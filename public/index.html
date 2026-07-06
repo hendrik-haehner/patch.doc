@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Eurorack patch documentation app">
+  <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f4f4" media="(prefers-color-scheme: light)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PATCH.doc">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230c0c0c'/><text x='4' y='24' font-size='22' fill='%237F77DD'>▣</text></svg>">
+  <title>PATCH.doc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="layout">
+
+  <!-- topbar -->
+  <div id="topbar">
+    <div id="topbar-left">
+      <button class="icon-btn" id="sidebar-desktop-toggle" onclick="App.toggleDesktopSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+        <i class="ti ti-layout-sidebar" aria-hidden="true"></i>
+      </button>
+      <span class="brand">▣ PATCH<span>.</span>doc</span>
+    </div>
+    <!-- Touch patch select — takes remaining space between brand and right buttons -->
+    <div id="touch-patch-select-wrap">
+      <select id="touch-patch-select" onchange="App.switchPatch(this.value)"></select>
+      <button id="touch-patch-new-btn" onclick="App.newPatch()" title="New patch">+</button>
+    </div>
+    <!-- Touch dropdown menu -->
+    <div id="touch-menu-dropdown">
+      <div class="touch-menu-tabs">
+        <button class="tab-btn active" data-tab="patch" onclick="App.switchTab('patch');App.closeTouchMenu()">patch</button>
+        <button class="tab-btn" data-tab="notes" onclick="App.switchTab('notes');App.closeTouchMenu()">notes</button>
+        <button class="tab-btn" data-tab="params" onclick="App.switchTab('params');App.closeTouchMenu()">params</button>
+        <button class="tab-btn" data-tab="connections" onclick="App.switchTab('connections');App.closeTouchMenu()">connections</button>
+        <button class="tab-btn" data-tab="media" onclick="App.switchTab('media');App.closeTouchMenu()">media</button>
+        <button class="tab-btn" data-tab="manuals" onclick="App.switchTab('manuals');App.closeTouchMenu()">manuals</button>
+      </div>
+      <div class="touch-menu-actions">
+        <span id="save-indicator" style="font-size:10px;letter-spacing:0.06em"></span>
+        <span id="topbar-username" style="font-size:10px;color:var(--text2);letter-spacing:0.08em"></span>
+        <a href="/api/logout" class="icon-btn" title="Logout" style="text-decoration:none"><i class="ti ti-logout"></i> logout</a>
+      </div>
+    </div>
+
+    <!-- Tab row — starts aligned with sidebar (200px from left) -->
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="patch" onclick="App.switchTab('patch')">patch</button>
+      <button class="tab-btn" data-tab="notes" onclick="App.switchTab('notes')">notes</button>
+      <button class="tab-btn" data-tab="params" onclick="App.switchTab('params')">params</button>
+      <button class="tab-btn" data-tab="connections" onclick="App.switchTab('connections')">connections</button>
+      <button class="tab-btn" data-tab="rack" onclick="App.switchTab('rack')">rack</button>
+      <button class="tab-btn" data-tab="media" onclick="App.switchTab('media')">media</button>
+      <button class="tab-btn" data-tab="manuals" onclick="App.switchTab('manuals')">manuals</button>
+      <button class="tab-btn" data-tab="io" onclick="App.switchTab('io')">
+        <i class="ti ti-database" aria-hidden="true"></i> save/load
+      </button>
+    </div>
+
+    <div id="topbar-right">
+      <!-- Touch: theme, search and hamburger on the right -->
+      <button class="icon-btn touch-only-btn" id="theme-toggle-btn-touch" onclick="Theme.toggle()" title="Theme" aria-label="Theme">
+        <i class="ti ti-moon" aria-hidden="true"></i>
+      </button>
+      <button class="icon-btn touch-only-btn" onclick="GlobalSearch.open()" title="Suche" aria-label="Suche">
+        <i class="ti ti-search" aria-hidden="true"></i>
+      </button>
+      <button class="icon-btn touch-only-btn" id="touch-menu-btn" onclick="App.toggleTouchMenu()" title="Menu" aria-label="Menu">
+        <i class="ti ti-dots-vertical" aria-hidden="true"></i>
+      </button>
+      <span id="save-indicator-desktop" style="font-size:10px;letter-spacing:0.06em;flex-shrink:0"></span>
+      <button class="icon-btn desktop-only-btn" id="theme-toggle-btn" onclick="Theme.toggle()" title="Theme wechseln" aria-label="Theme wechseln">
+        <i class="ti ti-moon" aria-hidden="true" id="theme-icon"></i>
+      </button>
+      <button class="icon-btn desktop-only-btn" onclick="GlobalSearch.open()" title="Globale Modulsuche (Cmd+F)" aria-label="Globale Modulsuche" id="global-search-btn"><i class="ti ti-search" aria-hidden="true"></i></button>
+      <button class="icon-btn desktop-only-btn" onclick="document.getElementById('shortcuts-modal').classList.toggle('open')" title="Tastaturkürzel" aria-label="Tastaturkürzel">
+        <i class="ti ti-keyboard" aria-hidden="true"></i>
+      </button>
+      <span id="topbar-username-desktop" style="font-size:10px;color:var(--text2);letter-spacing:0.08em;flex-shrink:0"></span>
+      <a href="/settings" class="icon-btn desktop-only-btn" title="Settings" aria-label="Settings" style="text-decoration:none">
+        <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+      </a>
+      <a href="/admin" class="icon-btn desktop-only-btn admin-link" title="Admin" aria-label="Admin" style="text-decoration:none;display:none">
+        <i class="ti ti-users" aria-hidden="true"></i>
+      </a>
+      <a href="/api/logout" class="icon-btn desktop-only-btn" title="Logout" aria-label="Logout" style="text-decoration:none">
+        <i class="ti ti-logout" aria-hidden="true"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- sidebar -->
+  <div id="sidebar">
+    <button id="sidebar-touch-close" onclick="App.toggleTouchSidebar()" aria-label="Close sidebar">
+      <i class="ti ti-x" aria-hidden="true"></i> close
+    </button>
+    <!-- sidebar tabs -->
+    <div id="sidebar-tabs">
+      <button class="sidebar-tab active" id="sidebar-tab-patches" onclick="App.switchSidebarTab('patches')">Patches</button>
+      <button class="sidebar-tab" id="sidebar-tab-modules" onclick="App.switchSidebarTab('modules')">Modules</button>
+    </div>
+
+    <!-- patch library -->
+    <div class="sidebar-section" id="sidebar-panel-patches">
+      <div class="sidebar-header">
+        <button class="sidebar-new-btn" onclick="App.newPatch()">+ New Patch</button>
+        <div class="spacer"></div>
+        <button class="sort-btn" id="patch-sort-btn" onclick="App.cyclePatchSort()" title="Sort patches">A↓</button>
+        <button class="icon-btn" id="patch-search-btn" onclick="App.togglePatchSearch()" title="Search patches" aria-label="Search patches" style="width:20px;height:20px;border-radius:50%;font-size:11px"><i class="ti ti-search" aria-hidden="true"></i></button>
+      </div>
+      <div class="patch-search-wrap" id="patch-search-wrap" style="display:none">
+        <input id="patch-search" type="text" placeholder="search patches…"
+          oninput="App.filterPatches(this.value)"
+          onclick="event.stopPropagation()"
+          autocomplete="off" spellcheck="false">
+      </div>
+      <div id="patch-tag-filters"></div>
+      <div id="patch-list"></div>
+      <div id="shared-patches-wrap"></div>
+    </div><!-- end sidebar-panel-patches -->
+    <!-- module library -->
+    <div id="sidebar-panel-modules" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div id="module-section" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <div class="sidebar-header" style="flex-shrink:0;border-bottom:0.5px solid var(--border)">
+        <button class="sidebar-new-btn" onclick="App.openModal()">+ New Module</button>
+        <div class="spacer"></div>
+        <button class="sort-btn" id="module-sort-btn" onclick="App.cycleModuleSort()" title="Sort modules">A↓</button>
+      </div>
+      <div id="module-section-body" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+        <div style="padding:5px 8px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+          <input id="module-search" type="text" placeholder="search…"
+            oninput="App.renderModuleLibrary()"
+            style="width:100%;font-size:10px;padding:3px 7px;border:0.5px solid var(--border2);border-radius:4px;background:var(--bg0);color:var(--text0);font-family:var(--font);outline:none">
+        </div>
+        <div style="padding:5px 8px;border-bottom:0.5px solid var(--border);flex-shrink:0;display:flex;gap:5px">
+          <select id="module-filter-maker" onchange="App.renderModuleLibrary()"
+            style="flex:1;font-size:9px;padding:3px 4px;border:0.5px solid var(--border2);border-radius:4px;background:var(--bg0);color:var(--text1);font-family:var(--font);outline:none;min-width:0">
+            <option value="">all makers</option>
+          </select>
+          <select id="module-filter-cat" onchange="App.renderModuleLibrary()"
+            style="flex:1;font-size:9px;padding:3px 4px;border:0.5px solid var(--border2);border-radius:4px;background:var(--bg0);color:var(--text1);font-family:var(--font);outline:none;min-width:0">
+            <option value="">all types</option>
+          </select>
+        </div>
+        <div id="module-list-wrap">
+          <div id="module-list"></div>
+        </div>
+      </div>
+    </div>
+    </div><!-- end sidebar-panel-modules -->
+  </div><!-- end sidebar -->
+
+  <!-- main content -->
+  <div id="main">
+
+    <!-- patch view -->
+    <div id="patch-view" class="view active">
+      <div id="patch-toolbar">
+        <button class="tool-btn" onclick="App.addSelectedToPatch()">
+          <i class="ti ti-plus" aria-hidden="true"></i> add to patch
+        </button>
+        <button class="tool-btn" onclick="Patch.clearCables()">clear cables</button>
+        <button class="tool-btn danger" onclick="Patch.clearAll()">clear patch</button>
+        <button class="tool-btn" id="undo-btn" onclick="Undo.undo()" title="Undo (⌘Z)" style="opacity:0.35">↩ undo</button>
+        <button class="tool-btn" id="redo-btn" onclick="Undo.redo()" title="Redo (⌘Y)" style="opacity:0.35">↪ redo</button>
+        <button class="tool-btn" id="snap-btn" onclick="Patch.toggleSnap()" title="Grid-Einrasten">snap off</button>
+        <button class="tool-btn" onclick="Patch.alignToGrid()" title="Align all modules to grid">⊞ align</button>
+        <button class="tool-btn" onclick="Patch.compactLayout()" title="Pack modules into rows with minimum spacing">⊟ compact</button>
+        <button class="tool-btn" id="collapse-all-btn" onclick="Patch.toggleAllCollapse()" title="Toggle all parameters">▴ params</button>
+        <button class="tool-btn" id="hide-cables-btn" onclick="Patch.toggleCablesVisible()" title="Show/hide all cables">⌁ cables</button>
+      </div>
+      <div id="patch-canvas-wrap">
+        <div id="patch-canvas">
+          <svg class="cable-svg" id="cable-svg" width="2000" height="1200"
+               aria-label="Patch cable connections" role="img"></svg>
+        </div>
+      </div>
+      <div id="patch-statusbar">
+        <span id="patch-status">select module → add · drag · click ports to connect · click cable to remove</span>
+        <span id="hp-sum" style="font-size:10px;color:var(--accent);font-weight:600"></span>
+        <span id="statusbar-cable-legend" title="cable types: solid=audio · dashed=CV · dotted=gate">
+          <span style="border-bottom:1.5px solid currentColor;padding-bottom:1px;margin-right:4px">audio</span>
+          <span style="border-bottom:1.5px dashed currentColor;padding-bottom:1px;margin-right:4px">cv</span>
+          <span style="border-bottom:1.5px dotted currentColor;padding-bottom:1px">gate</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- notes view -->
+    <div id="notes-view" class="view">
+      <div id="notes-header">
+        <input id="patch-title" type="text" placeholder="Patch name..."
+               oninput="App.onTitleChange(this.value)" />
+      </div>
+      <div style="padding:6px 14px 0;display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:9px;color:var(--text2);letter-spacing:0.1em;font-weight:600">TAGS</span>
+        <div style="flex:1;position:relative">
+          <input id="patch-tags" type="text" placeholder="ambient, generative, drone…"
+            oninput="App.onTagsChange(this.value)" onfocus="App.showTagSuggestions()" onblur="setTimeout(()=>App.hideTagSuggestions(),200)"
+            style="width:100%;font-size:11px;padding:3px 8px;border:0.5px solid var(--border2);border-radius:4px;background:transparent;color:var(--text0);font-family:var(--font);outline:none;box-sizing:border-box">
+          <div id="tag-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg1);border:0.5px solid var(--border2);border-radius:4px;z-index:200;max-height:120px;overflow-y:auto;margin-top:2px"></div>
+        </div>
+        <label class="btn-action" style="cursor:pointer;font-size:10px;padding:3px 8px">
+          <i class="ti ti-photo" aria-hidden="true"></i> photo
+          <input type="file" accept="image/*" style="display:none" onchange="App.onPhotoUpload(this)">
+        </label>
+      </div>
+      <div id="photo-preview" style="padding:6px 14px 2px;flex-shrink:0"></div>
+      <textarea id="notes-textarea"
+        placeholder="Describe the patch, signal flow, patch ideas, what works, what doesn't..."
+        oninput="App.onNotesChange(this.value)"></textarea>
+    </div>
+
+    <!-- params view -->
+    <div id="params-view" class="view">
+      <div id="params-content"></div>
+    </div>
+
+    <!-- connections view -->
+    <div id="connections-view" class="view" style="overflow-y:auto;padding:14px 16px;">
+      <div id="connections-touch-toolbar">
+        <button class="tool-btn" id="conn-undo-btn" onclick="Undo.undo()" title="Undo" style="opacity:0.35">↩ undo</button>
+        <button class="tool-btn" id="conn-redo-btn" onclick="Undo.redo()" title="Redo" style="opacity:0.35">↪ redo</button>
+      </div>
+      <div id="connections-content"></div>
+    </div>
+
+    <!-- rack view -->
+    <div id="rack-view" class="view" style="overflow-y:auto;padding:12px 14px;">
+      <div id="rack-content"></div>
+    </div>
+
+    <!-- media view -->
+    <div id="media-view" class="view" style="overflow-y:auto">
+      <div id="media-content" style="padding:14px 16px"></div>
+    </div>
+
+    <!-- manuals view -->
+    <div id="manuals-view" class="view" style="overflow-y:auto">
+      <div id="manuals-content" style="padding:14px 16px"></div>
+    </div>
+
+    <!-- save/load view -->
+    <div id="io-view" class="view">
+      <div id="io-content">
+
+        <div class="io-section">
+          <h4>EXPORT</h4>
+          <p>Download the current patch as a JSON file, or copy it to your clipboard to share.</p>
+          <div class="btn-row">
+            <button class="btn-action primary" onclick="IO.exportPatch()">
+              <i class="ti ti-download" aria-hidden="true"></i> download patch
+            </button>
+            <button class="btn-action" onclick="IO.copyPatch()">
+              <i class="ti ti-copy" aria-hidden="true"></i> copy to clipboard
+            </button>
+            <button class="btn-action" onclick="IO.exportAll()">
+              <i class="ti ti-archive" aria-hidden="true"></i> full backup
+            </button>
+            <button class="btn-action" onclick="IO.exportPDF()" style="border-color:var(--accent-border);color:var(--accent)">
+              <i class="ti ti-file-type-pdf" aria-hidden="true"></i> export A3 PDF
+            </button>
+          </div>
+          <div id="export-feedback" class="feedback"></div>
+          <div id="json-preview" class="json-box"></div>
+        </div>
+
+        <div class="io-section">
+          <h4>IMPORT</h4>
+          <p>Paste patch JSON below, or load a file. A single patch is merged into your library; a full backup replaces all data.</p>
+          <textarea id="import-textarea" placeholder='{"version":2,"patch":{...}} or full backup JSON...'></textarea>
+          <div class="btn-row">
+            <button class="btn-action primary" onclick="IO.importFromText()">
+              <i class="ti ti-upload" aria-hidden="true"></i> load from text
+            </button>
+            <label class="btn-action" style="cursor:pointer">
+              <i class="ti ti-file" aria-hidden="true"></i> load file
+              <input type="file" accept=".json" style="display:none" onchange="IO.loadFile(event)">
+            </label>
+          </div>
+          <div id="import-feedback" class="feedback"></div>
+        </div>
+
+        <div class="io-section">
+          <h4>MODULARGRID IMPORT</h4>
+          <p>Requires a Unicorn account on ModularGrid. Open your rack, add <code style="font-family:var(--font);font-size:10px;background:var(--bg2);padding:1px 5px;border-radius:3px">.json</code> to the URL, save the file, then paste or load it in the Import section above.</p>
+          <p style="margin-top:6px;color:var(--text2);font-size:11px">
+            e.g. <code style="font-family:var(--font);font-size:10px">modulargrid.net/e/racks/view/12345</code>
+            → <code style="font-family:var(--font);font-size:10px">modulargrid.net/e/racks/view/12345.json</code>
+          </p>
+          <p style="margin-top:10px;font-size:11px;color:var(--text1)">Expected format (auto-detected on import):</p>
+          <div class="json-box" id="mg-example-box" style="margin-top:6px"></div>
+        </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- add module modal -->
+<div id="module-modal-bg" class="modal-bg" onmousedown="window._modalMousedownOnBg=(event.target===this)" onmouseup="if(window._modalMousedownOnBg&&event.target===this)App.closeModal()">
+  <div class="modal" role="dialog" aria-label="Add module">
+    <h3 id="module-modal-title">add module</h3>
+    <div class="field">
+      <label>manufacturer</label>
+      <input id="m-maker" type="text" placeholder="e.g. Mutable Instruments" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>module name</label>
+      <input id="m-name" type="text" placeholder="e.g. Plaits" autocomplete="off"
+             onkeydown="if(event.key==='Enter')App.saveModule()">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>HP width</label>
+        <input id="m-hp" type="number" value="8" min="2" max="84">
+      </div>
+      <div class="field">
+        <label>category</label>
+        <select id="m-cat">
+          <option value="oscillator">oscillator</option>
+          <option value="filter">filter</option>
+          <option value="envelope">envelope</option>
+          <option value="lfo">lfo</option>
+          <option value="vca">vca</option>
+          <option value="sequencer">sequencer</option>
+          <option value="effects">effects</option>
+          <option value="utility">utility</option>
+          <option value="guitar pedal">guitar pedal</option>
+          <option value="placeholder">placeholder</option>
+          <option value="other">other</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>color (optional)</label>
+        <div id="m-color-swatches" class="color-swatch-row"></div>
+        <input id="m-color" type="color" value="" oninput="this.dataset.cleared='';App._renderColorSwatches(this.value)" style="height:28px;padding:2px 4px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg0);width:100%;margin-top:5px">
+      </div>
+      <div class="field">
+        <label>param columns</label>
+        <select id="m-param-cols">
+          <option value="2">2 columns</option>
+          <option value="3" selected>3 columns</option>
+          <option value="4">4 columns</option>
+          <option value="6">6 columns</option>
+          <option value="8">8 columns</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;flex-direction:column;gap:4px">
+        <label>power (mA)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+          <input id="m-p12p" type="number" placeholder="+12V" min="0" style="font-size:10px;padding:3px 5px">
+          <input id="m-p12n" type="number" placeholder="-12V" min="0" style="font-size:10px;padding:3px 5px">
+          <input id="m-p5"   type="number" placeholder="+5V"  min="0" style="font-size:10px;padding:3px 5px">
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>inputs</label>
+      <div class="io-builder" id="inputs-builder"></div>
+      <div style="display:grid;grid-template-columns:1fr 72px 24px;gap:5px;margin-top:6px">
+        <input id="input-add-field" type="text" placeholder="add input port..."
+               style="min-width:0"
+               onkeydown="if(event.key==='Enter')App.addIO('in')"
+               oninput="App.updateIOSigGuess('in')">
+        <select id="input-sig-type" class="io-sig-select">
+          <option value="audio">audio</option>
+          <option value="cv">cv</option>
+          <option value="gate">gate</option>
+        </select>
+        <button class="io-add-btn" onclick="App.addIO('in')">+</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>outputs</label>
+      <div class="io-builder" id="outputs-builder"></div>
+      <div style="display:grid;grid-template-columns:1fr 72px 24px;gap:5px;margin-top:6px">
+        <input id="output-add-field" type="text" placeholder="add output port..."
+               style="min-width:0"
+               onkeydown="if(event.key==='Enter')App.addIO('out')"
+               oninput="App.updateIOSigGuess('out')">
+        <select id="output-sig-type" class="io-sig-select">
+          <option value="audio">audio</option>
+          <option value="cv">cv</option>
+          <option value="gate">gate</option>
+        </select>
+        <button class="io-add-btn" onclick="App.addIO('out')">+</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>parameters</label>
+      <div id="param-defs-list" class="pdef-list"></div>
+      <div class="pdef-add-area">
+        <div class="pdef-add-row">
+          <input id="pdef-name" type="text" placeholder="parameter name..." autocomplete="off"
+            onkeydown="if(event.key==='Enter')App.addParamDef(event)">
+          <select id="pdef-type" onchange="App.onParamDefTypeChange()">
+            <option value="knob">knob</option>
+            <option value="toggle">toggle</option>
+            <option value="enum">enum</option>
+            <option value="text">text</option>
+          </select>
+          <button class="io-add-btn" onclick="App.addParamDef(event)">+</button>
+          <button class="io-add-btn" onclick="App.addDivider(event)" title="Add divider line" style="background:transparent;border:0.5px dashed var(--border2);color:var(--text2)">─</button>
+        </div>
+        <div id="pdef-knob-fields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px">
+          <div class="field" style="margin:0"><label>min</label><input id="pdef-min" type="number" value="0" style="padding:3px 6px;font-size:11px"></div>
+          <div class="field" style="margin:0"><label>max</label><input id="pdef-max" type="number" value="100" style="padding:3px 6px;font-size:11px"></div>
+          <div class="field" style="margin:0"><label>default</label><input id="pdef-default" type="number" value="0" style="padding:3px 6px;font-size:11px"></div>
+        </div>
+        <div id="pdef-toggle-fields" style="display:none;align-items:center;gap:8px;margin-top:6px">
+          <label style="font-size:10px;color:var(--text2)">default</label>
+          <select id="pdef-toggle-default" style="font-size:11px;padding:3px 6px">
+            <option value="off">off</option>
+            <option value="on">on</option>
+          </select>
+        </div>
+        <div id="pdef-enum-fields" style="display:none;margin-top:6px">
+          <div class="field" style="margin:0">
+            <label>options (comma separated)</label>
+            <input id="pdef-options" type="text" placeholder="sine, saw, square, noise" style="font-size:11px">
+          </div>
+        </div>
+      </div>
+
+      <div class="field" id="modal-manuals-field" style="display:none">
+        <label>manual (PDF)</label>
+        <div id="modal-manuals-content" style="font-size:11px"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="App.closeModal()">cancel</button>
+      <button id="module-modal-save-btn" class="btn-primary" onclick="App.saveModule()">add to library</button>
+    </div>
+  </div>
+</div>
+
+<!-- global module search modal -->
+<div id="global-search-modal" class="modal-bg" onclick="if(event.target===this)GlobalSearch.close()">
+  <div class="global-search-box" role="dialog" aria-label="Modulsuche">
+    <div class="global-search-input-row">
+      <i class="ti ti-search" style="color:var(--text2);flex-shrink:0"></i>
+      <input id="global-search-input" type="text" placeholder="Module suchen…"
+        oninput="GlobalSearch.search(this.value)"
+        autocomplete="off" spellcheck="false">
+      <kbd onclick="GlobalSearch.close()">ESC</kbd>
+    </div>
+    <div id="global-search-results"></div>
+  </div>
+</div>
+
+<!-- shortcuts modal -->
+<div id="shortcuts-modal" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="width:320px">
+    <h3 style="margin-bottom:12px">keyboard shortcuts</h3>
+    <div style="display:grid;grid-template-columns:80px 1fr;gap:5px 12px;font-size:11px">
+      <kbd>A</kbd><span>add selected module to patch</span>
+      <kbd>N</kbd><span>new patch</span>
+      <kbd>1–4</kbd><span>switch tabs</span>
+      <kbd>⌘S</kbd><span>export patch JSON</span>
+      <kbd>⌘P</kbd><span>export PDF</span>
+      <kbd>⌘Z</kbd><span>undo</span>
+      <kbd>⌘Y / ⌘⇧Z</kbd><span>redo</span>
+      <kbd>ESC</kbd><span>close modal / cancel connection</span>
+    </div>
+    <div style="margin-top:12px;font-size:10px;color:var(--text2)">
+      Cable types: solid = audio · dashed = CV · dotted = gate
+    </div>
+    <div style="margin-top:12px;font-size:10px;color:var(--text2)">
+      Double-click a patch name to rename it inline.
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-primary" onclick="document.getElementById('shortcuts-modal').classList.remove('open')">close</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/media.js"></script>
+<script src="js/manuals.js"></script>
+<script src="js/undo.js"></script>
+<script src="js/patch.js"></script>
+<script src="js/mobile.js"></script>
+<script src="js/io.js"></script>
+<script src="js/app.js"></script>
+<script src="js/search.js"></script>
+<script>Theme.init();</script>
+</body>
+</html>

@@ -1,0 +1,1659 @@
+{
+  "version": 2,
+  "patches": [
+    {
+      "id": "patch_1780508556557",
+      "title": "Set 50",
+      "notes": "",
+      "createdAt": "2026-06-03T17:42:36.557Z",
+      "updatedAt": "2026-06-30T20:51:56.758Z",
+      "patchModules": [
+        {
+          "moduleId": 16,
+          "id": 1780508556557,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 84,
+          "y": 19,
+          "collapsed": true
+        },
+        {
+          "moduleId": 17,
+          "id": 1780508556558,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 713,
+          "y": 32,
+          "collapsed": true
+        },
+        {
+          "moduleId": 19,
+          "id": 1780508556560,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 403,
+          "y": 32,
+          "collapsed": true
+        },
+        {
+          "moduleId": 20,
+          "id": 1780508556561,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 45,
+          "y": 656,
+          "collapsed": true
+        },
+        {
+          "moduleId": 21,
+          "id": 1780508556562,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 811,
+          "y": 643
+        },
+        {
+          "moduleId": 22,
+          "id": 1780508556563,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 1261,
+          "y": 240,
+          "collapsed": true
+        },
+        {
+          "moduleId": 23,
+          "id": 1780508556564,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 336,
+          "y": 336,
+          "collapsed": true
+        },
+        {
+          "moduleId": 24,
+          "id": 1780508556565,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 1031,
+          "y": 20,
+          "collapsed": true
+        },
+        {
+          "moduleId": 18,
+          "id": 1780565657815,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 752,
+          "y": 414,
+          "collapsed": true
+        },
+        {
+          "moduleId": 26,
+          "id": 1780565873914,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 70,
+          "y": 475
+        },
+        {
+          "moduleId": 15,
+          "id": 1780566802262,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 1068,
+          "y": 601
+        }
+      ],
+      "cables": [
+        {
+          "id": 1780565887604,
+          "fromPm": 1780565873914,
+          "fromPort": "Midi",
+          "toPm": 1780508556557,
+          "toPort": "Midi In",
+          "color": "#8f86e8",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780659562979,
+          "fromPm": 1780508556557,
+          "fromPort": "2 CV",
+          "toPm": 1780508556563,
+          "toPort": "V/Oct",
+          "color": "#2aaa7a",
+          "sigType": "cv"
+        },
+        {
+          "id": 1780659590050,
+          "fromPm": 1780508556557,
+          "fromPort": "2 Gate",
+          "toPm": 1780508556563,
+          "toPort": "Strum",
+          "color": "#4a9fd4",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780660195538,
+          "fromPm": 1780508556563,
+          "fromPort": "Odd",
+          "toPm": 1780508556561,
+          "toPort": "X",
+          "color": "#c45c82",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660198088,
+          "fromPm": 1780508556563,
+          "fromPort": "Even",
+          "toPm": 1780508556561,
+          "toPort": "Y",
+          "color": "#d4963a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660228154,
+          "fromPm": 1780508556561,
+          "fromPort": "A",
+          "toPm": 1780508556560,
+          "toPort": "Ch 1",
+          "color": "#7aaa2a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660230601,
+          "fromPm": 1780508556561,
+          "fromPort": "B",
+          "toPm": 1780508556560,
+          "toPort": "Ch 2",
+          "color": "#a07060",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660264675,
+          "fromPm": 1780508556565,
+          "fromPort": "4/3/3",
+          "toPm": 1780508556561,
+          "toPort": "Z",
+          "color": "#8f86e8",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660287897,
+          "fromPm": 1780508556562,
+          "fromPort": "1-1",
+          "toPm": 1780508556565,
+          "toPort": "Clock",
+          "color": "#2aaa7a",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780660300696,
+          "fromPm": 1780508556557,
+          "fromPort": "Reset",
+          "toPm": 1780508556565,
+          "toPort": "Reset",
+          "color": "#c8612a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660446886,
+          "fromPm": 1780508556565,
+          "fromPort": "2/2/2",
+          "toPm": 1780508556564,
+          "toPort": "Ch 1 Gate",
+          "color": "#4a9fd4",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780660467776,
+          "fromPm": 1780508556564,
+          "fromPort": "Ch 1-1",
+          "toPm": 1780508556563,
+          "toPort": "Shape",
+          "color": "#c45c82",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660485028,
+          "fromPm": 1780508556565,
+          "fromPort": "64/13/7",
+          "toPm": 1780508556564,
+          "toPort": "Ch 2 Gate",
+          "color": "#d4963a",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780662367443,
+          "fromPm": 1780508556558,
+          "fromPort": "L",
+          "toPm": 1780508556560,
+          "toPort": "Ch 3",
+          "color": "#7aaa2a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780662371047,
+          "fromPm": 1780508556558,
+          "fromPort": "R",
+          "toPm": 1780508556560,
+          "toPort": "Ch 4",
+          "color": "#a07060",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780662386773,
+          "fromPm": 1780565657815,
+          "fromPort": "L",
+          "toPm": 1780508556558,
+          "toPort": "L",
+          "color": "#8f86e8",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780662389008,
+          "fromPm": 1780565657815,
+          "fromPort": "R",
+          "toPm": 1780508556558,
+          "toPort": "R",
+          "color": "#2aaa7a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780662425932,
+          "fromPm": 1780508556557,
+          "fromPort": "Clock",
+          "toPm": 1780508556562,
+          "toPort": "1",
+          "color": "#c8612a",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780662436014,
+          "fromPm": 1780508556562,
+          "fromPort": "1-3",
+          "toPm": 1780508556558,
+          "toPort": "Clock",
+          "color": "#4a9fd4",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780662510243,
+          "fromPm": 1780508556557,
+          "fromPort": "Midi Out",
+          "toPm": 1780565657815,
+          "toPort": "Midi",
+          "color": "#c45c82",
+          "sigType": "audio"
+        }
+      ],
+      "params": {
+        "1780508556557": {
+          "Project name": "Set 50"
+        },
+        "1780508556558": {
+          "Transport": false
+        },
+        "1780508556559": {},
+        "1780508556560": {
+          "CV 2": 47.37848917643229,
+          "CV 4": 0,
+          "CV 1": 42.097814639564604,
+          "CV 3": 34.30445353190104
+        },
+        "1780508556561": {
+          "Program": "B4"
+        },
+        "1780508556562": {},
+        "1780508556563": {
+          "Attn Freq": 44.140625,
+          "Freq": 46.666666666666664,
+          "Brite": 70,
+          "Shape": 28.333333333333332,
+          "Attn Shape": 82.5,
+          "Attn Brite": 92.5,
+          "Pos": 0,
+          "Attn Pos": 48.333333333333336,
+          "Attn Damp": 59.166666666666664,
+          "Poly": "Red"
+        },
+        "1780508556564": {},
+        "1780508556565": {},
+        "1780508556566": {},
+        "1780565657815": {
+          "Chord sel (s)": 0,
+          "Voice Pan": 30.771484375,
+          "Midi Ch": 0,
+          "Pitch Env": 15.421484375,
+          "Vol (S)": 16.949869791666668,
+          "Dec/Sus": 100,
+          "Attack": 100,
+          "Release": 100,
+          "Filter Type": "Phase",
+          "Key Follow": "Half",
+          "Mode": "Sync 2"
+        },
+        "1780565873914": {},
+        "1780566802262": {}
+      },
+      "cableColorIdx": 21,
+      "tags": [],
+      "photo": null
+    },
+    {
+      "id": "patch_1782581464087",
+      "title": "Set 50 (copy)",
+      "notes": "",
+      "createdAt": "2026-06-27T17:31:04.087Z",
+      "updatedAt": "2026-06-27T17:32:18.774Z",
+      "patchModules": [
+        {
+          "moduleId": 16,
+          "id": 1780508556557,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 16,
+          "y": 16,
+          "collapsed": false
+        },
+        {
+          "moduleId": 17,
+          "id": 1780508556558,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 356,
+          "y": 16,
+          "collapsed": false
+        },
+        {
+          "moduleId": 19,
+          "id": 1780508556560,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 186,
+          "y": 16,
+          "collapsed": false
+        },
+        {
+          "moduleId": 20,
+          "id": 1780508556561,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 1248,
+          "y": 576,
+          "collapsed": false
+        },
+        {
+          "moduleId": 21,
+          "id": 1780508556562,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 96,
+          "y": 552
+        },
+        {
+          "moduleId": 22,
+          "id": 1780508556563,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 960,
+          "y": 24,
+          "collapsed": false
+        },
+        {
+          "moduleId": 23,
+          "id": 1780508556564,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 1200,
+          "y": 96,
+          "collapsed": false
+        },
+        {
+          "moduleId": 24,
+          "id": 1780508556565,
+          "instance": 1,
+          "paramsOpen": false,
+          "x": 650,
+          "y": 16,
+          "collapsed": false
+        },
+        {
+          "moduleId": 18,
+          "id": 1780565657815,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 696,
+          "y": 336,
+          "collapsed": false
+        }
+      ],
+      "cables": [
+        {
+          "id": 1780659562979,
+          "fromPm": 1780508556557,
+          "fromPort": "2 CV",
+          "toPm": 1780508556563,
+          "toPort": "V/Oct",
+          "color": "#2aaa7a",
+          "sigType": "cv"
+        },
+        {
+          "id": 1780659590050,
+          "fromPm": 1780508556557,
+          "fromPort": "2 Gate",
+          "toPm": 1780508556563,
+          "toPort": "Strum",
+          "color": "#4a9fd4",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780660195538,
+          "fromPm": 1780508556563,
+          "fromPort": "Odd",
+          "toPm": 1780508556561,
+          "toPort": "X",
+          "color": "#c45c82",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660198088,
+          "fromPm": 1780508556563,
+          "fromPort": "Even",
+          "toPm": 1780508556561,
+          "toPort": "Y",
+          "color": "#d4963a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660228154,
+          "fromPm": 1780508556561,
+          "fromPort": "A",
+          "toPm": 1780508556560,
+          "toPort": "Ch 1",
+          "color": "#7aaa2a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660230601,
+          "fromPm": 1780508556561,
+          "fromPort": "B",
+          "toPm": 1780508556560,
+          "toPort": "Ch 2",
+          "color": "#a07060",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660264675,
+          "fromPm": 1780508556565,
+          "fromPort": "4/3/3",
+          "toPm": 1780508556561,
+          "toPort": "Z",
+          "color": "#8f86e8",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660287897,
+          "fromPm": 1780508556562,
+          "fromPort": "1-1",
+          "toPm": 1780508556565,
+          "toPort": "Clock",
+          "color": "#2aaa7a",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780660300696,
+          "fromPm": 1780508556557,
+          "fromPort": "Reset",
+          "toPm": 1780508556565,
+          "toPort": "Reset",
+          "color": "#c8612a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660446886,
+          "fromPm": 1780508556565,
+          "fromPort": "2/2/2",
+          "toPm": 1780508556564,
+          "toPort": "Ch 1 Gate",
+          "color": "#4a9fd4",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780660467776,
+          "fromPm": 1780508556564,
+          "fromPort": "Ch 1-1",
+          "toPm": 1780508556563,
+          "toPort": "Shape",
+          "color": "#c45c82",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780660485028,
+          "fromPm": 1780508556565,
+          "fromPort": "64/13/7",
+          "toPm": 1780508556564,
+          "toPort": "Ch 2 Gate",
+          "color": "#d4963a",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780662367443,
+          "fromPm": 1780508556558,
+          "fromPort": "L",
+          "toPm": 1780508556560,
+          "toPort": "Ch 3",
+          "color": "#7aaa2a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780662371047,
+          "fromPm": 1780508556558,
+          "fromPort": "R",
+          "toPm": 1780508556560,
+          "toPort": "Ch 4",
+          "color": "#a07060",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780662386773,
+          "fromPm": 1780565657815,
+          "fromPort": "L",
+          "toPm": 1780508556558,
+          "toPort": "L",
+          "color": "#8f86e8",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780662389008,
+          "fromPm": 1780565657815,
+          "fromPort": "R",
+          "toPm": 1780508556558,
+          "toPort": "R",
+          "color": "#2aaa7a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1780662425932,
+          "fromPm": 1780508556557,
+          "fromPort": "Clock",
+          "toPm": 1780508556562,
+          "toPort": "1",
+          "color": "#c8612a",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780662436014,
+          "fromPm": 1780508556562,
+          "fromPort": "1-3",
+          "toPm": 1780508556558,
+          "toPort": "Clock",
+          "color": "#4a9fd4",
+          "sigType": "gate"
+        },
+        {
+          "id": 1780662510243,
+          "fromPm": 1780508556557,
+          "fromPort": "Midi Out",
+          "toPm": 1780565657815,
+          "toPort": "Midi",
+          "color": "#c45c82",
+          "sigType": "audio"
+        }
+      ],
+      "params": {
+        "1780508556557": {
+          "Project name": "Set 50"
+        },
+        "1780508556558": {
+          "Transport": false
+        },
+        "1780508556559": {},
+        "1780508556560": {
+          "CV 2": 47.37848917643229,
+          "CV 4": 0,
+          "CV 1": 42.097814639564604,
+          "CV 3": 34.30445353190104
+        },
+        "1780508556561": {
+          "Program": "B4"
+        },
+        "1780508556562": {},
+        "1780508556563": {
+          "Attn Freq": 44.140625,
+          "Freq": 46.666666666666664,
+          "Brite": 70,
+          "Shape": 28.333333333333332,
+          "Attn Shape": 82.5,
+          "Attn Brite": 92.5,
+          "Pos": 0,
+          "Attn Pos": 48.333333333333336,
+          "Attn Damp": 59.166666666666664,
+          "Poly": "Red"
+        },
+        "1780508556564": {},
+        "1780508556565": {},
+        "1780508556566": {},
+        "1780565657815": {
+          "Chord sel (s)": 0,
+          "Voice Pan": 30.771484375,
+          "Midi Ch": 0,
+          "Pitch Env": 15.421484375,
+          "Vol (S)": 16.949869791666668,
+          "Dec/Sus": 100,
+          "Attack": 100,
+          "Release": 100,
+          "Filter Type": "Phase",
+          "Key Follow": "Half",
+          "Mode": "Sync 2"
+        },
+        "1780565873914": {},
+        "1780566802262": {}
+      },
+      "cableColorIdx": 21,
+      "tags": [],
+      "photo": null
+    },
+    {
+      "id": "patch_1782635804414",
+      "title": "Maths Sidechain",
+      "notes": "https://modulargrid.net/e/patches/view/69286\n\n\nSTEP BY STEP RECIPIE\n1. Use a multiple or stackcable to 'copy' (aka 'mult') the audio output of your kick.\n2. Create an envelope followed version of this kick, by either passing the multed audio thru an envelope follower, or, 'mult' the trigger that triggers the kick, and use THAT to trigger a separate envelope generator which can be customised to create the most satisfying shape. MATHS is also great for that!\n3. You now need to pass your 'music' channel (that is, all the audio you want to be 'ducked' by the kick) through a VCA. If you are doing a stereo mix, you'll need two VCAs.\n4. Invert the envelope followed kick, with an inverter or attenuverter. This is why utilities rule, they make stuff possible.\n5. Get the inverted kick to control the VCA CV level (if you're using two VCAs, use a mult to send it equally to both).\n6. Now you need to mix together the percussion audio and the 'ducked' music audio channels together, which will give you your finished mix.\n7. Rejoice, dropping your droppy drops harder, for they will drop with great effectiveness, even if your low/mids are a bloody mess.",
+      "createdAt": "2026-06-28T08:36:44.414Z",
+      "updatedAt": "2026-07-05T20:59:13.063Z",
+      "patchModules": [
+        {
+          "moduleId": 8,
+          "id": 1782636468047,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 312,
+          "y": 24
+        },
+        {
+          "moduleId": 19,
+          "id": 1782636630965,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 624,
+          "y": 24
+        },
+        {
+          "moduleId": 30,
+          "id": 1782637090773,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 24,
+          "y": 120
+        },
+        {
+          "moduleId": 31,
+          "id": 1782637280107,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 24,
+          "y": 264
+        }
+      ],
+      "cables": [
+        {
+          "id": 1782636520271,
+          "fromPm": 1782636468047,
+          "fromPort": "Out 1",
+          "toPm": 1782636468047,
+          "toPort": "Both 4",
+          "color": "hsl(0.0,72%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782636645174,
+          "fromPm": 1782636468047,
+          "fromPort": "SUM",
+          "toPm": 1782636630965,
+          "toPort": "Ch 1",
+          "color": "hsl(52.5,58%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782637163672,
+          "fromPm": 1782637090773,
+          "fromPort": "out",
+          "toPm": 1782636468047,
+          "toPort": "In 2",
+          "color": "hsl(327.5,58%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782637211733,
+          "fromPm": 1782637090773,
+          "fromPort": "out",
+          "toPm": 1782636468047,
+          "toPort": "In 1",
+          "color": "hsl(105.0,72%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782637301171,
+          "fromPm": 1782637280107,
+          "fromPort": "out",
+          "toPm": 1782636468047,
+          "toPort": "In 4",
+          "color": "hsl(242.6,58%,52%)",
+          "sigType": "audio"
+        }
+      ],
+      "params": {
+        "1782635867531": {},
+        "1782636145089": {},
+        "1782636468047": {
+          "Fall 1": 50,
+          "Freq 1": 33,
+          "Attn 2": 73,
+          "Rise 4": 0,
+          "Attn 4": 100
+        },
+        "1782636558640": {},
+        "1782636630965": {
+          "Level 1": 100
+        },
+        "1782637090773": {},
+        "1782637280107": {}
+      },
+      "cableColorIdx": 8,
+      "tags": [
+        "function"
+      ],
+      "photo": null,
+      "marks": {
+        "1782636468047": {
+          "Rise 1": "green",
+          "Fall 1": "green",
+          "Freq 1": "green",
+          "Attn 1": "green",
+          "Attn 2": "green",
+          "Rise 4": "green",
+          "Fall 4": "green",
+          "Attn 4": "green"
+        }
+      }
+    },
+    {
+      "id": "patch_1782638129002",
+      "title": "MATHS Swirly Bird Grooves",
+      "notes": "",
+      "createdAt": "2026-06-28T09:15:29.002Z",
+      "updatedAt": "2026-07-06T14:50:54.284Z",
+      "patchModules": [
+        {
+          "moduleId": 8,
+          "id": 1782638141591,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 480,
+          "y": 16
+        },
+        {
+          "moduleId": 7,
+          "id": 1782638591837,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 944,
+          "y": 16
+        },
+        {
+          "moduleId": 32,
+          "id": 1782638784911,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 248,
+          "y": 16
+        },
+        {
+          "moduleId": 21,
+          "id": 1782638825111,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 16,
+          "y": 16
+        },
+        {
+          "moduleId": 20,
+          "id": 1782638948177,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 712,
+          "y": 16
+        }
+      ],
+      "cables": [
+        {
+          "id": 1782638532785,
+          "fromPm": 1782638141591,
+          "fromPort": "EOC 4",
+          "toPm": 1782638141591,
+          "toPort": "Trig 1",
+          "color": "hsl(0.0,72%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782638604684,
+          "fromPm": 1782638141591,
+          "fromPort": "OR",
+          "toPm": 1782638591837,
+          "toPort": "Harmonics",
+          "color": "hsl(275.0,72%,52%)",
+          "sigType": "cv"
+        },
+        {
+          "id": 1782638702979,
+          "fromPm": 1782638141591,
+          "fromPort": "Func 1",
+          "toPm": 1782638591837,
+          "toPort": "FM",
+          "color": "hsl(52.5,58%,52%)",
+          "sigType": "cv"
+        },
+        {
+          "id": 1782638708675,
+          "fromPm": 1782638141591,
+          "fromPort": "Func 4",
+          "toPm": 1782638591837,
+          "toPort": "Morph",
+          "color": "hsl(190.0,72%,52%)",
+          "sigType": "cv"
+        },
+        {
+          "id": 1782638837928,
+          "fromPm": 1782638825111,
+          "fromPort": "1-1",
+          "toPm": 1782638141591,
+          "toPort": "Trig 4",
+          "color": "hsl(327.5,58%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782638841903,
+          "fromPm": 1782638141591,
+          "fromPort": "EOR 1",
+          "toPm": 1782638825111,
+          "toPort": "1",
+          "color": "hsl(105.0,72%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782638857657,
+          "fromPm": 1782638825111,
+          "fromPort": "1-2",
+          "toPm": 1782638784911,
+          "toPort": "gate",
+          "color": "hsl(242.6,58%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782638925115,
+          "fromPm": 1782638784911,
+          "fromPort": "x2",
+          "toPm": 1782638141591,
+          "toPort": "In 3",
+          "color": "hsl(20.1,72%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782639256334,
+          "fromPm": 1782638948177,
+          "fromPort": "B",
+          "toPm": 1782638141591,
+          "toPort": "In 3",
+          "color": "hsl(157.6,58%,52%)",
+          "sigType": "audio"
+        }
+      ],
+      "params": {
+        "1782638948177": {
+          "Program": "B6"
+        },
+        "1782638141591": {},
+        "1782638591837": {},
+        "1782638784911": {},
+        "1782638825111": {}
+      },
+      "cableColorIdx": 10,
+      "tags": [
+        "function"
+      ],
+      "photo": null,
+      "marks": {
+        "1782638141591": {
+          "Attn 1": "yellow",
+          "Attn 4": "yellow",
+          "Attn 3": "green"
+        }
+      }
+    },
+    {
+      "id": "patch_1782717742517",
+      "title": "Maths Subharmonicon",
+      "notes": "",
+      "createdAt": "2026-06-29T07:22:22.517Z",
+      "updatedAt": "2026-07-06T15:38:02.327Z",
+      "patchModules": [
+        {
+          "moduleId": 8,
+          "id": 1782717751559,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 240,
+          "y": 24,
+          "collapsed": false
+        },
+        {
+          "moduleId": 33,
+          "id": 1782717777620,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 24,
+          "y": 24
+        },
+        {
+          "moduleId": 19,
+          "id": 1783351487078,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 504,
+          "y": 24
+        }
+      ],
+      "cables": [
+        {
+          "id": 1783351579622,
+          "fromPm": 1782717777620,
+          "fromPort": "out",
+          "toPm": 1783351487078,
+          "toPort": "Ch 1",
+          "color": "#d4963a",
+          "sigType": "audio"
+        },
+        {
+          "id": 1783351583313,
+          "fromPm": 1782717777620,
+          "fromPort": "out",
+          "toPm": 1782717751559,
+          "toPort": "Trig 1",
+          "color": "#7aaa2a",
+          "sigType": "gate"
+        },
+        {
+          "id": 1783351597988,
+          "fromPm": 1782717751559,
+          "fromPort": "Out 1",
+          "toPm": 1783351487078,
+          "toPort": "Ch 2",
+          "color": "#a07060",
+          "sigType": "audio"
+        },
+        {
+          "id": 1783351604712,
+          "fromPm": 1782717751559,
+          "fromPort": "EOR 1",
+          "toPm": 1783351487078,
+          "toPort": "Ch 3",
+          "color": "#8f86e8",
+          "sigType": "gate"
+        }
+      ],
+      "params": {
+        "1782717751559": {
+          "Freq 1": 29,
+          "Freq 4": 100,
+          "Attn 1": 50,
+          "Attn 2": 50,
+          "Attn 3": 50,
+          "Attn 4": 50,
+          "Fall 1": 50,
+          "Rise 1": 0
+        },
+        "1782717777620": {},
+        "1782717846071": {},
+        "1783351487078": {}
+      },
+      "cableColorIdx": 9,
+      "tags": [
+        "function"
+      ],
+      "photo": null,
+      "marks": {
+        "1782717751559": {
+          "Rise 4": "green",
+          "Attn 1": "green",
+          "Rise 1": "red"
+        }
+      }
+    },
+    {
+      "id": "patch_1782725991802",
+      "title": "Maths Burst Generator",
+      "notes": "Rise 1: Preburst delay\nFall 1: Length of burst period, amount of pulses\nRise 4: Gate length of bursts\nFall 4: Gate length between bursts\n",
+      "createdAt": "2026-06-29T09:39:51.802Z",
+      "updatedAt": "2026-07-05T20:58:42.654Z",
+      "patchModules": [
+        {
+          "moduleId": 8,
+          "id": 1782726043319,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 221,
+          "y": 22
+        },
+        {
+          "moduleId": 35,
+          "id": 1782726141759,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 515,
+          "y": 19
+        },
+        {
+          "moduleId": 36,
+          "id": 1782726227916,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 10,
+          "y": 24
+        }
+      ],
+      "cables": [
+        {
+          "id": 1782726073156,
+          "fromPm": 1782726043319,
+          "fromPort": "EOR 1",
+          "toPm": 1782726043319,
+          "toPort": "Cycle 4",
+          "color": "hsl(0.0,72%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782726173062,
+          "fromPm": 1782726043319,
+          "fromPort": "EOC 4",
+          "toPm": 1782726141759,
+          "toPort": "output",
+          "color": "hsl(137.5,58%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782726231794,
+          "fromPm": 1782726227916,
+          "fromPort": "out",
+          "toPm": 1782726043319,
+          "toPort": "Trig 1",
+          "color": "hsl(275.0,72%,52%)",
+          "sigType": "gate"
+        }
+      ],
+      "params": {
+        "1782726043319": {},
+        "1782726141759": {},
+        "1782726227916": {}
+      },
+      "cableColorIdx": 3,
+      "tags": [
+        "function"
+      ],
+      "photo": null,
+      "marks": {
+        "1782726043319": {
+          "Rise 4": "green",
+          "Fall 4": "green",
+          "Rise 1": "green",
+          "Fall 1": "green"
+        }
+      }
+    },
+    {
+      "id": "patch_1782732682933",
+      "title": "Maths Pseudo LPG",
+      "notes": "",
+      "createdAt": "2026-06-29T11:31:22.933Z",
+      "updatedAt": "2026-07-05T20:58:44.552Z",
+      "patchModules": [
+        {
+          "moduleId": 8,
+          "id": 1782732693586,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 239,
+          "y": 44
+        },
+        {
+          "moduleId": 34,
+          "id": 1782732701792,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 28,
+          "y": 24
+        },
+        {
+          "moduleId": 35,
+          "id": 1782732741304,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 581,
+          "y": 321
+        },
+        {
+          "moduleId": 37,
+          "id": 1782732907191,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 25,
+          "y": 194
+        }
+      ],
+      "cables": [
+        {
+          "id": 1782732728328,
+          "fromPm": 1782732701792,
+          "fromPort": "1",
+          "toPm": 1782732693586,
+          "toPort": "In 1",
+          "color": "hsl(0.0,72%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782732757535,
+          "fromPm": 1782732693586,
+          "fromPort": "Func 1",
+          "toPm": 1782732741304,
+          "toPort": "output",
+          "color": "hsl(137.5,58%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782732789095,
+          "fromPm": 1782732693586,
+          "fromPort": "Func 4",
+          "toPm": 1782732693586,
+          "toPort": "Both 1",
+          "color": "hsl(275.0,72%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782732919530,
+          "fromPm": 1782732907191,
+          "fromPort": "1",
+          "toPm": 1782732693586,
+          "toPort": "Trig 4",
+          "color": "hsl(52.5,58%,52%)",
+          "sigType": "gate"
+        }
+      ],
+      "params": {
+        "1782732693586": {
+          "Rise 1": 75,
+          "Fall 1": 75,
+          "Freq 1": 35,
+          "Fall 4": 100
+        },
+        "1782732701792": {},
+        "1782732741304": {},
+        "1782732907191": {}
+      },
+      "cableColorIdx": 4,
+      "tags": [],
+      "photo": null,
+      "marks": {
+        "1782732693586": {
+          "Freq 1": "green",
+          "Fall 1": "red",
+          "Rise 1": "red",
+          "Rise 4": "red",
+          "Fall 4": "red"
+        }
+      },
+      "isTemplate": true
+    },
+    {
+      "id": "patch_1782740570361",
+      "title": "Maths Tremolo",
+      "notes": "Rise / Fall / Freq 4: Tremolo Shape & Speed\nAtta 4: Tremolo amount",
+      "createdAt": "2026-06-29T13:42:50.361Z",
+      "updatedAt": "2026-07-05T20:52:29.089Z",
+      "patchModules": [
+        {
+          "moduleId": 8,
+          "id": 1782740576769,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 275,
+          "y": 71
+        },
+        {
+          "moduleId": 34,
+          "id": 1782740624642,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 36,
+          "y": 50
+        },
+        {
+          "moduleId": 34,
+          "id": 1782740627680,
+          "paramsOpen": false,
+          "instance": 2,
+          "x": 625,
+          "y": 307
+        }
+      ],
+      "cables": [
+        {
+          "id": 1782740613993,
+          "fromPm": 1782740576769,
+          "fromPort": "Out 4",
+          "toPm": 1782740576769,
+          "toPort": "Both 1",
+          "color": "hsl(0.0,72%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782740645938,
+          "fromPm": 1782740624642,
+          "fromPort": "1",
+          "toPm": 1782740576769,
+          "toPort": "In 1",
+          "color": "hsl(137.5,58%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782740666358,
+          "fromPm": 1782740576769,
+          "fromPort": "Func 1",
+          "toPm": 1782740627680,
+          "toPort": "1",
+          "color": "hsl(275.0,72%,52%)",
+          "sigType": "audio"
+        }
+      ],
+      "params": {
+        "1782740576769": {
+          "Cycle 4": true,
+          "Attn 4": 29,
+          "Rise 4": 49,
+          "Fall 4": 51,
+          "Freq 4": 45
+        },
+        "1782740624642": {},
+        "1782740627680": {}
+      },
+      "cableColorIdx": 3,
+      "tags": [
+        "function"
+      ],
+      "photo": null,
+      "marks": {
+        "1782740576769": {
+          "Attn 4": "green",
+          "Rise 1": "red",
+          "Fall 1": "red",
+          "Rise 4": "green",
+          "Fall 4": "green",
+          "Freq 4": "green"
+        }
+      }
+    },
+    {
+      "id": "patch_1782851045596",
+      "title": "Maths Arcade Trill",
+      "notes": "Attn 1: Scale/Inversion\nRise 4: Trill\nFreq 4: Trill\nAttn 4: Trill",
+      "createdAt": "2026-06-30T20:24:05.596Z",
+      "updatedAt": "2026-07-05T20:52:13.396Z",
+      "patchModules": [
+        {
+          "moduleId": 8,
+          "id": 1782851049797,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 192,
+          "y": 24
+        },
+        {
+          "moduleId": 35,
+          "id": 1782851420892,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 480,
+          "y": 24
+        }
+      ],
+      "cables": [
+        {
+          "id": 1782851393293,
+          "fromPm": 1782851049797,
+          "fromPort": "Out 4",
+          "toPm": 1782851049797,
+          "toPort": "Both 1",
+          "color": "hsl(0.0,72%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782851403672,
+          "fromPm": 1782851049797,
+          "fromPort": "EOC 4",
+          "toPm": 1782851049797,
+          "toPort": "Trig 1",
+          "color": "hsl(137.5,58%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782851436072,
+          "fromPm": 1782851049797,
+          "fromPort": "Out 1",
+          "toPm": 1782851420892,
+          "toPort": "output",
+          "color": "hsl(275.0,72%,52%)",
+          "sigType": "audio"
+        }
+      ],
+      "params": {
+        "1782851049797": {
+          "Attn 1": 50,
+          "Attn 2": 50,
+          "Attn 3": 50,
+          "Attn 4": 17,
+          "Freq 4": 32,
+          "Rise 4": 50,
+          "Fall 4": 50,
+          "Rise 1": 50,
+          "Freq 1": 31
+        },
+        "1782851420892": {}
+      },
+      "cableColorIdx": 3,
+      "tags": [
+        "function"
+      ],
+      "photo": null,
+      "marks": {
+        "1782851049797": {
+          "Attn 1": "green",
+          "Attn 2": "red",
+          "Attn 3": "red",
+          "Attn 4": "green",
+          "Freq 4": "green",
+          "Rise 4": "green",
+          "Fall 4": "red",
+          "Rise 1": "red",
+          "Fall 1": "red",
+          "Freq 1": "red"
+        }
+      }
+    },
+    {
+      "id": "patch_1782851706335",
+      "title": "Maths Bouncing Ball",
+      "notes": "Rise 4: Variations\nFall 4: Variations\nOut 4: VCA or LPG\n",
+      "createdAt": "2026-06-30T20:35:06.335Z",
+      "updatedAt": "2026-07-05T20:58:56.413Z",
+      "patchModules": [
+        {
+          "moduleId": 8,
+          "id": 1782851742145,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 240,
+          "y": 24
+        },
+        {
+          "moduleId": 37,
+          "id": 1782851751449,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 24,
+          "y": 24
+        },
+        {
+          "moduleId": 35,
+          "id": 1782851951769,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 504,
+          "y": 72
+        }
+      ],
+      "cables": [
+        {
+          "id": 1782851759849,
+          "fromPm": 1782851751449,
+          "fromPort": "1",
+          "toPm": 1782851742145,
+          "toPort": "Trig 1",
+          "color": "hsl(0.0,72%,52%)",
+          "sigType": "gate"
+        },
+        {
+          "id": 1782851960774,
+          "fromPm": 1782851742145,
+          "fromPort": "Out 4",
+          "toPm": 1782851951769,
+          "toPort": "output",
+          "color": "hsl(137.5,58%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782851979323,
+          "fromPm": 1782851742145,
+          "fromPort": "EOR 1",
+          "toPm": 1782851742145,
+          "toPort": "Cycle 4",
+          "color": "hsl(275.0,72%,52%)",
+          "sigType": "gate"
+        }
+      ],
+      "params": {
+        "1782851742145": {
+          "Fall 1": 84,
+          "Freq 1": 31,
+          "Attn 1": 50,
+          "Attn 2": 50,
+          "Attn 3": 50,
+          "Attn 4": 100,
+          "Fall 4": 34,
+          "Freq 4": 32
+        },
+        "1782851751449": {},
+        "1782851951769": {}
+      },
+      "cableColorIdx": 3,
+      "tags": [
+        "function"
+      ],
+      "photo": null,
+      "marks": {
+        "1782851742145": {
+          "Rise 1": "red",
+          "Fall 1": "red",
+          "Freq 1": "red",
+          "Attn 1": "red",
+          "Attn 2": "red",
+          "Attn 3": "red",
+          "Attn 4": "green",
+          "Rise 4": "green",
+          "Fall 4": "green",
+          "Freq 4": "red"
+        }
+      }
+    },
+    {
+      "id": "patch_1782852234458",
+      "title": "Maths Envelope Follower",
+      "notes": "Attn 1: Scale/Inversion\nFall 1: Response\nOut 1: Positive/Negative Out\nOR: Positive Out",
+      "createdAt": "2026-06-30T20:43:54.458Z",
+      "updatedAt": "2026-07-05T20:52:44.454Z",
+      "patchModules": [
+        {
+          "moduleId": 34,
+          "id": 1782852257155,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 16,
+          "y": 16
+        },
+        {
+          "moduleId": 8,
+          "id": 1782852262593,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 186,
+          "y": 16
+        },
+        {
+          "moduleId": 35,
+          "id": 1782852349927,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 432,
+          "y": 24
+        },
+        {
+          "moduleId": 35,
+          "id": 1782852363509,
+          "paramsOpen": false,
+          "instance": 3,
+          "x": 432,
+          "y": 120
+        }
+      ],
+      "cables": [
+        {
+          "id": 1782852275114,
+          "fromPm": 1782852257155,
+          "fromPort": "1",
+          "toPm": 1782852262593,
+          "toPort": "In 1",
+          "color": "hsl(0.0,72%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782852372830,
+          "fromPm": 1782852262593,
+          "fromPort": "OR",
+          "toPm": 1782852363509,
+          "toPort": "output",
+          "color": "hsl(137.5,58%,52%)",
+          "sigType": "audio"
+        },
+        {
+          "id": 1782852388626,
+          "fromPm": 1782852262593,
+          "fromPort": "Out 1",
+          "toPm": 1782852349927,
+          "toPort": "output",
+          "color": "hsl(275.0,72%,52%)",
+          "sigType": "audio"
+        }
+      ],
+      "params": {
+        "1782852262593": {
+          "Attn 1": 50,
+          "Rise 1": 50,
+          "Fall 1": 50,
+          "Freq 1": 26
+        },
+        "1782852257155": {},
+        "1782852349927": {},
+        "1782852350426": {},
+        "1782852363509": {}
+      },
+      "cableColorIdx": 3,
+      "tags": [
+        "function"
+      ],
+      "photo": null,
+      "marks": {
+        "1782852262593": {
+          "Attn 1": "green",
+          "Fall 1": "green",
+          "Freq 1": "red"
+        }
+      }
+    },
+    {
+      "id": "patch_1782852652711",
+      "title": "TEST PATCH",
+      "notes": "",
+      "createdAt": "2026-06-30T20:50:52.711Z",
+      "updatedAt": "2026-07-03T14:21:09.224Z",
+      "patchModules": [
+        {
+          "moduleId": 38,
+          "id": 1782891227770,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 422,
+          "y": 120,
+          "collapsed": false
+        },
+        {
+          "moduleId": 28,
+          "id": 1782911007914,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 72,
+          "y": 27
+        },
+        {
+          "moduleId": 13,
+          "id": 1782911042984,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 1320,
+          "y": 120
+        },
+        {
+          "moduleId": 22,
+          "id": 1782911166775,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 1056,
+          "y": 120
+        },
+        {
+          "moduleId": 39,
+          "id": 1782914759329,
+          "paramsOpen": false,
+          "instance": 1,
+          "x": 148,
+          "y": 752
+        }
+      ],
+      "cables": [],
+      "params": {
+        "1782852660481": {
+          "Tone": 32,
+          "Freeze": false
+        },
+        "1782888199201": {},
+        "1782891227770": {
+          "Step 1 A": 0,
+          "Step 1": "Normal",
+          "3rd Row Timing": false,
+          "3rd Row Time": false,
+          "7-B": 0
+        },
+        "1782894073882": {},
+        "1782911007914": {
+          "Tone": 17
+        },
+        "1782911042984": {},
+        "1782911166775": {
+          "Poly": "Red"
+        },
+        "1782914759329": {}
+      },
+      "cableColorIdx": 0,
+      "tags": [],
+      "photo": null,
+      "marks": {}
+    }
+  ],
+  "activePatchId": "patch_1782717742517",
+  "nextPatchNum": 2
+}

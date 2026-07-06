@@ -1,0 +1,878 @@
+const CAT_COLORS = {
+  oscillator: '#8f86e8', filter: '#2aaa7a', envelope: '#d4963a',
+  lfo: '#4a9fd4', vca: '#c45c82', sequencer: '#c8612a',
+  effects: '#7aaa2a', utility: '#7a8a78', other: '#7a8a78'
+};
+const CABLE_COLORS = ['#8f86e8','#2aaa7a','#c8612a','#4a9fd4','#c45c82','#d4963a','#7aaa2a','#a07060'];
+
+const MARK_COLORS = [
+  { id:'green',  hex:'#4aaa60', label:'green'  },
+  { id:'yellow', hex:'#d4c030', label:'yellow' },
+  { id:'red',    hex:'#e05555', label:'red'    },
+];
+
+// Curated module-color swatches shown in the module editor. Picked to
+// read clearly as a tinted border/background across all themes — both
+// the warm/organic synth themes and the neutral Studio (Blender/Ableton
+// inspired) dark & light themes.
+const MODULE_COLOR_PALETTE = [
+  '#8f86e8', // violet  (default oscillator hue)
+  '#4a8fd4', // blue
+  '#4ac4c4', // cyan
+  '#2aaa7a', // green
+  '#7aaa2a', // lime
+  '#d4c030', // yellow
+  '#d4963a', // amber
+  '#e08c30', // orange
+  '#c8612a', // rust
+  '#e05555', // red
+  '#d44aaa', // pink
+  '#a05ad4', // purple
+  '#4772b3', // studio blue
+  '#6fa85c', // studio green
+  '#9a9a9a', // neutral grey
+  '#c4a880', // warm sand
+];
+
+let pendingPort = null;
+let _markMenuOpen = null;
+let snapEnabled = false;
+let cablesVisible = true;
+const GRID = 24;
+
+const Patch = {
+
+  // ── Port helpers ──────────────────────────────────────────────────────────
+  _portName(p)    { return typeof p === 'object' ? p.name    : p; },
+  _portSigType(p) { return typeof p === 'object' ? p.sigType : 'audio'; },
+
+  // ── Render ───────────────────────────────────────────────────────────────
+
+  render() {
+    const patch  = Store.getActivePatch();
+    const canvas = document.getElementById('patch-canvas');
+    canvas.querySelectorAll('.patch-module').forEach(e => e.remove());
+
+    patch.patchModules.forEach(pm => {
+      const m = Store.state.modules.find(x => x.id === pm.moduleId);
+      if (!m) return;
+      const col    = m.color || CAT_COLORS[m.cat] || '#888';
+      const defs   = m.paramDefs || [];
+      const vals   = (patch.params[pm.id] || {});
+
+      const el = document.createElement('div');
+      el.className = 'patch-module';
+      el.dataset.pmid = pm.id;
+      el.style.left     = pm.x + 'px';
+      el.style.top      = pm.y + 'px';
+      el.style.setProperty('--mod-color', col);
+      if (m.color) el.classList.add('has-custom-color');
+      // Min-width based on param columns: 52px per column + base 30px
+      const cols = m.paramCols || 3;
+      el.style.minWidth = (cols * 62 + 30) + 'px';
+
+      // Group defs into separate rows
+      const toggleDefs = defs.filter(d => d.type === 'toggle');
+      const enumDefs   = defs.filter(d => d.type === 'enum' || d.type === 'text');
+      const knobDefs   = defs.filter(d => d.type === 'knob');
+
+      // Build sortedDefs with sentinel dividers
+      const sortedDefs = [
+        ...toggleDefs,
+        ...(toggleDefs.length && enumDefs.length   ? [{ _divider: true }] : []),
+        ...enumDefs,
+        ...((toggleDefs.length || enumDefs.length) && knobDefs.length ? [{ _divider: true }] : []),
+        ...knobDefs
+      ];
+
+      el.innerHTML = `
+        <div class="pm-header">
+          <div class="pm-header-main">
+            <span class="pm-maker" style="color:${col}">${m.maker}</span>
+            <a class="pm-manual-link" id="manual-icon-${pm.id}" href="#" target="_blank" rel="noopener"
+               title="open manual" aria-label="open manual" style="display:none"
+               onclick="event.stopPropagation()">
+              <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
+            </a>
+            ${defs.length ? `<button class="pm-collapse-btn" onclick="Patch.toggleCollapse(${pm.id},event)" title="${pm.collapsed ? 'show parameters' : 'hide parameters'}" aria-label="toggle parameters">${pm.collapsed ? '▾' : '▴'}</button>` : ''}
+            <button class="pm-remove" onclick="Patch.removeFromPatch(${pm.id})" aria-label="remove">×</button>
+          </div>
+          <div class="pm-name">${m.name}${pm.instance > 1 ? '<span class="pm-instance">#' + pm.instance + '</span>' : ''}</div>
+        </div>
+        <div class="pm-ports">
+          <div class="pm-col">
+            <div class="pm-col-label">IN</div>
+            ${m.inputs.map(inp => `
+              <div class="port input" onclick="Patch.clickPort(${pm.id},'in','${Patch._portName(inp)}',event)" title="${Patch._portName(inp)}">
+                <span class="port-jack" id="jack-${pm.id}-in-${Patch._portName(inp)}" style="border-color:${col}55"></span>
+                <span class="port-name">${Patch._portName(inp)}</span>
+              </div>`).join('')}
+          </div>
+          <div class="pm-col pm-col-out">
+            <div class="pm-col-label right">OUT</div>
+            ${m.outputs.map(outp => `
+              <div class="port output" onclick="Patch.clickPort(${pm.id},'out','${Patch._portName(outp)}',event)" title="${Patch._portName(outp)}">
+                <span class="port-name">${Patch._portName(outp)}</span>
+                <span class="port-jack" id="jack-${pm.id}-out-${Patch._portName(outp)}" style="border-color:${col}55"></span>
+              </div>`).join('')}
+          </div>
+        </div>
+        ${sortedDefs.length && !pm.collapsed ? `<div class="pm-controls" id="pcontrols-${pm.id}" style="grid-template-columns:repeat(${m.paramCols||3},1fr)">${sortedDefs.map(d => d._divider ? `<div class="pm-controls-divider" style="grid-column:1/-1"></div>` : this._renderControl(pm.id, d, vals[d.name], col)).join('')}</div>` : ''}`;
+
+      this._makeDraggable(el, pm);
+      canvas.appendChild(el);
+      defs.forEach(d => { if (!d._divider) this._bindControl(el, pm.id, d, vals[d.name]); });
+    });
+
+    this.renderCables();
+    this.updateJacks();
+    this._showManualIcons(patch);
+  },
+
+  // Fetch manual lists for every module currently in the patch (deduped
+  // by the cache) and reveal the PDF icon on modules that have one.
+  async _showManualIcons(patch) {
+    if (window.PATCHDOC_STATIC) return;
+    const moduleIds = [...new Set(patch.patchModules.map(pm => pm.moduleId))];
+    await Manuals.prefetchFor(moduleIds);
+    patch.patchModules.forEach(pm => {
+      const files = Manuals._cache[pm.moduleId] || [];
+      if (!files.length) return;
+      const icon = document.getElementById('manual-icon-' + pm.id);
+      if (!icon) return;
+      icon.href = files[0].url;
+      icon.title = files.length > 1 ? files.length + ' manuals — open first' : 'open manual';
+      icon.style.display = 'flex';
+    });
+  },
+
+  // ── Mark (performance highlight) ─────────────────────────────────────────
+
+  _getMark(pmId, name) {
+    const patch = Store.getActivePatch();
+    return (patch.marks && patch.marks[pmId] && patch.marks[pmId][name]) || null;
+  },
+
+  _setMark(pmId, name, colorId) {
+    const patch = Store.getActivePatch();
+    if (!patch.marks) patch.marks = {};
+    if (!patch.marks[pmId]) patch.marks[pmId] = {};
+    if (colorId) patch.marks[pmId][name] = colorId;
+    else delete patch.marks[pmId][name];
+    Store.updatePatch(patch.id, { marks: patch.marks });
+  },
+
+  _markClickTimer: null,
+
+  cycleMarkColor(pmId, name, e) {
+    if (e) { e.stopPropagation(); e.preventDefault(); }
+    // Ignore if this is part of a double-click (dblclick fires after 2 clicks)
+    if (e && e.detail >= 2) return;
+    clearTimeout(this._markClickTimer);
+    this._markClickTimer = setTimeout(() => {
+      const current = this._getMark(pmId, name);
+      const idx = MARK_COLORS.findIndex(c => c.id === current);
+      const next = idx < MARK_COLORS.length - 1 ? MARK_COLORS[idx + 1].id : null;
+      this._setMark(pmId, name, next);
+      this.render();
+    }, 220);
+  },
+
+  _markColor(pmId, name) {
+    const id = this._getMark(pmId, name);
+    if (!id) return null;
+    return MARK_COLORS.find(c => c.id === id)?.hex || null;
+  },
+
+  openMarkMenu(pmId, name, anchorEl, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    this.closeMarkMenu();
+    const canvas  = document.getElementById('patch-canvas');
+    const cr      = canvas.getBoundingClientRect();
+    const ar      = anchorEl.getBoundingClientRect();
+    const menu    = document.createElement('div');
+    menu.className = 'mark-menu';
+    menu.style.left = (ar.left - cr.left) + 'px';
+    menu.style.top  = (ar.bottom - cr.top + 4) + 'px';
+    const current = this._getMark(pmId, name);
+    menu.innerHTML =
+      MARK_COLORS.map(mc => `
+        <button class="mark-swatch ${current === mc.id ? 'active' : ''}"
+          style="background:${mc.hex}"
+          onclick="Patch._setMark('${pmId}','${name}','${mc.id}');Patch.closeMarkMenu();Patch.render()"
+          title="${mc.label}"></button>`).join('') +
+      `<button class="mark-swatch mark-clear ${!current ? 'active' : ''}"
+        onclick="Patch._setMark('${pmId}','${name}',null);Patch.closeMarkMenu();Patch.render()"
+        title="keine Markierung">×</button>`;
+    canvas.appendChild(menu);
+    _markMenuOpen = menu;
+    setTimeout(() => document.addEventListener('mousedown', Patch._markOutside, { once: true }), 0);
+  },
+
+  _markOutside(e) {
+    if (_markMenuOpen && !_markMenuOpen.contains(e.target)) Patch.closeMarkMenu();
+  },
+
+  closeMarkMenu() {
+    if (_markMenuOpen) { _markMenuOpen.remove(); _markMenuOpen = null; }
+  },
+
+  // ── Control rendering ────────────────────────────────────────────────────
+
+  _safeId(pmId, name) {
+    return `ctrl-${pmId}-${name.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+  },
+
+  _renderControl(pmId, def, val, col) {
+    const id = this._safeId(pmId, def.name);
+    if (def.type === 'knob') {
+      const min = def.min ?? 0, max = def.max ?? 100;
+      const v   = val !== undefined ? parseFloat(val) : (def.default ?? min);
+      const pct = (v - min) / (max - min);
+      const markCol = this._markColor(pmId, def.name);
+      const markRing = markCol ? `<circle cx="19" cy="19" r="18" fill="none" stroke="${markCol}" stroke-width="2" opacity="0.9"/>` : '';
+      return `<div class="pm-knob-wrap${markCol ? ' marked' : ''}" data-pmid="${pmId}" data-def="${encodeURIComponent(JSON.stringify(def))}" data-val="${v}"
+        title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})">
+        ${this._knobSVG(id, pct, col, markRing)}
+        <div class="pm-ctrl-val" id="val-${id}">${this._fmtVal(v, def)}</div>
+        <div class="pm-ctrl-label perf-label ${markCol ? 'is-marked' : ''}" style="${markCol ? 'color:'+markCol : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
+      </div>`;
+    }
+    if (def.type === 'toggle') {
+      const on = val !== undefined ? (val === true || val === 'true' || val === 1) : (def.default === true || def.default === 'true');
+      const markColT = this._markColor(pmId, def.name);
+      return `<div class="pm-toggle-wrap${markColT ? ' marked' : ''}" title="${def.name}">
+        <div class="pm-toggle-btn ${on ? 'on' : ''}" id="${id}"
+          style="${markColT ? 'box-shadow:0 0 0 2px '+markColT : ''}"
+          onclick="Patch.setToggle('${pmId}','${def.name}',event)" onmousedown="event.stopPropagation()">
+          <div class="pm-toggle-thumb"></div>
+        </div>
+        <div class="pm-ctrl-val" id="val-${id}">${on ? 'on' : 'off'}</div>
+        <div class="pm-ctrl-label perf-label ${markColT ? 'is-marked' : ''}" style="${markColT ? 'color:'+markColT : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
+      </div>`;
+    }
+    if (def.type === 'enum') {
+      const opts = (def.options || '').split(',').map(s => s.trim()).filter(Boolean);
+      const cur  = val !== undefined ? val : (def.default || opts[0] || '');
+      const markColE = this._markColor(pmId, def.name);
+      return `<div class="pm-enum-wrap${markColE ? ' marked' : ''}" title="${def.name}">
+        <div class="pm-ctrl-label perf-label ${markColE ? 'is-marked' : ''}" style="${markColE ? 'color:'+markColE : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
+        <select class="pm-enum-select" id="${id}"
+          style="${markColE ? 'border-color:'+markColE+';box-shadow:0 0 0 1.5px '+markColE+'44' : ''}"
+          onchange="Patch.setEnum('${pmId}','${def.name}',this.value)"
+          onmousedown="event.stopPropagation()" onclick="event.stopPropagation()">
+          ${opts.map(o => `<option value="${o}" ${o === cur ? 'selected' : ''}>${o}</option>`).join('')}
+        </select>
+      </div>`;
+    }
+    if (def.type === 'text') {
+      const cur = val !== undefined ? val : (def.default || '');
+      return `<div class="pm-text-wrap">
+        <div class="pm-ctrl-label full">${def.name}</div>
+        <input class="pm-text-input" type="text" id="${id}"
+          value="${cur.replace(/"/g,'&quot;')}" placeholder="—"
+          onchange="Patch.setEnum('${pmId}','${def.name}',this.value)"
+          onmousedown="event.stopPropagation()"
+          onclick="event.stopPropagation()"
+          onfocus="event.stopPropagation()" />
+      </div>`;
+    }
+    return '';
+  },
+
+  _knobSVG(id, pct, col, markRing = '') {
+    // r=15, circumference=94.248, arc=270° → arc_length=70.686, gap=23.562
+    const CIRC = 94.248, ARC = 70.686, GAP = 23.562;
+    const deg  = pct * 270 - 135;  // tick rotation: -135° (min) to +135° (max)
+    const dashoffset = (GAP + ARC * (1 - pct)).toFixed(2);
+    return `<svg class="pm-knob-svg" width="38" height="38" viewBox="0 0 38 38" id="svg-${id}">
+      <circle cx="19" cy="19" r="15" fill="none" stroke="var(--border2)" stroke-width="2.5"
+        stroke-dasharray="${ARC} ${GAP}" stroke-linecap="round" transform="rotate(135 19 19)"/>
+      <circle cx="19" cy="19" r="15" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round"
+        stroke-dasharray="${CIRC}" stroke-dashoffset="${dashoffset}"
+        transform="rotate(135 19 19)" id="arc-${id}"/>
+      <circle cx="19" cy="19" r="9" fill="var(--bg2)" stroke="var(--border2)" stroke-width="1"/>
+      <line x1="19" y1="12" x2="19" y2="15.5" stroke="var(--text1)" stroke-width="1.5" stroke-linecap="round"
+        transform="rotate(${deg.toFixed(1)} 19 19)" id="tick-${id}"/>
+      ${markRing}
+    </svg>`;
+  },
+
+  _fmtVal(v, def) {
+    const n = parseFloat(v);
+    if (isNaN(n)) return v;
+    const range = (def.max ?? 100) - (def.min ?? 0);
+    return range >= 10 ? Math.round(n) : n.toFixed(1);
+  },
+
+  // Round a stored value the same way it is displayed — whole numbers for
+  // large ranges, one decimal for small/fine ranges (e.g. 0–1 mix knobs).
+  _roundVal(v, def) {
+    const n = parseFloat(v);
+    if (isNaN(n)) return v;
+    const range = (def.max ?? 100) - (def.min ?? 0);
+    return range >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
+  },
+
+  _bindControl(el, pmId, def, initVal) {
+    if (def.type !== 'knob') return;
+    const id   = this._safeId(pmId, def.name);
+    const wrap = el.querySelector(`[data-def="${encodeURIComponent(JSON.stringify(def))}"]`);
+    if (!wrap) return;
+    const min = def.min ?? 0, max = def.max ?? 100;
+    let val   = initVal !== undefined ? parseFloat(initVal) : (def.default ?? min);
+    let startY = 0, startVal = 0;
+
+    const update = (v) => {
+      val = Math.max(min, Math.min(max, v));
+      const pct  = (val - min) / (max - min);
+      const CIRC = 94.248, ARC = 70.686, GAP = 23.562;
+      const arc   = document.getElementById(`arc-${id}`);
+      const tick  = document.getElementById(`tick-${id}`);
+      const valEl = document.getElementById(`val-${id}`);
+      if (arc)   arc.setAttribute('stroke-dashoffset', (GAP + ARC * (1 - pct)).toFixed(2));
+      if (tick)  tick.setAttribute('transform', `rotate(${(pct * 270 - 135).toFixed(1)} 19 19)`);
+      if (valEl) valEl.textContent = this._fmtVal(val, def);
+    };
+
+    // Use pointer capture — clean, no global listeners needed
+    wrap.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      if (e.target.closest('.perf-label')) return;
+      e.stopPropagation();
+      e.preventDefault();
+      startY = e.clientY;
+      startVal = val;
+      wrap.setPointerCapture(e.pointerId);
+      wrap.style.cursor = 'ns-resize';
+    });
+
+    wrap.addEventListener('pointermove', e => {
+      if (!wrap.hasPointerCapture(e.pointerId)) return;
+      const range = max - min;
+      update(startVal + (startY - e.clientY) / 120 * range);
+    });
+
+    wrap.addEventListener('pointerup', e => {
+      if (!wrap.hasPointerCapture(e.pointerId)) return;
+      wrap.releasePointerCapture(e.pointerId);
+      wrap.style.cursor = '';
+      val = this._roundVal(val, def);
+      update(val);
+      this._saveParam(pmId, def.name, val);
+    });
+
+    wrap.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      // Cancel any pending mark color change — dblclick is for value input
+      clearTimeout(Patch._markClickTimer);
+      const newVal = prompt(`${def.name} (${min}–${max}):`, Math.round(val));
+      if (newVal === null) return;
+      const n = parseFloat(newVal);
+      if (!isNaN(n)) {
+        val = this._roundVal(Math.max(min, Math.min(max, n)), def);
+        update(val);
+        this._saveParam(pmId, def.name, val);
+      }
+    });
+  },
+
+  setToggle(pmId, name, e) {
+    if (e) e.stopPropagation();
+    const id  = `ctrl-${pmId}-${name}`;
+    const btn = document.getElementById(id);
+    const val = document.getElementById('val-' + id);
+    if (!btn) return;
+    const on = !btn.classList.contains('on');
+    btn.classList.toggle('on', on);
+    if (val) val.textContent = on ? 'on' : 'off';
+    this._saveParam(pmId, name, on);
+  },
+
+  setEnum(pmId, name, value) {
+    this._saveParam(pmId, name, value);
+  },
+
+  _saveParam(pmId, name, val) {
+    const patch = Store.getActivePatch();
+    if (!patch.params[pmId]) patch.params[pmId] = {};
+    patch.params[pmId][name] = val;
+    // Use direct store save without triggering full re-render
+    Store.updatePatchSilent(patch.id, { params: patch.params });
+  },
+
+  // ── Draggable ────────────────────────────────────────────────────────────
+
+  // Finds a cable's visible path element.
+  _findCablePath(cableId) {
+    const svg = document.getElementById('cable-svg');
+    return svg?.querySelector('path[data-cable-id="' + cableId + '"]') || null;
+  },
+
+  _highlightCables(pmId, on) {
+    const patch = Store.getActivePatch();
+    const svg   = document.getElementById('cable-svg');
+    if (!svg) return;
+    const connectedIds = new Set(
+      patch.cables.filter(c => c.fromPm === pmId || c.toPm === pmId).map(c => c.id)
+    );
+    if (!connectedIds.size) return;
+    patch.cables.forEach(c => {
+      const path = this._findCablePath(c.id);
+      if (!path) return;
+      const isConnected = connectedIds.has(c.id);
+      if (on) {
+        if (isConnected) {
+          path.setAttribute('stroke-width', '4');
+          path.setAttribute('opacity', '1');
+          path.style.filter = 'drop-shadow(0 0 5px ' + c.color + ')';
+        } else {
+          path.setAttribute('opacity', '0.15');
+        }
+      } else {
+        path.setAttribute('stroke-width', '2.5');
+        path.setAttribute('opacity', '0.85');
+        path.style.filter = '';
+      }
+    });
+  },
+
+  _makeDraggable(el, pm) {
+    el.addEventListener('mouseenter', () => this._highlightCables(pm.id, true));
+    el.addEventListener('mouseleave', () => this._highlightCables(pm.id, false));
+
+    // In touch/read mode, modules aren't draggable — the canvas is
+    // pan/zoom only and tapping a module's header jumps to its parameters.
+    if (Mobile.isTouch()) {
+      const header = el.querySelector('.pm-header');
+      if (header) {
+        header.addEventListener('click', e => {
+          if (e.target.closest('.pm-remove') || e.target.closest('.pm-collapse-btn') ||
+              e.target.closest('.pm-manual-link')) return;
+          App.jumpToModuleParams(pm.id);
+        });
+      }
+      return;
+    }
+
+    el.addEventListener('mousedown', e => {
+      if (e.target.closest('.port') || e.target.closest('.pm-remove') ||
+          e.target.closest('.pm-collapse-btn') || e.target.closest('.pm-manual-link') ||
+          e.target.closest('.pm-knob-wrap') || e.target.closest('.pm-toggle-btn') ||
+          e.target.closest('.pm-enum-wrap') || e.target.closest('.pm-text-wrap') ||
+          e.target.closest('.perf-label')) return;
+      e.preventDefault();
+      const sx = e.clientX - pm.x, sy = e.clientY - pm.y;
+      el.classList.add('dragging');
+      const onMove = ev => {
+        pm.x = this._snap(Math.max(0, ev.clientX - sx));
+        pm.y = this._snap(Math.max(0, ev.clientY - sy));
+        el.style.left = pm.x + 'px';
+        el.style.top  = pm.y + 'px';
+        this.renderCables();
+        this._highlightCables(pm.id, true);
+      };
+      const onUp = () => {
+        el.classList.remove('dragging');
+        this._highlightCables(pm.id, false);
+        Store.updatePatch(Store.state.activePatchId, { patchModules: Store.getActivePatch().patchModules });
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  },
+
+  // ── Snap ─────────────────────────────────────────────────────────────────
+
+  toggleSnap() {
+    snapEnabled = !snapEnabled;
+    try { localStorage.setItem('patchdoc_snap', snapEnabled ? '1' : '0'); } catch(e) {}
+    const btn = document.getElementById('snap-btn');
+    if (btn) {
+      btn.textContent = snapEnabled ? 'snap on' : 'snap off';
+      btn.style.borderColor = snapEnabled ? 'var(--accent-border)' : '';
+      btn.style.color       = snapEnabled ? 'var(--accent)' : '';
+    }
+    App.setStatus(snapEnabled ? 'grid snap on (' + GRID + 'px)' : 'grid snap off');
+  },
+
+  initSnap() {
+    try { snapEnabled = localStorage.getItem('patchdoc_snap') === '1'; } catch(e) {}
+    const btn = document.getElementById('snap-btn');
+    if (btn && snapEnabled) {
+      btn.textContent = 'snap on';
+      btn.style.borderColor = 'var(--accent-border)';
+      btn.style.color       = 'var(--accent)';
+    }
+  },
+
+  // ── Cable visibility (helps untangle dense patches) ────────────────────────
+
+  toggleCablesVisible() {
+    cablesVisible = !cablesVisible;
+    const svg = document.getElementById('cable-svg');
+    if (svg) svg.style.display = cablesVisible ? '' : 'none';
+    const btn = document.getElementById('hide-cables-btn');
+    if (btn) {
+      btn.style.borderColor = cablesVisible ? '' : 'var(--accent-border)';
+      btn.style.color       = cablesVisible ? '' : 'var(--accent)';
+      btn.textContent       = cablesVisible ? '⌁ cables' : '⌁ cables (hidden)';
+    }
+    App.setStatus(cablesVisible ? 'cables visible' : 'cables hidden — ports still clickable to remove via re-show');
+  },
+
+  _snap(v) { return snapEnabled ? Math.round(v / GRID) * GRID : v; },
+
+  // Force-align all modules in the current patch to the grid, regardless
+  // of whether snap-while-dragging is currently enabled.
+  alignToGrid() {
+    const patch = Store.getActivePatch();
+    if (!patch.patchModules.length) { App.setStatus('no modules to align'); return; }
+    patch.patchModules.forEach(pm => {
+      pm.x = Math.round(pm.x / GRID) * GRID;
+      pm.y = Math.round(pm.y / GRID) * GRID;
+    });
+    Store.updatePatch(patch.id, { patchModules: patch.patchModules });
+    Undo.snapshot();
+    this.render();
+    App.setStatus('aligned ' + patch.patchModules.length + ' module(s) to grid (' + GRID + 'px)');
+  },
+
+  // Pack all modules tightly into rows (like a hardware rack), wrapping to
+  // a new row once the visible canvas width is exceeded. Order is preserved
+  // top-to-bottom, left-to-right based on current position.
+  compactLayout() {
+    const patch = Store.getActivePatch();
+    if (!patch.patchModules.length) { App.setStatus('no modules to compact'); return; }
+
+    const GAP = 16; // minimum spacing between modules, in px
+    const wrapEl = document.getElementById('patch-canvas-wrap');
+    const rowWidth = Math.max(600, (wrapEl ? wrapEl.clientWidth : 1200) - 40);
+
+    // Sort by current visual order: row first (y, bucketed), then x
+    const sorted = [...patch.patchModules].sort((a, b) => {
+      const rowA = Math.round(a.y / 100), rowB = Math.round(b.y / 100);
+      if (rowA !== rowB) return rowA - rowB;
+      return a.x - b.x;
+    });
+
+    let x = GAP, y = GAP, rowH = 0;
+    sorted.forEach(pm => {
+      const el = document.querySelector('.patch-module[data-pmid="' + pm.id + '"]');
+      const w  = el ? el.offsetWidth  : 150;
+      const h  = el ? el.offsetHeight : 120;
+
+      if (x + w > rowWidth && x > GAP) {
+        // wrap to next row
+        x = GAP;
+        y += rowH + GAP;
+        rowH = 0;
+      }
+      pm.x = x;
+      pm.y = y;
+      x += w + GAP;
+      rowH = Math.max(rowH, h);
+    });
+
+    Store.updatePatch(patch.id, { patchModules: patch.patchModules });
+    Undo.snapshot();
+    this.render();
+    App.setStatus('compacted ' + sorted.length + ' module(s) into rows');
+  },
+
+  // ── Patch management ──────────────────────────────────────────────────────
+
+  addToPatch(moduleId) {
+    const patch = Store.getActivePatch();
+    const idx       = patch.patchModules.length;
+    const instances = patch.patchModules.filter(p => p.moduleId === moduleId).length;
+    patch.patchModules.push({
+      moduleId, id: Date.now(), paramsOpen: false,
+      instance: instances + 1,
+      x: 20 + (idx % 4) * 160,
+      y: 20 + Math.floor(idx / 4) * 220
+    });
+    Store.updatePatch(patch.id, { patchModules: patch.patchModules });
+    Undo.snapshot();
+    this.render();
+    const m = Store.state.modules.find(x => x.id === moduleId);
+    App.setStatus((m ? m.name : 'module') + (instances > 0 ? ' #' + (instances + 1) : '') + ' added');
+  },
+
+  removeFromPatch(pmId) {
+    const patch = Store.getActivePatch();
+    patch.patchModules = patch.patchModules.filter(pm => pm.id !== pmId);
+    patch.cables       = patch.cables.filter(c => c.fromPm !== pmId && c.toPm !== pmId);
+    if (patch.marks) delete patch.marks[pmId];
+    Store.updatePatch(patch.id, { patchModules: patch.patchModules, cables: patch.cables, marks: patch.marks });
+    this.render();
+  },
+
+  toggleCollapse(pmId, e) {
+    if (e) e.stopPropagation();
+    const patch = Store.getActivePatch();
+    const pm = patch.patchModules.find(p => p.id === pmId);
+    if (!pm) return;
+    pm.collapsed = !pm.collapsed;
+    Store.updatePatch(patch.id, { patchModules: patch.patchModules });
+    Undo.snapshot();
+    this.render();
+  },
+
+  toggleAllCollapse() {
+    const patch = Store.getActivePatch();
+    if (!patch.patchModules.length) return;
+    // If any module is expanded (and has params), collapse all. Otherwise expand all.
+    const modules = Store.state.modules;
+    const collapsibleModules = patch.patchModules.filter(pm => {
+      const m = modules.find(x => x.id === pm.moduleId);
+      return m && (m.paramDefs || []).length;
+    });
+    if (!collapsibleModules.length) return;
+    const anyExpanded = collapsibleModules.some(pm => !pm.collapsed);
+    collapsibleModules.forEach(pm => { pm.collapsed = anyExpanded; });
+    Store.updatePatch(patch.id, { patchModules: patch.patchModules });
+    Undo.snapshot();
+    this.render();
+    const btn = document.getElementById('collapse-all-btn');
+    if (btn) btn.innerHTML = anyExpanded ? '▾ params' : '▴ params';
+  },
+
+  // ── Ports & cables ────────────────────────────────────────────────────────
+
+  // Shared cable-creation logic, used both by canvas click-click and by
+  // the mobile dropdown-based connection editor.
+  createCable(fromPmId, fromPort, toPmId, toPort) {
+    const patch = Store.getActivePatch();
+    if (patch.cables.find(c => c.fromPm === fromPmId && c.fromPort === fromPort && c.toPm === toPmId && c.toPort === toPort)) {
+      return null; // already exists
+    }
+    const color  = CABLE_COLORS[patch.cableColorIdx++ % CABLE_COLORS.length];
+    const m_from = Store.state.modules.find(x => x.id === patch.patchModules.find(p => p.id === fromPmId)?.moduleId);
+    const p_from = m_from?.outputs.find(p => this._portName(p) === fromPort);
+    const sigType = this._portSigType(p_from) !== 'audio'
+      ? this._portSigType(p_from)
+      : this._guessSigType(fromPort, toPort);
+    const cable = { id: Date.now(), fromPm: fromPmId, fromPort, toPm: toPmId, toPort, color, sigType };
+    patch.cables.push(cable);
+    Store.updatePatch(patch.id, { cables: patch.cables, cableColorIdx: patch.cableColorIdx });
+    Undo.snapshot();
+    return cable;
+  },
+
+  // Re-route an existing cable to a new target (used by the mobile
+  // connections editor when changing a dropdown selection).
+  updateCable(cableId, changes) {
+    const patch = Store.getActivePatch();
+    const cable = patch.cables.find(c => c.id === cableId);
+    if (!cable) return false;
+    // Prevent creating a duplicate of another existing cable
+    const next = { ...cable, ...changes };
+    const dup = patch.cables.find(c =>
+      c.id !== cableId && c.fromPm === next.fromPm && c.fromPort === next.fromPort &&
+      c.toPm === next.toPm && c.toPort === next.toPort
+    );
+    if (dup) return false;
+    Object.assign(cable, changes);
+    // Re-evaluate signal type if the ports changed
+    const m_from = Store.state.modules.find(x => x.id === patch.patchModules.find(p => p.id === cable.fromPm)?.moduleId);
+    const p_from = m_from?.outputs.find(p => this._portName(p) === cable.fromPort);
+    cable.sigType = this._portSigType(p_from) !== 'audio'
+      ? this._portSigType(p_from)
+      : this._guessSigType(cable.fromPort, cable.toPort);
+    Store.updatePatch(patch.id, { cables: patch.cables });
+    Undo.snapshot();
+    return true;
+  },
+
+  clickPort(pmId, dir, portName, e) {
+    e.stopPropagation();
+    // In touch/read mode, cables are created via the connections tab
+    // dropdowns instead of click-click on ports.
+    if (Mobile.isTouch()) {
+      App.setStatus('use the connections tab to add cables on touch devices');
+      return;
+    }
+    const patch = Store.getActivePatch();
+    if (!pendingPort) {
+      pendingPort = { pmId, dir, portName };
+      document.getElementById('jack-' + pmId + '-' + dir + '-' + portName)?.classList.add('pending');
+      App.setStatus('connecting ' + portName + ' → click target port  (same port to cancel)');
+      return;
+    }
+    document.querySelectorAll('.port-jack.pending').forEach(j => j.classList.remove('pending'));
+    if (pendingPort.pmId === pmId && pendingPort.dir === dir && pendingPort.portName === portName) {
+      pendingPort = null; App.setStatus('cancelled'); return;
+    }
+    if (pendingPort.dir === dir) {
+      pendingPort = { pmId, dir, portName };
+      document.getElementById('jack-' + pmId + '-' + dir + '-' + portName)?.classList.add('pending');
+      App.setStatus('need ' + (dir === 'out' ? 'an input' : 'an output') + ' port');
+      return;
+    }
+    const from = pendingPort.dir === 'out' ? pendingPort : { pmId, dir, portName };
+    const to   = pendingPort.dir === 'in'  ? pendingPort : { pmId, dir, portName };
+    this.createCable(from.pmId, from.portName, to.pmId, to.portName);
+    pendingPort = null;
+    this.renderCables(); this.updateJacks();
+    App.setStatus(patch.cables.length + ' cable' + (patch.cables.length !== 1 ? 's' : ''));
+  },
+
+  _getPortCenter(pmId, dir, portName) {
+    const jack = document.getElementById('jack-' + pmId + '-' + dir + '-' + portName);
+    if (!jack) return null;
+    const canvas = document.getElementById('patch-canvas');
+    const cr = canvas.getBoundingClientRect();
+    const jr = jack.getBoundingClientRect();
+    return { x: jr.left - cr.left + jr.width / 2, y: jr.top - cr.top + jr.height / 2 };
+  },
+
+  // Builds the SVG path "d" string for a cable between two port centers.
+  // Cables leave/arrive with a flat, stub-like departure near the jack
+  // before bending into the sag — regardless of cable length — by
+  // starting the control points as a horizontal continuation of the jack
+  // direction, then blending toward the full sag based on distance.
+  //
+  // Special case: if the target port lies to the LEFT of the source
+  // (totalDx < 0), a normal horizontal bow can't work — output jacks
+  // always face right and input jacks always face left, so the cable
+  // would have to swing backward and arrive from the wrong side. Instead
+  // it loops vertically (down or up, whichever matches the target's
+  // relative height) so it always approaches each jack from the correct
+  // fixed direction.
+  _cablePath(from, to, totalDx, totalDy) {
+    if (totalDx < 0) {
+      // Cable loops vertically instead of bowing backward (output jacks
+      // always face right, input jacks always face left — a backward
+      // cable can't just curve horizontally without arriving from the
+      // wrong side). Single bezier for guaranteed smoothness at any
+      // distance or angle (a three-segment version was tried first but
+      // its joins created a visible kink on short/flat cables).
+      //
+      // Both STUB (how far the curve travels horizontally before the
+      // loop "takes over") and loopAmount scale down together for short
+      // cables, keeping their ratio consistent — that's what keeps the
+      // curve a clean loop instead of a crossed-over knot, while still
+      // giving long cables a clearly visible flat departure.
+      const dist  = Math.sqrt(totalDx * totalDx + totalDy * totalDy);
+      const scale = Math.min(1, dist / 500); // reaches full size by 500px distance
+      const loopDir = totalDy >= 0 ? 1 : -1;
+      const STUB = 40 + 210 * scale; // 40 (short cables) up to 250 (long cables)
+      const loopAmount = Math.max(45, Math.abs(totalDy) * 0.3) * Math.max(0.55, scale);
+      const cp1 = { x: from.x + STUB, y: from.y + loopAmount * loopDir };
+      const cp2 = { x: to.x   - STUB, y: to.y   + loopAmount * loopDir };
+      return `M${from.x},${from.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${to.x},${to.y}`;
+    }
+
+    const dist = Math.sqrt(totalDx * totalDx + totalDy * totalDy);
+    const rawSag = 60 + Math.abs(totalDy) * 0.2;
+    const sag = Math.min(rawSag, 140);
+    const rawBow = Math.abs(totalDx) * 0.5;
+    const bow = Math.min(rawBow, 110);
+
+    // STUB is capped relative to the available horizontal space so the
+    // two control points can never cross past each other on short or
+    // mostly-horizontal cables — that crossing was causing visible
+    // loops/kinks at medium-short distances (~50-150px).
+    const halfDx = totalDx / 2;
+    const STUB = Math.min(36, halfDx * 0.8);
+    const blend = Math.min(1, dist / 220); // 0 = very short cable, 1 = full sag kicks in
+    const cp1 = { x: from.x + STUB + bow * 0.3 * blend, y: from.y + sag * blend };
+    const cp2 = { x: to.x   - STUB - bow * 0.3 * blend, y: to.y   + sag * blend };
+    return `M${from.x},${from.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${to.x},${to.y}`;
+  },
+
+  renderCables() {
+    const patch = Store.getActivePatch();
+    const svg   = document.getElementById('cable-svg');
+    svg.innerHTML = '';
+    // Remove any leftover overlay from an earlier render — cables now
+    // always render in the single SVG below modules, as originally
+    // intended. (A per-cable overlay above modules was tried to keep
+    // backward loops visible when they pass behind another module, but
+    // that made cables draw over module content they have nothing to
+    // do with, which looked worse than the occasional partial overlap.)
+    document.getElementById('cable-svg-overlay')?.remove();
+
+    // signal type dash patterns
+    const DASH = { audio: 'none', cv: '6 3', gate: '2 4' };
+    patch.cables.forEach(c => {
+      const from = this._getPortCenter(c.fromPm, 'out', c.fromPort);
+      const to   = this._getPortCenter(c.toPm,   'in',  c.toPort);
+      if (!from || !to) return;
+      const totalDx = to.x - from.x;
+      const totalDy = to.y - from.y;
+      const d = this._cablePath(from, to, totalDx, totalDy);
+      const dash = DASH[c.sigType] || 'none';
+      // hit area (wider invisible path for easier clicking)
+      const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      hit.setAttribute('d', d); hit.setAttribute('stroke', 'transparent');
+      hit.setAttribute('stroke-width', '12'); hit.setAttribute('fill', 'none');
+      hit.style.cursor = 'pointer';
+      hit.style.pointerEvents = 'stroke'; // SVG container is click-through; only this path intercepts clicks
+      hit.addEventListener('click', () => this.removeCable(c.id));
+      hit.addEventListener('mouseenter', () => { vis.setAttribute('opacity', '1'); vis.setAttribute('stroke-width', '3.5'); });
+      hit.addEventListener('mouseleave', () => { vis.setAttribute('opacity', '0.85'); vis.setAttribute('stroke-width', '2.5'); });
+      // visible path
+      const vis = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      vis.setAttribute('d', d); vis.setAttribute('stroke', c.color);
+      vis.setAttribute('stroke-width', '2.5'); vis.setAttribute('fill', 'none');
+      vis.setAttribute('stroke-linecap', 'round'); vis.setAttribute('opacity', '0.85');
+      vis.setAttribute('data-cable-id', c.id);
+      if (dash !== 'none') vis.setAttribute('stroke-dasharray', dash);
+      vis.style.pointerEvents = 'none';
+      const label = c.sigType && c.sigType !== 'audio' ? ` [${c.sigType}]` : '';
+      vis.title = c.fromPort + ' → ' + c.toPort + label;
+      svg.appendChild(vis);
+      svg.appendChild(hit);
+    });
+  },
+
+  _guessSigType(fromPort, toPort) {
+    const s = (fromPort + ' ' + toPort).toLowerCase();
+    if (/gate|trig|tr|clock|clk|sync|eoc|eof/.test(s)) return 'gate';
+    if (/cv|mod|lfo|env|pitch|v\/oct|freq|harm|timbre|morph|level|fm|am|exp/.test(s)) return 'cv';
+    return 'audio';
+  },
+
+  removeCable(id) {
+    const patch = Store.getActivePatch();
+    patch.cables = patch.cables.filter(c => c.id !== id);
+    Store.updatePatch(patch.id, { cables: patch.cables });
+    Undo.snapshot();
+    this.renderCables(); this.updateJacks();
+    App.setStatus('cable removed');
+  },
+
+  updateJacks() {
+    const patch = Store.getActivePatch();
+    document.querySelectorAll('.port-jack').forEach(j => {
+      j.classList.remove('connected'); j.style.background = ''; j.style.borderColor = '';
+    });
+    patch.cables.forEach(c => {
+      const fj = document.getElementById('jack-' + c.fromPm + '-out-' + c.fromPort);
+      const tj = document.getElementById('jack-' + c.toPm   + '-in-'  + c.toPort);
+      if (fj) { fj.classList.add('connected'); fj.style.background = c.color; fj.style.borderColor = c.color; }
+      if (tj) { tj.classList.add('connected'); tj.style.background = c.color; tj.style.borderColor = c.color; }
+    });
+  },
+
+  clearCables() {
+    const patch = Store.getActivePatch();
+    patch.cables = [];
+    Store.updatePatch(patch.id, { cables: [] });
+    this.renderCables(); this.updateJacks();
+    App.setStatus('cables cleared');
+  },
+
+  clearAll() {
+    const patch = Store.getActivePatch();
+    patch.patchModules = []; patch.cables = [];
+    Store.updatePatch(patch.id, { patchModules: [], cables: [] });
+    this.render();
+    App.updateHPSum();
+    App.setStatus('patch cleared');
+  }
+};

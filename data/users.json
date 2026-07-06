@@ -1,0 +1,14 @@
+{
+  "enriko": {
+    "password": "***REMOVED-PASSWORD***",
+    "isAdmin": true
+  },
+  "timo": {
+    "password": "***REMOVED-PASSWORD***",
+    "isAdmin": false
+  },
+  "floez": {
+    "password": "gyrzum-zarpu3-Pepmup",
+    "isAdmin": false
+  }
+}
