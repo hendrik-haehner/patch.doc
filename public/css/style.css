@@ -387,6 +387,7 @@ html, body {
 .patch-module.has-custom-color .pm-header {
   background: color-mix(in srgb, var(--mod-color) 12%, var(--bg2));
   border-bottom-color: color-mix(in srgb, var(--mod-color) 30%, var(--border));
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .pm-header {

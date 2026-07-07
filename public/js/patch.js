@@ -57,6 +57,7 @@ const Patch = {
       const m = Store.state.modules.find(x => x.id === pm.moduleId);
       if (!m) return;
       const col    = m.color || CAT_COLORS[m.cat] || '#888';
+      const catCol = CAT_COLORS[m.cat] || '#888'; // always category color for maker name
       const defs   = m.paramDefs || [];
       const vals   = (patch.params[pm.id] || {});
 
@@ -88,7 +89,7 @@ const Patch = {
       el.innerHTML = `
         <div class="pm-header">
           <div class="pm-header-main">
-            <span class="pm-maker" style="color:${col}">${m.maker}</span>
+            <span class="pm-maker" style="color:${catCol}">${m.maker}</span>
             <a class="pm-manual-link" id="manual-icon-${pm.id}" href="#" target="_blank" rel="noopener"
                title="open manual" aria-label="open manual" style="display:none"
                onclick="event.stopPropagation()">
@@ -233,7 +234,7 @@ const Patch = {
       const markRing = markCol ? `<circle cx="19" cy="19" r="18" fill="none" stroke="${markCol}" stroke-width="2" opacity="0.9"/>` : '';
       return `<div class="pm-knob-wrap${markCol ? ' marked' : ''}" data-pmid="${pmId}" data-def="${encodeURIComponent(JSON.stringify(def))}" data-val="${v}"
         title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})">
-        ${this._knobSVG(id, pct, col, markRing)}
+        ${this._knobSVG(id, pct, 'var(--accent)', markRing)}
         <div class="pm-ctrl-val" id="val-${id}">${this._fmtVal(v, def)}</div>
         <div class="pm-ctrl-label perf-label ${markCol ? 'is-marked' : ''}" style="${markCol ? 'color:'+markCol : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
       </div>`;
