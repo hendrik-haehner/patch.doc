@@ -4,7 +4,7 @@
 
 PATCH.doc is a web app for documenting modular synthesizer patches. It runs as a Docker container on your own hardware (NAS, home server, VPS) and is accessible from any browser or mobile device.
 
-![PATCH.doc Screenshot](docs/screenshot.png)
+![PATCH.doc Screenshot](docs/screenshot_patch.png)
 
 ---
 
