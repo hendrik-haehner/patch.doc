@@ -1,30 +1,40 @@
-// PATCH.doc theme system — 2 themes (Studio dark / Studio Light)
-// Simple toggle, no picker menu: one click switches between them.
+// PATCH.doc theme system — 3 states: auto / dark / light
+// Toggle cycles: auto → dark → light → auto
 
 const Theme = (() => {
   const KEY = 'patchdoc_theme';
-  const VALID = ['studio', 'studio-light'];
-  const ICONS = { studio: 'ti-moon', 'studio-light': 'ti-sun' };
+  const STATES = ['auto', 'studio', 'studio-light'];
+  const ICONS  = { auto: 'ti-brightness-auto', studio: 'ti-moon', 'studio-light': 'ti-sun' };
+  const TITLES = { auto: 'Theme: auto (follows OS)', studio: 'Theme: dark', 'studio-light': 'Theme: light' };
 
   function _osPrefersDark() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
-  function _effective() {
+  function _savedState() {
     try {
       const saved = localStorage.getItem(KEY);
-      if (saved && VALID.includes(saved)) return saved;
+      if (STATES.includes(saved)) return saved;
     } catch(e) {}
-    return _osPrefersDark() ? 'studio' : 'studio-light';
+    return 'auto';
   }
 
-  function apply(theme) {
-    if (!VALID.includes(theme)) theme = 'studio';
-    document.documentElement.setAttribute('data-theme', theme);
-    // Update icon on button — moon for dark, sun for light
+  function _effectiveTheme(state) {
+    if (state === 'auto') return _osPrefersDark() ? 'studio' : 'studio-light';
+    return state;
+  }
+
+  function _updateIcon(state) {
     const icon = document.getElementById('theme-icon');
-    if (icon) icon.className = 'ti ' + (ICONS[theme] || 'ti-moon');
-    // Update topbar brand icon if theme-specific version exists
+    if (icon) icon.className = 'ti ' + (ICONS[state] || 'ti-brightness-auto');
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) btn.title = TITLES[state] || 'Theme';
+  }
+
+  function apply(state) {
+    const theme = _effectiveTheme(state);
+    document.documentElement.setAttribute('data-theme', theme);
+    _updateIcon(state);
     const brandImg = document.getElementById('brand-icon');
     if (brandImg) {
       const themeIcon = `./icon-${theme}.png`;
@@ -35,35 +45,30 @@ const Theme = (() => {
     }
   }
 
-  function set(theme) {
-    try { localStorage.setItem(KEY, theme); } catch(e) {}
-    apply(theme);
-  }
-
-  // Click handler for the topbar button — directly flips between the
-  // two themes, no menu involved.
   function toggle() {
-    const next = _effective() === 'studio' ? 'studio-light' : 'studio';
-    set(next);
+    const current = _savedState();
+    const idx  = STATES.indexOf(current);
+    const next = STATES[(idx + 1) % STATES.length];
+    try { localStorage.setItem(KEY, next); } catch(e) {}
+    apply(next);
   }
 
   function init() {
-    apply(_effective());
-    // OS theme change (only if no manual override)
+    apply(_savedState());
+    // React to OS changes when in auto mode
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      try { if (!localStorage.getItem(KEY)) apply(_effective()); } catch(e) {}
+      if (_savedState() === 'auto') apply('auto');
     });
   }
 
-  return { init, apply, set, toggle };
+  return { init, apply, toggle };
 })();
 
 // Apply theme immediately (before DOM ready) to avoid flash
 Theme.apply((() => {
   try {
     const saved = localStorage.getItem('patchdoc_theme');
-    const valid = ['studio', 'studio-light'];
-    if (saved && valid.includes(saved)) return saved;
+    if (['auto', 'studio', 'studio-light'].includes(saved)) return saved;
   } catch(e) {}
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'studio' : 'studio-light';
+  return 'auto';
 })());
