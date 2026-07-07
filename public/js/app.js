@@ -136,7 +136,11 @@ const App = {
         case '1': this.switchTab('patch'); break;
         case '2': this.switchTab('notes'); break;
         case '3': this.switchTab('params'); break;
-        case '4': this.switchTab('io'); break;
+        case '4': this.switchTab('connections'); break;
+        case '5': this.switchTab('rack'); break;
+        case '6': this.switchTab('media'); break;
+        case '7': this.switchTab('manuals'); break;
+        case '8': this.switchTab('io'); break;
         case 'z': if (e.metaKey || e.ctrlKey) { Undo.undo(); } break;
         case 'y': if (e.metaKey || e.ctrlKey) { Undo.redo(); } break;
       }
@@ -795,8 +799,7 @@ const App = {
   switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const btn = document.querySelector('[data-tab="' + tab + '"]');
-    if (btn) btn.classList.add('active');
+    document.querySelectorAll('[data-tab="' + tab + '"]').forEach(b => b.classList.add('active'));
     const view = document.getElementById(tab + '-view');
     if (view) view.classList.add('active');
     this.closeTouchMenu();
