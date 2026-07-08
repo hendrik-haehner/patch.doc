@@ -38,6 +38,7 @@ let pendingPort = null;
 let _markMenuOpen = null;
 let snapEnabled = false;
 let cablesVisible = true;
+let cablesMode = 'normal'; // 'normal' | 'solid' | 'hidden'
 const GRID = 24;
 
 const Patch = {
@@ -57,7 +58,7 @@ const Patch = {
       const m = Store.state.modules.find(x => x.id === pm.moduleId);
       if (!m) return;
       const col    = m.color || CAT_COLORS[m.cat] || '#888';
-      const catCol = CAT_COLORS[m.cat] || '#888'; // always category color for maker name
+      const catCol = CAT_COLORS[m.cat] || '#888';
       const defs   = m.paramDefs || [];
       const vals   = (patch.params[pm.id] || {});
 
@@ -167,7 +168,6 @@ const Patch = {
 
   cycleMarkColor(pmId, name, e) {
     if (e) { e.stopPropagation(); e.preventDefault(); }
-    // Ignore if this is part of a double-click (dblclick fires after 2 clicks)
     if (e && e.detail >= 2) return;
     clearTimeout(this._markClickTimer);
     this._markClickTimer = setTimeout(() => {
@@ -233,7 +233,8 @@ const Patch = {
       const markCol = this._markColor(pmId, def.name);
       const markRing = markCol ? `<circle cx="19" cy="19" r="18" fill="none" stroke="${markCol}" stroke-width="2" opacity="0.9"/>` : '';
       return `<div class="pm-knob-wrap${markCol ? ' marked' : ''}" data-pmid="${pmId}" data-def="${encodeURIComponent(JSON.stringify(def))}" data-val="${v}"
-        title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})">
+        title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})"
+        oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
         ${this._knobSVG(id, pct, 'var(--accent)', markRing)}
         <div class="pm-ctrl-val" id="val-${id}">${this._fmtVal(v, def)}</div>
         <div class="pm-ctrl-label perf-label ${markCol ? 'is-marked' : ''}" style="${markCol ? 'color:'+markCol : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
@@ -242,7 +243,8 @@ const Patch = {
     if (def.type === 'toggle') {
       const on = val !== undefined ? (val === true || val === 'true' || val === 1) : (def.default === true || def.default === 'true');
       const markColT = this._markColor(pmId, def.name);
-      return `<div class="pm-toggle-wrap${markColT ? ' marked' : ''}" title="${def.name}">
+      return `<div class="pm-toggle-wrap${markColT ? ' marked' : ''}" title="${def.name}"
+        oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
         <div class="pm-toggle-btn ${on ? 'on' : ''}" id="${id}"
           style="${markColT ? 'box-shadow:0 0 0 2px '+markColT : ''}"
           onclick="Patch.setToggle('${pmId}','${def.name}',event)" onmousedown="event.stopPropagation()">
@@ -256,7 +258,8 @@ const Patch = {
       const opts = (def.options || '').split(',').map(s => s.trim()).filter(Boolean);
       const cur  = val !== undefined ? val : (def.default || opts[0] || '');
       const markColE = this._markColor(pmId, def.name);
-      return `<div class="pm-enum-wrap${markColE ? ' marked' : ''}" title="${def.name}">
+      return `<div class="pm-enum-wrap${markColE ? ' marked' : ''}" title="${def.name}"
+        oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
         <div class="pm-ctrl-label perf-label ${markColE ? 'is-marked' : ''}" style="${markColE ? 'color:'+markColE : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
         <select class="pm-enum-select" id="${id}"
           style="${markColE ? 'border-color:'+markColE+';box-shadow:0 0 0 1.5px '+markColE+'44' : ''}"
@@ -365,7 +368,6 @@ const Patch = {
 
     wrap.addEventListener('dblclick', e => {
       e.stopPropagation();
-      // Cancel any pending mark color change — dblclick is for value input
       clearTimeout(Patch._markClickTimer);
       const newVal = prompt(`${def.name} (${min}–${max}):`, Math.round(val));
       if (newVal === null) return;
@@ -512,16 +514,23 @@ const Patch = {
   // ── Cable visibility (helps untangle dense patches) ────────────────────────
 
   toggleCablesVisible() {
-    cablesVisible = !cablesVisible;
+    const MODES = ['normal', 'solid', 'hidden'];
+    cablesMode = MODES[(MODES.indexOf(cablesMode) + 1) % MODES.length];
+    this._applyCablesMode();
+  },
+
+  _applyCablesMode() {
     const svg = document.getElementById('cable-svg');
-    if (svg) svg.style.display = cablesVisible ? '' : 'none';
     const btn = document.getElementById('hide-cables-btn');
+    if (svg) svg.style.display = cablesMode === 'hidden' ? 'none' : '';
+    this.renderCables();
     if (btn) {
-      btn.style.borderColor = cablesVisible ? '' : 'var(--accent-border)';
-      btn.style.color       = cablesVisible ? '' : 'var(--accent)';
-      btn.textContent       = cablesVisible ? '⌁ cables' : '⌁ cables (hidden)';
+      const labels = { normal: '⌁ cables', solid: '━ cables', hidden: '⌁ cables (off)' };
+      btn.textContent = labels[cablesMode];
+      btn.style.borderColor = cablesMode !== 'normal' ? 'var(--accent-border)' : '';
+      btn.style.color       = cablesMode !== 'normal' ? 'var(--accent)' : '';
     }
-    App.setStatus(cablesVisible ? 'cables visible' : 'cables hidden — ports still clickable to remove via re-show');
+    App.setStatus({ normal: 'cables: normal', solid: 'cables: all solid', hidden: 'cables: hidden' }[cablesMode]);
   },
 
   _snap(v) { return snapEnabled ? Math.round(v / GRID) * GRID : v; },
@@ -798,7 +807,7 @@ const Patch = {
     document.getElementById('cable-svg-overlay')?.remove();
 
     // signal type dash patterns
-    const DASH = { audio: 'none', cv: '6 3', gate: '2 4' };
+    const DASH = { audio: 'none', cv: '2 5', gate: '8 4' };
     patch.cables.forEach(c => {
       const from = this._getPortCenter(c.fromPm, 'out', c.fromPort);
       const to   = this._getPortCenter(c.toPm,   'in',  c.toPort);
@@ -806,7 +815,7 @@ const Patch = {
       const totalDx = to.x - from.x;
       const totalDy = to.y - from.y;
       const d = this._cablePath(from, to, totalDx, totalDy);
-      const dash = DASH[c.sigType] || 'none';
+      const dash = cablesMode === 'solid' ? 'none' : (DASH[c.sigType] || 'none');
       // hit area (wider invisible path for easier clicking)
       const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       hit.setAttribute('d', d); hit.setAttribute('stroke', 'transparent');
@@ -861,16 +870,18 @@ const Patch = {
   },
 
   clearCables() {
+    if (!confirm('Delete all cables in this patch?')) return;
+    Undo.snapshot();
     const patch = Store.getActivePatch();
-    patch.cables = [];
     Store.updatePatch(patch.id, { cables: [] });
     this.renderCables(); this.updateJacks();
     App.setStatus('cables cleared');
   },
 
   clearAll() {
+    if (!confirm('Remove all modules and cables from this patch?')) return;
+    Undo.snapshot();
     const patch = Store.getActivePatch();
-    patch.patchModules = []; patch.cables = [];
     Store.updatePatch(patch.id, { patchModules: [], cables: [] });
     this.render();
     App.updateHPSum();
