@@ -1,5 +1,95 @@
 const IO = {
 
+  async exportCanvasPNG() {
+    const feedback = document.getElementById('png-feedback');
+    if (feedback) { feedback.textContent = 'generating…'; feedback.style.color = 'var(--text2)'; }
+
+    try {
+      // Load dom-to-image-more (supports modern CSS like color-mix)
+      if (!window.domtoimage) {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js';
+          s.onload = resolve; s.onerror = reject;
+          document.head.appendChild(s);
+        });
+      }
+
+      const canvas = document.getElementById('patch-canvas');
+      if (!canvas) throw new Error('canvas not found');
+
+      // Make patch-canvas temporarily visible without switching tab
+      const patchView = document.getElementById('patch-view');
+      const wasHidden = patchView && !patchView.classList.contains('active');
+      if (wasHidden) {
+        patchView.style.display = 'flex';
+        patchView.style.position = 'fixed';
+        patchView.style.left = '-9999px';
+        patchView.style.top = '0';
+      }
+
+      const patchTitle = (Store.getActivePatch()?.title || 'patch').replace(/[^a-z0-9]/gi, '_');
+
+      // Get content bounds from modules
+      const modules = canvas.querySelectorAll('.patch-module');
+      let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+      modules.forEach(m => {
+        const x = parseFloat(m.style.left) || 0;
+        const y = parseFloat(m.style.top)  || 0;
+        minX = Math.min(minX, x); minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x + m.offsetWidth);
+        maxY = Math.max(maxY, y + m.offsetHeight);
+      });
+
+      if (!isFinite(minX)) { minX = 0; minY = 0; maxX = 800; maxY = 600; }
+      const pad = 40;
+      minX = Math.max(0, minX - pad);
+      minY = Math.max(0, minY - pad);
+      const W = Math.min(maxX - minX + pad * 2, canvas.scrollWidth);
+      const H = Math.min(maxY - minY + pad * 2, canvas.scrollHeight);
+
+      const bgColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--canvas-bg').trim() || '#f0eeea';
+
+      // Crop to content bounds using a wrapper div
+      const cropDiv = document.createElement('div');
+      cropDiv.style.cssText = `position:absolute;left:${minX}px;top:${minY}px;width:${W}px;height:${H}px;overflow:hidden;pointer-events:none;`;
+      document.body.appendChild(cropDiv);
+
+      const dataUrl = await domtoimage.toPng(canvas, {
+        bgcolor: bgColor,
+        width: W,
+        height: H,
+        style: {
+          transform: `translate(-${minX}px, -${minY}px)`,
+          transformOrigin: '0 0',
+        },
+        quality: 1,
+      });
+
+      document.body.removeChild(cropDiv);
+
+      if (wasHidden) {
+        patchView.style.display = '';
+        patchView.style.position = '';
+        patchView.style.left = '';
+        patchView.style.top = '';
+      }
+
+      const link = document.createElement('a');
+      link.download = patchTitle + '.png';
+      link.href = dataUrl;
+      link.click();
+
+      if (feedback) { feedback.textContent = '✓ PNG saved'; feedback.style.color = 'var(--success)'; }
+      setTimeout(() => { if (feedback) feedback.textContent = ''; }, 3000);
+
+    } catch(e) {
+      console.error('PNG export error:', e);
+      if (feedback) { feedback.textContent = '✗ ' + e.message; feedback.style.color = 'var(--danger)'; }
+    }
+  },
+
   // ── Export ──────────────────────────────────────────────────────────────
 
   exportAll() {
@@ -26,28 +116,14 @@ const IO = {
     const patch   = Store.getActivePatch();
     const modules = Store.state.modules;
 
-    // Build canvas SVG snapshot — returns {svg, wPx, hPx}
-    const canvasData = this._snapshotCanvas(patch, modules);
-
-    // Calculate print page size from SVG content dimensions.
-    // We scale the SVG to 2x resolution (96dpi → ~192dpi effective),
-    // then derive mm dimensions so the page is exactly one page tall.
-    const PX_PER_MM = 96 / 25.4;     // 96dpi
-    const SCALE     = 2.0;            // 2x resolution for crisp zoom
-    const PAD_MM    = 22;             // header + padding
-    const svgWmm = (canvasData.wPx * SCALE) / PX_PER_MM;
-    const svgHmm = (canvasData.hPx * SCALE) / PX_PER_MM;
-    const pageWmm = Math.max(210, svgWmm + 24).toFixed(1);
-    const pageHmm = Math.max(148, svgHmm + PAD_MM + 20).toFixed(1);
+    // Build canvas SVG snapshot
+    const canvasSVG = this._snapshotCanvas(patch, modules);
 
     // Build params HTML
     const paramsHTML = this._buildParamsHTML(patch, modules);
 
     // Build notes HTML
     const notesHTML = (patch.notes || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
-
-    // Build connections HTML
-    const connectionsHTML = this._buildConnectionsHTML(patch, modules);
 
     const dateStr = new Date().toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'});
 
@@ -57,10 +133,6 @@ const IO = {
 <meta charset="UTF-8">
 <title>${patch.title || 'patch'} — PATCH.doc</title>
 <style>
-  :root {
-    --patch-page-w: ${pageWmm}mm;
-    --patch-page-h: ${pageHmm}mm;
-  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
@@ -69,18 +141,14 @@ const IO = {
     background: #fff;
   }
 
-  /* ── page 1: patch canvas — sized to content ── */
+  /* ── page 1: patch canvas — A3 landscape ── */
   .sheet-patch {
     page: patchpage;
-    width: var(--patch-page-w, 297mm);
-    height: var(--patch-page-h, 210mm);
-    padding: 10mm 12mm;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    width: 420mm; min-height: 297mm;
+    padding: 14mm 16mm;
   }
   @page patchpage {
-    size: var(--patch-page-w, 297mm) var(--patch-page-h, 210mm);
+    size: A3 landscape;
     margin: 0;
   }
 
@@ -112,11 +180,10 @@ const IO = {
   /* canvas section (page 1) */
   .canvas-section {
     border: 0.5pt solid #ddd; border-radius: 4pt;
-    padding: 4mm; overflow: hidden;
-    flex: 1; display: flex; flex-direction: column;
+    padding: 5mm; overflow: hidden;
   }
-  .canvas-svg-wrap { flex: 1; overflow: hidden; display: flex; align-items: flex-start; }
-  .canvas-svg-wrap svg { width: 100%; height: 100%; display: block; }
+  .canvas-svg-wrap { width: 100%; overflow: hidden; }
+  .canvas-svg-wrap svg { max-width: 100%; height: auto; display: block; }
 
   /* params section (page 2) */
   .params-section {
@@ -146,33 +213,6 @@ const IO = {
     margin-top: 8mm; border-top: 0.5pt solid #ddd; padding-top: 5mm;
   }
   .notes-text { font-size: 8.5pt; line-height: 1.7; color: #333; white-space: pre-wrap; }
-
-  /* tags */
-  .patch-tags { margin-top: 3mm; display: flex; gap: 3pt; flex-wrap: wrap; }
-  .patch-tag { font-size: 7pt; padding: 1pt 5pt; border-radius: 3pt; background: #f0f0ee; color: #666; }
-
-  /* ── page 3: connections — A4 portrait ── */
-  .sheet-conn {
-    page: connpage;
-    width: 210mm; min-height: 297mm;
-    padding: 14mm 16mm;
-    page-break-before: always;
-  }
-  @page connpage { size: A4 portrait; margin: 0; }
-
-  .conn-table { width: 100%; border-collapse: collapse; font-size: 8pt; margin-top: 3mm; }
-  .conn-table th {
-    text-align: left; font-size: 7pt; letter-spacing: 0.1em; color: #aaa;
-    font-weight: 600; padding: 2pt 4pt; border-bottom: 0.5pt solid #ddd;
-  }
-  .conn-table td { padding: 3pt 4pt; border-bottom: 0.3pt solid #f0f0f0; vertical-align: middle; }
-  .conn-table tr:last-child td { border-bottom: none; }
-  .conn-swatch { display: inline-block; width: 8pt; height: 8pt; border-radius: 50%; vertical-align: middle; margin-right: 4pt; }
-  .conn-mod { font-weight: 600; color: #222; }
-  .conn-port { color: #555; }
-  .conn-arrow { color: #bbb; padding: 0 4pt; }
-  .conn-mod-group { font-size: 7pt; letter-spacing: 0.1em; font-weight: 700; color: #aaa;
-    padding: 5pt 4pt 2pt; text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -189,7 +229,7 @@ const IO = {
 
   <div class="canvas-section">
     <div class="section-label">patch canvas</div>
-    <div class="canvas-svg-wrap">${canvasData.svg}</div>
+    <div class="canvas-svg-wrap">${canvasSVG}</div>
   </div>
 </div>
 
@@ -208,25 +248,10 @@ const IO = {
     ${paramsHTML}
   </div>
 
-  ${(patch.tags||[]).length ? `<div class="patch-tags">${(patch.tags||[]).map(t=>'<span class="patch-tag">'+t+'</span>').join('')}</div>` : ''}
-
   <div class="notes-section">
     <div class="section-label">notes</div>
     <div class="notes-text">${notesHTML || '<span style="color:#ccc">—</span>'}</div>
   </div>
-</div>
-
-<!-- PAGE 3 — connections, A4 portrait -->
-<div class="sheet-conn">
-  <div class="page-header">
-    <h1>${patch.title || 'Untitled Patch'}</h1>
-    <div style="text-align:right">
-      <div class="brand">&#9635; PATCH.doc</div>
-      <div class="meta">${dateStr} &middot; ${patch.cables.length} connection(s)</div>
-    </div>
-  </div>
-  <div class="section-label">connections</div>
-  ${connectionsHTML}
 </div>
 
 <script>window.onload = () => { window.print(); }</script>
@@ -248,16 +273,12 @@ const IO = {
     const CAT = {
       oscillator:'#8f86e8', filter:'#2aaa7a', envelope:'#d4963a',
       lfo:'#4a9fd4', vca:'#c45c82', sequencer:'#c8612a',
-      effects:'#7aaa2a', utility:'#7a8a78', 'guitar pedal':'#c87850', placeholder:'#a0a0a0', other:'#7a8a78'
+      effects:'#7aaa2a', utility:'#7a8a78', other:'#7a8a78'
     };
-    // Use same golden-angle color function as patch.js
-    const _cc = idx => { const h=(idx*137.508)%360, s=idx%2===0?72:58; return `hsl(${h.toFixed(1)},${s}%,52%)`; };
-
-    const SCALE = 2.0; // 2x resolution for crisp PDF zoom
+    const CABLE_COLORS = ['#8f86e8','#2aaa7a','#c8612a','#4a9fd4','#c45c82','#d4963a','#7aaa2a','#a07060'];
 
     if (!patch.patchModules.length) {
-      const svg = '<svg width="800" height="200" viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg"><text x="20" y="40" font-family="monospace" font-size="12" fill="#ccc">no modules in patch</text></svg>';
-      return { svg, wPx: 400, hPx: 100 };
+      return '<svg width="400" height="100"><text x="20" y="40" font-family="monospace" font-size="12" fill="#ccc">no modules in patch</text></svg>';
     }
 
     const MW = 130, PORT_H = 14, HEADER_H = 22, PAD = 8;
@@ -281,23 +302,20 @@ const IO = {
     const W = Math.max(400, maxModX);
     let H = Math.max(200, maxModY);
 
-    // Port name helper — ports can be strings or {name, sigType} objects
-    const pn = p => (typeof p === 'object' && p !== null) ? p.name : p;
-
     // Port center helper (SVG-space)
     const portCenters = {};
     patch.patchModules.forEach(pm => {
       const lay = pmLayouts[pm.id];
       if (!lay) return;
       const { m } = lay;
-      m.inputs.forEach((port, i) => {
-        portCenters[`${pm.id}-in-${pn(port)}`] = {
+      m.inputs.forEach((name, i) => {
+        portCenters[`${pm.id}-in-${name}`] = {
           x: pm.x + 10,
           y: pm.y + HEADER_H + i * PORT_H + PORT_H / 2
         };
       });
-      m.outputs.forEach((port, i) => {
-        portCenters[`${pm.id}-out-${pn(port)}`] = {
+      m.outputs.forEach((name, i) => {
+        portCenters[`${pm.id}-out-${name}`] = {
           x: pm.x + MW - 10,
           y: pm.y + HEADER_H + i * PORT_H + PORT_H / 2
         };
@@ -349,7 +367,7 @@ const IO = {
         maxY = Math.max(cp1.y, cp2.y);
       }
 
-      const col = c.color || _cc(idx);
+      const col = c.color || CABLE_COLORS[idx % CABLE_COLORS.length];
       cableSVG += `<path d="${pathD}"
         stroke="${col}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8"/>`;
       // control points define the curve's reach — track the lower of the two
@@ -380,16 +398,14 @@ const IO = {
           <text x="${x+MW-5}" y="${y+14}" font-family="monospace" font-size="7" fill="#aaa" text-anchor="end">
             ${m.maker.split(' ').pop()}
           </text>
-          ${m.inputs.map((port, i) => {
-            const name = pn(port);
+          ${m.inputs.map((name, i) => {
             const py = y + HEADER_H + i * PORT_H + PORT_H / 2;
             const connected = patch.cables.some(c => c.toPm === pm.id && c.toPort === name);
             const jackFill  = connected ? (patch.cables.find(c => c.toPm === pm.id && c.toPort === name)?.color || col) : '#eee';
             return `<circle cx="${x+10}" cy="${py}" r="4" fill="${jackFill}" stroke="${col}" stroke-width="1"/>
               <text x="${x+18}" y="${py+3}" font-family="monospace" font-size="7" fill="#888">${name}</text>`;
           }).join('')}
-          ${m.outputs.map((port, i) => {
-            const name = pn(port);
+          ${m.outputs.map((name, i) => {
             const py = y + HEADER_H + i * PORT_H + PORT_H / 2;
             const connected = patch.cables.some(c => c.fromPm === pm.id && c.fromPort === name);
             const jackFill  = connected ? (patch.cables.find(c => c.fromPm === pm.id && c.fromPort === name)?.color || col) : '#eee';
@@ -399,16 +415,11 @@ const IO = {
         </g>`;
     });
 
-    // Render at 2x resolution: physical pixel size = W*SCALE x H*SCALE,
-    // but viewBox stays at W x H so all coordinates are unchanged.
-    const svgW = Math.round(W * SCALE);
-    const svgH = Math.round(H * SCALE);
-    const svg = `<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
       style="background:#fafaf8;border-radius:3pt">
       <rect width="${W}" height="${H}" fill="#fafaf8"/>
       ${cableSVG}${modSVG}
     </svg>`;
-    return { svg, wPx: W, hPx: H };
   },
 
   _buildParamsHTML(patch, modules) {
@@ -430,22 +441,18 @@ const IO = {
         ...Object.keys(vals).filter(k => !defs.find(d => d.name === k))
       ];
       if (!allKeys.length) return '';
-      const MARK_HEX = { green:'#4aaa60', yellow:'#d4c030', red:'#e05555' };
       const rows = allKeys.map(k => {
         const def = defs.find(d => d.name === k);
         let val = vals[k] !== undefined ? vals[k] : (def?.default ?? '—');
         const typ = def ? def.type : 'text';
+        // Round knob values for display — handles any legacy unrounded data too
         if (typ === 'knob' && typeof val === 'number') {
           const range = (def?.max ?? 100) - (def?.min ?? 0);
           val = range >= 10 ? Math.round(val) : Math.round(val * 10) / 10;
         }
         const disp = val === true ? 'on' : val === false ? 'off' : String(val);
-        const markId  = patch.marks?.[pm.id]?.[k];
-        const markHex = markId ? (MARK_HEX[markId] || null) : null;
-        const markDot = markHex ? `<span style="display:inline-block;width:6pt;height:6pt;border-radius:50%;background:${markHex};margin-right:4pt;vertical-align:middle"></span>` : '';
-        const nameStyle = markHex ? `color:${markHex};font-weight:700` : '';
-        return `<div class="param-line" style="${markHex ? 'border-left:2.5pt solid '+markHex+';padding-left:5pt' : ''}">
-          <span class="param-n" style="${nameStyle}">${markDot}${k}</span>
+        return `<div class="param-line">
+          <span class="param-n">${k}</span>
           <span><span class="param-v">${disp}</span><span class="param-t">${typ}</span></span>
         </div>`;
       }).join('');
@@ -458,64 +465,6 @@ const IO = {
         ${rows}
       </div>`;
     }).filter(Boolean).join('');
-  },
-
-  _buildConnectionsHTML(patch, modules) {
-    const CAT = {
-      oscillator:'#8f86e8', filter:'#2aaa7a', envelope:'#d4963a',
-      lfo:'#4a9fd4', vca:'#c45c82', sequencer:'#c8612a',
-      effects:'#7aaa2a', utility:'#7a8a78', other:'#7a8a78'
-    };
-
-    if (!patch.cables.length) {
-      return '<p style="color:#ccc;font-size:8pt">no connections</p>';
-    }
-
-    const modName = pmId => {
-      const pm = patch.patchModules.find(p => p.id === pmId);
-      if (!pm) return '?';
-      const m = modules.find(x => x.id === pm.moduleId);
-      return m ? m.name + (pm.instance > 1 ? ' #' + pm.instance : '') : '?';
-    };
-    const modColor = pmId => {
-      const pm = patch.patchModules.find(p => p.id === pmId);
-      if (!pm) return '#888';
-      const m = modules.find(x => x.id === pm.moduleId);
-      return m ? (CAT[m.cat] || '#888') : '#888';
-    };
-
-    // Group cables by source module
-    const sortedPmIds = [...new Set(patch.cables.map(c => c.fromPm))]
-      .sort((a, b) => modName(a).localeCompare(modName(b)));
-
-    const rows = sortedPmIds.map(pmId => {
-      const outCables = patch.cables.filter(c => c.fromPm === pmId);
-      const col = modColor(pmId);
-      return `
-        <tr><td colspan="5" class="conn-mod-group">
-          <span style="display:inline-block;width:6pt;height:6pt;border-radius:50%;background:${col};vertical-align:middle;margin-right:3pt"></span>
-          ${modName(pmId)}
-        </td></tr>
-        ${outCables.map(c => `
-        <tr>
-          <td><span class="conn-swatch" style="background:${c.color || '#888'}"></span></td>
-          <td class="conn-port">${c.fromPort}</td>
-          <td class="conn-arrow">→</td>
-          <td class="conn-mod">${modName(c.toPm)}</td>
-          <td class="conn-port">${c.toPort}</td>
-        </tr>`).join('')}`;
-    }).join('');
-
-    return `<table class="conn-table">
-      <thead><tr>
-        <th style="width:14pt"></th>
-        <th>from port</th>
-        <th style="width:20pt"></th>
-        <th>to module</th>
-        <th>to port</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
   },
 
   // ── Import dispatcher ───────────────────────────────────────────────────

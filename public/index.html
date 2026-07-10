@@ -62,9 +62,7 @@
       <button class="tab-btn" data-tab="rack" onclick="App.switchTab('rack')">rack</button>
       <button class="tab-btn" data-tab="media" onclick="App.switchTab('media')">media</button>
       <button class="tab-btn" data-tab="manuals" onclick="App.switchTab('manuals')">manuals</button>
-      <button class="tab-btn" data-tab="io" onclick="App.switchTab('io')">
-        <i class="ti ti-database" aria-hidden="true"></i> save/load
-      </button>
+      <button class="tab-btn" data-tab="io" onclick="App.switchTab('io')">export</button>
     </div>
 
     <div id="topbar-right">
@@ -186,14 +184,12 @@
         </div>
       </div>
       <div id="patch-statusbar">
-        <span id="patch-status"></span>
-        <span id="statusbar-info" style="font-size:10px;color:var(--text2);flex-shrink:0"></span>
-        <span id="hp-sum" style="font-size:10px;color:var(--accent);font-weight:600;flex-shrink:0"></span>
-        <span id="statusbar-save" style="font-size:10px;color:var(--text2);flex-shrink:0"></span>
-        <span id="statusbar-cable-legend" title="cable types: solid=audio · dotted=CV · dashed=gate" style="flex-shrink:0">
+        <span id="patch-status">select module → add · drag · click ports to connect · click cable to remove</span>
+        <span id="hp-sum" style="font-size:10px;color:var(--accent);font-weight:600"></span>
+        <span id="statusbar-cable-legend" title="cable types: solid=audio · dashed=CV · dotted=gate">
           <span style="border-bottom:1.5px solid currentColor;padding-bottom:1px;margin-right:4px">audio</span>
-          <span style="border-bottom:1.5px dotted currentColor;padding-bottom:1px;margin-right:4px">cv</span>
-          <span style="border-bottom:1.5px dashed currentColor;padding-bottom:1px">gate</span>
+          <span style="border-bottom:1.5px dashed currentColor;padding-bottom:1px;margin-right:4px">cv</span>
+          <span style="border-bottom:1.5px dotted currentColor;padding-bottom:1px">gate</span>
         </span>
       </div>
     </div>
@@ -257,7 +253,18 @@
       <div id="io-content">
 
         <div class="io-section">
-          <h4>EXPORT</h4>
+          <h4>CANVAS EXPORT</h4>
+          <p>Export the current patch canvas as a PNG image.</p>
+          <div class="btn-row">
+            <button class="btn-action primary" onclick="IO.exportCanvasPNG()">
+              <i class="ti ti-photo-down" aria-hidden="true"></i> export as PNG
+            </button>
+          </div>
+          <div id="png-feedback" class="feedback"></div>
+        </div>
+
+        <div class="io-section">
+          <h4>PATCH EXPORT</h4>
           <p>Download the current patch as a JSON file, or copy it to your clipboard to share.</p>
           <div class="btn-row">
             <button class="btn-action primary" onclick="IO.exportPatch()">

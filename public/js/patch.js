@@ -6,9 +6,12 @@ const CAT_COLORS = {
 const CABLE_COLORS = ['#8f86e8','#2aaa7a','#c8612a','#4a9fd4','#c45c82','#d4963a','#7aaa2a','#a07060'];
 
 const MARK_COLORS = [
-  { id:'green',  hex:'#4aaa60', label:'green'  },
-  { id:'yellow', hex:'#d4c030', label:'yellow' },
-  { id:'red',    hex:'#e05555', label:'red'    },
+  { id:'red',    hex:'#e05555', label:'rot'    },
+  { id:'orange', hex:'#e08c30', label:'orange' },
+  { id:'yellow', hex:'#d4c030', label:'gelb'   },
+  { id:'green',  hex:'#4aaa60', label:'grün'   },
+  { id:'blue',   hex:'#4a8fd4', label:'blau'   },
+  { id:'pink',   hex:'#d44aaa', label:'pink'   },
 ];
 
 // Curated module-color swatches shown in the module editor. Picked to
@@ -38,8 +41,21 @@ let pendingPort = null;
 let _markMenuOpen = null;
 let snapEnabled = false;
 let cablesVisible = true;
-let cablesMode = 'normal'; // 'normal' | 'solid' | 'hidden'
 const GRID = 24;
+
+// ── Canvas zoom ───────────────────────────────────────────────────────────────
+let _zoom = 1.0;
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 2.0;
+const ZOOM_STEP = 0.1;
+
+function _applyZoom() {
+  const canvas = document.getElementById('patch-canvas');
+  if (canvas) canvas.style.transform = `scale(${_zoom})`;
+  if (canvas) canvas.style.transformOrigin = '0 0';
+  const el = document.getElementById('statusbar-zoom-level');
+  if (el) el.textContent = Math.round(_zoom * 100) + '%';
+}
 
 const Patch = {
 
@@ -58,7 +74,6 @@ const Patch = {
       const m = Store.state.modules.find(x => x.id === pm.moduleId);
       if (!m) return;
       const col    = m.color || CAT_COLORS[m.cat] || '#888';
-      const catCol = CAT_COLORS[m.cat] || '#888';
       const defs   = m.paramDefs || [];
       const vals   = (patch.params[pm.id] || {});
 
@@ -89,17 +104,16 @@ const Patch = {
 
       el.innerHTML = `
         <div class="pm-header">
-          <div class="pm-header-main">
-            <span class="pm-maker" style="color:${catCol}">${m.maker}</span>
-            <a class="pm-manual-link" id="manual-icon-${pm.id}" href="#" target="_blank" rel="noopener"
-               title="open manual" aria-label="open manual" style="display:none"
-               onclick="event.stopPropagation()">
-              <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
-            </a>
-            ${defs.length ? `<button class="pm-collapse-btn" onclick="Patch.toggleCollapse(${pm.id},event)" title="${pm.collapsed ? 'show parameters' : 'hide parameters'}" aria-label="toggle parameters">${pm.collapsed ? '▾' : '▴'}</button>` : ''}
-            <button class="pm-remove" onclick="Patch.removeFromPatch(${pm.id})" aria-label="remove">×</button>
-          </div>
-          <div class="pm-name">${m.name}${pm.instance > 1 ? '<span class="pm-instance">#' + pm.instance + '</span>' : ''}</div>
+          <span class="dot" style="background:${col}"></span>
+          <span class="pm-name">${m.name}${pm.instance > 1 ? '<span class="pm-instance">#' + pm.instance + '</span>' : ''}</span>
+          <span class="pm-maker">${m.maker.split(' ').pop()}</span>
+          <a class="pm-manual-link" id="manual-icon-${pm.id}" href="#" target="_blank" rel="noopener"
+             title="open manual" aria-label="open manual" style="display:none"
+             onclick="event.stopPropagation()">
+            <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
+          </a>
+          ${sortedDefs.length ? `<button class="pm-collapse-btn" onclick="Patch.toggleCollapse(${pm.id},event)" title="${pm.collapsed ? 'show parameters' : 'hide parameters'}" aria-label="toggle parameters">${pm.collapsed ? '▾' : '▴'}</button>` : ''}
+          <button class="pm-remove" onclick="Patch.removeFromPatch(${pm.id})" aria-label="remove">×</button>
         </div>
         <div class="pm-ports">
           <div class="pm-col">
@@ -164,21 +178,6 @@ const Patch = {
     Store.updatePatch(patch.id, { marks: patch.marks });
   },
 
-  _markClickTimer: null,
-
-  cycleMarkColor(pmId, name, e) {
-    if (e) { e.stopPropagation(); e.preventDefault(); }
-    if (e && e.detail >= 2) return;
-    clearTimeout(this._markClickTimer);
-    this._markClickTimer = setTimeout(() => {
-      const current = this._getMark(pmId, name);
-      const idx = MARK_COLORS.findIndex(c => c.id === current);
-      const next = idx < MARK_COLORS.length - 1 ? MARK_COLORS[idx + 1].id : null;
-      this._setMark(pmId, name, next);
-      this.render();
-    }, 220);
-  },
-
   _markColor(pmId, name) {
     const id = this._getMark(pmId, name);
     if (!id) return null;
@@ -235,9 +234,9 @@ const Patch = {
       return `<div class="pm-knob-wrap${markCol ? ' marked' : ''}" data-pmid="${pmId}" data-def="${encodeURIComponent(JSON.stringify(def))}" data-val="${v}"
         title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})"
         oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
-        ${this._knobSVG(id, pct, 'var(--accent)', markRing)}
+        ${this._knobSVG(id, pct, col, markRing)}
         <div class="pm-ctrl-val" id="val-${id}">${this._fmtVal(v, def)}</div>
-        <div class="pm-ctrl-label perf-label ${markCol ? 'is-marked' : ''}" style="${markCol ? 'color:'+markCol : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
+        <div class="pm-ctrl-label">${def.name}</div>
       </div>`;
     }
     if (def.type === 'toggle') {
@@ -251,7 +250,7 @@ const Patch = {
           <div class="pm-toggle-thumb"></div>
         </div>
         <div class="pm-ctrl-val" id="val-${id}">${on ? 'on' : 'off'}</div>
-        <div class="pm-ctrl-label perf-label ${markColT ? 'is-marked' : ''}" style="${markColT ? 'color:'+markColT : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
+        <div class="pm-ctrl-label">${def.name}</div>
       </div>`;
     }
     if (def.type === 'enum') {
@@ -260,7 +259,7 @@ const Patch = {
       const markColE = this._markColor(pmId, def.name);
       return `<div class="pm-enum-wrap${markColE ? ' marked' : ''}" title="${def.name}"
         oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
-        <div class="pm-ctrl-label perf-label ${markColE ? 'is-marked' : ''}" style="${markColE ? 'color:'+markColE : ''}" onclick="Patch.cycleMarkColor('${pmId}','${def.name}',event)" title="Click once to change color, double-click to change value">${def.name}</div>
+        <div class="pm-ctrl-label">${def.name}</div>
         <select class="pm-enum-select" id="${id}"
           style="${markColE ? 'border-color:'+markColE+';box-shadow:0 0 0 1.5px '+markColE+'44' : ''}"
           onchange="Patch.setEnum('${pmId}','${def.name}',this.value)"
@@ -342,7 +341,6 @@ const Patch = {
     // Use pointer capture — clean, no global listeners needed
     wrap.addEventListener('pointerdown', e => {
       if (e.button !== 0) return;
-      if (e.target.closest('.perf-label')) return;
       e.stopPropagation();
       e.preventDefault();
       startY = e.clientY;
@@ -368,7 +366,6 @@ const Patch = {
 
     wrap.addEventListener('dblclick', e => {
       e.stopPropagation();
-      clearTimeout(Patch._markClickTimer);
       const newVal = prompt(`${def.name} (${min}–${max}):`, Math.round(val));
       if (newVal === null) return;
       const n = parseFloat(newVal);
@@ -462,8 +459,7 @@ const Patch = {
       if (e.target.closest('.port') || e.target.closest('.pm-remove') ||
           e.target.closest('.pm-collapse-btn') || e.target.closest('.pm-manual-link') ||
           e.target.closest('.pm-knob-wrap') || e.target.closest('.pm-toggle-btn') ||
-          e.target.closest('.pm-enum-wrap') || e.target.closest('.pm-text-wrap') ||
-          e.target.closest('.perf-label')) return;
+          e.target.closest('.pm-enum-wrap') || e.target.closest('.pm-text-wrap')) return;
       e.preventDefault();
       const sx = e.clientX - pm.x, sy = e.clientY - pm.y;
       el.classList.add('dragging');
@@ -501,6 +497,21 @@ const Patch = {
     App.setStatus(snapEnabled ? 'grid snap on (' + GRID + 'px)' : 'grid snap off');
   },
 
+  zoomIn() {
+    _zoom = Math.min(ZOOM_MAX, Math.round((_zoom + ZOOM_STEP) * 10) / 10);
+    _applyZoom();
+  },
+
+  zoomOut() {
+    _zoom = Math.max(ZOOM_MIN, Math.round((_zoom - ZOOM_STEP) * 10) / 10);
+    _applyZoom();
+  },
+
+  zoomReset() {
+    _zoom = 1.0;
+    _applyZoom();
+  },
+
   initSnap() {
     try { snapEnabled = localStorage.getItem('patchdoc_snap') === '1'; } catch(e) {}
     const btn = document.getElementById('snap-btn');
@@ -514,23 +525,16 @@ const Patch = {
   // ── Cable visibility (helps untangle dense patches) ────────────────────────
 
   toggleCablesVisible() {
-    const MODES = ['normal', 'solid', 'hidden'];
-    cablesMode = MODES[(MODES.indexOf(cablesMode) + 1) % MODES.length];
-    this._applyCablesMode();
-  },
-
-  _applyCablesMode() {
+    cablesVisible = !cablesVisible;
     const svg = document.getElementById('cable-svg');
+    if (svg) svg.style.display = cablesVisible ? '' : 'none';
     const btn = document.getElementById('hide-cables-btn');
-    if (svg) svg.style.display = cablesMode === 'hidden' ? 'none' : '';
-    this.renderCables();
     if (btn) {
-      const labels = { normal: '⌁ cables', solid: '━ cables', hidden: '⌁ cables (off)' };
-      btn.textContent = labels[cablesMode];
-      btn.style.borderColor = cablesMode !== 'normal' ? 'var(--accent-border)' : '';
-      btn.style.color       = cablesMode !== 'normal' ? 'var(--accent)' : '';
+      btn.style.borderColor = cablesVisible ? '' : 'var(--accent-border)';
+      btn.style.color       = cablesVisible ? '' : 'var(--accent)';
+      btn.textContent       = cablesVisible ? '⌁ cables' : '⌁ cables (hidden)';
     }
-    App.setStatus({ normal: 'cables: normal', solid: 'cables: all solid', hidden: 'cables: hidden' }[cablesMode]);
+    App.setStatus(cablesVisible ? 'cables visible' : 'cables hidden — ports still clickable to remove via re-show');
   },
 
   _snap(v) { return snapEnabled ? Math.round(v / GRID) * GRID : v; },
@@ -807,7 +811,7 @@ const Patch = {
     document.getElementById('cable-svg-overlay')?.remove();
 
     // signal type dash patterns
-    const DASH = { audio: 'none', cv: '2 5', gate: '8 4' };
+    const DASH = { audio: 'none', cv: '6 3', gate: '2 4' };
     patch.cables.forEach(c => {
       const from = this._getPortCenter(c.fromPm, 'out', c.fromPort);
       const to   = this._getPortCenter(c.toPm,   'in',  c.toPort);
@@ -815,7 +819,7 @@ const Patch = {
       const totalDx = to.x - from.x;
       const totalDy = to.y - from.y;
       const d = this._cablePath(from, to, totalDx, totalDy);
-      const dash = cablesMode === 'solid' ? 'none' : (DASH[c.sigType] || 'none');
+      const dash = DASH[c.sigType] || 'none';
       // hit area (wider invisible path for easier clicking)
       const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       hit.setAttribute('d', d); hit.setAttribute('stroke', 'transparent');
@@ -870,18 +874,16 @@ const Patch = {
   },
 
   clearCables() {
-    if (!confirm('Delete all cables in this patch?')) return;
-    Undo.snapshot();
     const patch = Store.getActivePatch();
+    patch.cables = [];
     Store.updatePatch(patch.id, { cables: [] });
     this.renderCables(); this.updateJacks();
     App.setStatus('cables cleared');
   },
 
   clearAll() {
-    if (!confirm('Remove all modules and cables from this patch?')) return;
-    Undo.snapshot();
     const patch = Store.getActivePatch();
+    patch.patchModules = []; patch.cables = [];
     Store.updatePatch(patch.id, { patchModules: [], cables: [] });
     this.render();
     App.updateHPSum();

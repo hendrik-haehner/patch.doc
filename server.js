@@ -670,6 +670,8 @@ app.get('/settings', (req, res) => {
   <div>
     <button class="btn btn-primary" onclick="save()">save</button>
     <button class="btn btn-reset" onclick="reset()">reset to defaults</button>
+    <button class="btn btn-reset" onclick="applyToModules()" style="margin-left:8px">apply to all modules</button>
+    <button class="btn btn-reset" onclick="clearModuleColors()" style="margin-left:8px">clear all module colors</button>
   </div>
   <div class="msg" id="msg"></div>
 
@@ -702,6 +704,51 @@ app.get('/settings', (req, res) => {
         body: JSON.stringify({ catColors: {} })
       });
       location.reload();
+    }
+
+    async function clearModuleColors() {
+      if (!confirm('Remove all individual colors from modules? They will use category colors.')) return;
+      const modRes = await fetch('/api/modules');
+      if (!modRes.ok) { alert('Could not load modules'); return; }
+      const data = await modRes.json();
+      const modules = (data.modules || []).map(m => ({ ...m, color: null }));
+      const saveRes = await fetch('/api/modules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modules, nextModuleId: data.nextModuleId })
+      });
+      const msg = document.getElementById('msg');
+      if (saveRes.ok) { msg.style.color = '#2aaa7a'; msg.textContent = '✓ colors cleared from ' + modules.length + ' modules'; }
+      else { msg.style.color = '#e05555'; msg.textContent = '✗ failed'; }
+      setTimeout(() => msg.textContent = '', 3000);
+    }
+
+    async function applyToModules() {
+      if (!confirm('Set all modules to their category color? This overwrites individual module colors.')) return;
+      // Get current category colors from pickers
+      const catColors = {};
+      document.querySelectorAll('input[type=color]').forEach(el => {
+        catColors[el.dataset.cat] = el.value;
+      });
+      // Load modules
+      const modRes = await fetch('/api/modules');
+      if (!modRes.ok) { alert('Could not load modules'); return; }
+      const data = await modRes.json();
+      const modules = data.modules || [];
+      // Apply category color to each module
+      modules.forEach(m => {
+        m.color = catColors[m.cat] || null;
+      });
+      // Save modules
+      const saveRes = await fetch('/api/modules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modules, nextModuleId: data.nextModuleId })
+      });
+      const msg = document.getElementById('msg');
+      if (saveRes.ok) { msg.style.color = '#2aaa7a'; msg.textContent = '✓ applied to ' + modules.length + ' modules'; }
+      else { msg.style.color = '#e05555'; msg.textContent = '✗ failed'; }
+      setTimeout(() => msg.textContent = '', 3000);
     }
   </script>
 </body>

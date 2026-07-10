@@ -368,7 +368,7 @@ html, body {
   border: 1px solid var(--module-border, var(--border2));
   border-radius: var(--radius); min-width: 115px;
   cursor: move; user-select: none;
-  overflow: visible;
+  overflow: hidden;
   transition: border-color 0.1s, background 0.1s;
 }
 .patch-module:hover { border-color: var(--accent-border); }

@@ -67,8 +67,6 @@ const App = {
       document.querySelectorAll('.admin-link').forEach(el => el.style.display = 'flex');
     }
     this.fullRender();
-    this.updateStatusbar();
-    this._startStatusbarClock();
     // Init touch patch dropdown
     this._updateTouchPatchDropdown();
     this._bindGlobal();
@@ -117,6 +115,18 @@ const App = {
     // every mutating action already calls saveNow() immediately,
     // so beaconing on unload is redundant and risks overwriting
     // a newer state saved by another device.
+    // Ctrl/Cmd + scroll to zoom canvas
+    const canvasWrap = document.getElementById('patch-canvas-wrap');
+    if (canvasWrap) {
+      canvasWrap.addEventListener('wheel', e => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          if (e.deltaY < 0) Patch.zoomIn();
+          else Patch.zoomOut();
+        }
+      }, { passive: false });
+    }
+
     document.addEventListener('keydown', e => {
       const tag = document.activeElement?.tagName;
       const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
@@ -599,7 +609,6 @@ const App = {
     if (searchInput) searchInput.value = '';
     this.fullRender();
     this.setStatus('switched to ' + Store.getActivePatch().title);
-    this.updateStatusbar();
     // Close the touch-mode sidebar overlay after picking a patch
     document.getElementById('sidebar')?.classList.remove('touch-sidebar-open');
   },
@@ -785,53 +794,14 @@ const App = {
     if (el) el.textContent = total + 'hp';
   },
 
-  _lastSaveTime: null,
-  _statusbarTimer: null,
-
   setStatus(msg, timeout = 3500) {
     const el = document.getElementById('patch-status');
     if (!el) return;
     el.textContent = msg;
     clearTimeout(el._t);
-    el._t = timeout > 0 ? setTimeout(() => { el.textContent = ''; }, timeout) : null;
-  },
-
-  updateStatusbar() {
-    const patch = Store.getActivePatch();
-    if (!patch) return;
-    const info = document.getElementById('statusbar-info');
-    if (info) {
-      const mods  = (patch.patchModules || []).length;
-      const cables = (patch.cables || []).length;
-      const marks = Object.values(patch.marks || {}).reduce((n, m) => n + Object.keys(m).length, 0);
-      const parts = [
-        mods + ' module' + (mods !== 1 ? 's' : ''),
-        cables + ' cable' + (cables !== 1 ? 's' : ''),
-      ];
-      if (marks > 0) parts.push(marks + ' marked');
-      info.textContent = parts.join(' · ');
+    if (timeout > 0) {
+      el._t = setTimeout(() => { el.textContent = ''; }, timeout);
     }
-    // Save time
-    const saveEl = document.getElementById('statusbar-save');
-    if (saveEl && this._lastSaveTime) {
-      const mins = Math.round((Date.now() - this._lastSaveTime) / 60000);
-      saveEl.textContent = mins < 1 ? 'saved just now' : `saved ${mins}m ago`;
-    }
-  },
-
-  _startStatusbarClock() {
-    clearInterval(this._statusbarTimer);
-    this._statusbarTimer = setInterval(() => this.updateStatusbar(), 30000);
-    // Watch save-indicator for successful saves
-    const obs = new MutationObserver(() => {
-      const el = document.getElementById('save-indicator-desktop') || document.getElementById('save-indicator');
-      if (el && el.textContent === '✓') {
-        this._lastSaveTime = Date.now();
-        this.updateStatusbar();
-      }
-    });
-    const si = document.getElementById('save-indicator-desktop') || document.getElementById('save-indicator');
-    if (si) obs.observe(si, { childList: true, characterData: true, subtree: true });
   },
 
   switchTab(tab) {
@@ -1143,7 +1113,6 @@ const App = {
     this.renderConnections();
     Patch.render();
     this.setStatus('module added');
-    this.updateStatusbar();
   },
 
   connRemoveModule(pmId) {
@@ -1168,7 +1137,6 @@ const App = {
     this.renderConnections();
     Patch.render();
     this.setStatus('connected');
-    this.updateStatusbar();
   },
 
   connChangeTarget(cableId, field, value) {
