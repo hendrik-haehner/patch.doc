@@ -70,6 +70,7 @@ const Patch = {
       const m = Store.state.modules.find(x => x.id === pm.moduleId);
       if (!m) return;
       const col    = m.color || CAT_COLORS[m.cat] || '#888';
+      const catCol = CAT_COLORS[m.cat] || '#888';
       const defs   = m.paramDefs || [];
       const vals   = (patch.params[pm.id] || {});
 
@@ -100,16 +101,17 @@ const Patch = {
 
       el.innerHTML = `
         <div class="pm-header">
-          <span class="dot" style="background:${col}"></span>
-          <span class="pm-name">${m.name}${pm.instance > 1 ? '<span class="pm-instance">#' + pm.instance + '</span>' : ''}</span>
-          <span class="pm-maker">${m.maker.split(' ').pop()}</span>
-          <a class="pm-manual-link" id="manual-icon-${pm.id}" href="#" target="_blank" rel="noopener"
-             title="open manual" aria-label="open manual" style="display:none"
-             onclick="event.stopPropagation()">
-            <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
-          </a>
-          ${sortedDefs.length ? `<button class="pm-collapse-btn" onclick="Patch.toggleCollapse(${pm.id},event)" title="${pm.collapsed ? 'show parameters' : 'hide parameters'}" aria-label="toggle parameters">${pm.collapsed ? '▾' : '▴'}</button>` : ''}
-          <button class="pm-remove" onclick="Patch.removeFromPatch(${pm.id})" aria-label="remove">×</button>
+          <div class="pm-header-main">
+            <span class="pm-maker" style="color:${catCol}">${m.maker}</span>
+            <a class="pm-manual-link" id="manual-icon-${pm.id}" href="#" target="_blank" rel="noopener"
+               title="open manual" aria-label="open manual" style="display:none"
+               onclick="event.stopPropagation()">
+              <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
+            </a>
+            ${defs.length ? `<button class="pm-collapse-btn" onclick="Patch.toggleCollapse(${pm.id},event)" title="${pm.collapsed ? 'show parameters' : 'hide parameters'}" aria-label="toggle parameters">${pm.collapsed ? '▾' : '▴'}</button>` : ''}
+            <button class="pm-remove" onclick="Patch.removeFromPatch(${pm.id})" aria-label="remove">×</button>
+          </div>
+          <div class="pm-name">${m.name}${pm.instance > 1 ? '<span class="pm-instance">#' + pm.instance + '</span>' : ''}</div>
         </div>
         <div class="pm-ports">
           <div class="pm-col">
