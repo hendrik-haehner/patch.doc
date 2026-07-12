@@ -186,6 +186,11 @@
       <div id="patch-statusbar">
         <span id="patch-status">select module → add · drag · click ports to connect · click cable to remove</span>
         <span id="hp-sum" style="font-size:10px;color:var(--accent);font-weight:600"></span>
+        <div id="statusbar-zoom" style="display:flex;align-items:center;gap:3px;flex-shrink:0">
+          <button onclick="Patch.zoomOut()" style="width:18px;height:18px;border:0.5px solid var(--border2);border-radius:3px;background:transparent;cursor:pointer;font-size:13px;line-height:1;color:var(--text1);display:flex;align-items:center;justify-content:center;padding:0">−</button>
+          <span id="statusbar-zoom-level" onclick="Patch.zoomReset()" title="click to reset zoom" style="font-size:10px;color:var(--text2);min-width:34px;text-align:center;cursor:pointer">100%</span>
+          <button onclick="Patch.zoomIn()" style="width:18px;height:18px;border:0.5px solid var(--border2);border-radius:3px;background:transparent;cursor:pointer;font-size:13px;line-height:1;color:var(--text1);display:flex;align-items:center;justify-content:center;padding:0">+</button>
+        </div>
         <span id="statusbar-cable-legend" title="cable types: solid=audio · dashed=CV · dotted=gate">
           <span style="border-bottom:1.5px solid currentColor;padding-bottom:1px;margin-right:4px">audio</span>
           <span style="border-bottom:1.5px dashed currentColor;padding-bottom:1px;margin-right:4px">cv</span>
@@ -264,7 +269,7 @@
         </div>
 
         <div class="io-section">
-          <h4>PATCH EXPORT</h4>
+          <h4>EXPORT</h4>
           <p>Download the current patch as a JSON file, or copy it to your clipboard to share.</p>
           <div class="btn-row">
             <button class="btn-action primary" onclick="IO.exportPatch()">

@@ -51,10 +51,22 @@ const IO = {
       const bgColor = getComputedStyle(document.documentElement)
         .getPropertyValue('--canvas-bg').trim() || '#f0eeea';
 
-      // Crop to content bounds using a wrapper div
-      const cropDiv = document.createElement('div');
-      cropDiv.style.cssText = `position:absolute;left:${minX}px;top:${minY}px;width:${W}px;height:${H}px;overflow:hidden;pointer-events:none;`;
-      document.body.appendChild(cropDiv);
+      // Fix module widths: force explicit px width so dom-to-image renders correctly
+      const moduleEls = canvas.querySelectorAll('.patch-module');
+      moduleEls.forEach(m => {
+        const w = m.offsetWidth;
+        m.dataset._origW = m.style.width;
+        m.style.width = w + 'px';
+        // Also fix text-overflow: ellipsis elements — expand them
+        m.querySelectorAll('*').forEach(el => {
+          if (getComputedStyle(el).textOverflow === 'ellipsis') {
+            el.dataset._origOv = el.style.overflow;
+            el.dataset._origWs = el.style.whiteSpace;
+            el.style.overflow = 'visible';
+            el.style.whiteSpace = 'normal';
+          }
+        });
+      });
 
       const dataUrl = await domtoimage.toPng(canvas, {
         bgcolor: bgColor,
@@ -67,7 +79,18 @@ const IO = {
         quality: 1,
       });
 
-      document.body.removeChild(cropDiv);
+      // Restore module widths and text styles
+      moduleEls.forEach(m => {
+        m.style.width = m.dataset._origW || '';
+        m.querySelectorAll('*').forEach(el => {
+          if (el.dataset._origOv !== undefined) {
+            el.style.overflow  = el.dataset._origOv;
+            el.style.whiteSpace = el.dataset._origWs;
+            delete el.dataset._origOv;
+            delete el.dataset._origWs;
+          }
+        });
+      });
 
       if (wasHidden) {
         patchView.style.display = '';

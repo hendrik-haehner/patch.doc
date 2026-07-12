@@ -115,15 +115,10 @@ const App = {
     // every mutating action already calls saveNow() immediately,
     // so beaconing on unload is redundant and risks overwriting
     // a newer state saved by another device.
-    // Ctrl/Cmd + scroll to zoom canvas
     const canvasWrap = document.getElementById('patch-canvas-wrap');
     if (canvasWrap) {
       canvasWrap.addEventListener('wheel', e => {
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          if (e.deltaY < 0) Patch.zoomIn();
-          else Patch.zoomOut();
-        }
+        if (e.ctrlKey || e.metaKey) { e.preventDefault(); if (e.deltaY < 0) Patch.zoomIn(); else Patch.zoomOut(); }
       }, { passive: false });
     }
 

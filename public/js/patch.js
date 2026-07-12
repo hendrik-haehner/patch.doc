@@ -43,16 +43,12 @@ let snapEnabled = false;
 let cablesVisible = true;
 const GRID = 24;
 
-// ── Canvas zoom ───────────────────────────────────────────────────────────────
 let _zoom = 1.0;
-const ZOOM_MIN = 0.25;
-const ZOOM_MAX = 2.0;
-const ZOOM_STEP = 0.1;
+const ZOOM_MIN = 0.25, ZOOM_MAX = 2.0, ZOOM_STEP = 0.1;
 
 function _applyZoom() {
   const canvas = document.getElementById('patch-canvas');
-  if (canvas) canvas.style.transform = `scale(${_zoom})`;
-  if (canvas) canvas.style.transformOrigin = '0 0';
+  if (canvas) { canvas.style.transform = `scale(${_zoom})`; canvas.style.transformOrigin = '0 0'; }
   const el = document.getElementById('statusbar-zoom-level');
   if (el) el.textContent = Math.round(_zoom * 100) + '%';
 }
@@ -497,20 +493,9 @@ const Patch = {
     App.setStatus(snapEnabled ? 'grid snap on (' + GRID + 'px)' : 'grid snap off');
   },
 
-  zoomIn() {
-    _zoom = Math.min(ZOOM_MAX, Math.round((_zoom + ZOOM_STEP) * 10) / 10);
-    _applyZoom();
-  },
-
-  zoomOut() {
-    _zoom = Math.max(ZOOM_MIN, Math.round((_zoom - ZOOM_STEP) * 10) / 10);
-    _applyZoom();
-  },
-
-  zoomReset() {
-    _zoom = 1.0;
-    _applyZoom();
-  },
+  zoomIn()    { _zoom = Math.min(ZOOM_MAX, Math.round((_zoom + ZOOM_STEP) * 10) / 10); _applyZoom(); },
+  zoomOut()   { _zoom = Math.max(ZOOM_MIN, Math.round((_zoom - ZOOM_STEP) * 10) / 10); _applyZoom(); },
+  zoomReset() { _zoom = 1.0; _applyZoom(); },
 
   initSnap() {
     try { snapEnabled = localStorage.getItem('patchdoc_snap') === '1'; } catch(e) {}
