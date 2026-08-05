@@ -150,7 +150,7 @@ const App = {
         case '2': this.switchTab('notes'); break;
         case '3': this.switchTab('params'); break;
         case '4': this.switchTab('io'); break;
-        case 'z': if (e.metaKey || e.ctrlKey) { Undo.undo(); } break;
+        case 'z': if (e.metaKey || e.ctrlKey) { if (e.shiftKey) Undo.redo(); else Undo.undo(); } break;
         case 'y': if (e.metaKey || e.ctrlKey) { Undo.redo(); } break;
       }
     });
