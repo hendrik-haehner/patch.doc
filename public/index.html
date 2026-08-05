@@ -509,6 +509,11 @@
 <script src="js/io.js"></script>
 <script src="js/app.js"></script>
 <script src="js/search.js"></script>
-<script>Theme.init();</script>
+<script>
+  Theme.init();
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
 </body>
 </html>
