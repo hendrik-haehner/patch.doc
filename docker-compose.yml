@@ -7,8 +7,5 @@ services:
       - /volume1/docker/patchbook/data:/data
       - /volume1/docker/patchbook/public:/app/public
     restart: unless-stopped
-    environment:
-      - PORT=3000
-      - DATA_DIR=/data
-      - SESSION_SECRET=***REMOVED-SESSION-SECRET***
-      - PATCHDOC_USERS=enriko:***REMOVED-PASSWORD***,timo:***REMOVED-PASSWORD***
+    env_file:
+      - .env

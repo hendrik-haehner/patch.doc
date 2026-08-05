@@ -331,13 +331,15 @@ const IO = {
       const lay = pmLayouts[pm.id];
       if (!lay) return;
       const { m } = lay;
-      m.inputs.forEach((name, i) => {
+      m.inputs.forEach((p, i) => {
+        const name = Patch._portName(p);
         portCenters[`${pm.id}-in-${name}`] = {
           x: pm.x + 10,
           y: pm.y + HEADER_H + i * PORT_H + PORT_H / 2
         };
       });
-      m.outputs.forEach((name, i) => {
+      m.outputs.forEach((p, i) => {
+        const name = Patch._portName(p);
         portCenters[`${pm.id}-out-${name}`] = {
           x: pm.x + MW - 10,
           y: pm.y + HEADER_H + i * PORT_H + PORT_H / 2
@@ -421,14 +423,16 @@ const IO = {
           <text x="${x+MW-5}" y="${y+14}" font-family="monospace" font-size="7" fill="#aaa" text-anchor="end">
             ${m.maker.split(' ').pop()}
           </text>
-          ${m.inputs.map((name, i) => {
+          ${m.inputs.map((p, i) => {
+            const name = Patch._portName(p);
             const py = y + HEADER_H + i * PORT_H + PORT_H / 2;
             const connected = patch.cables.some(c => c.toPm === pm.id && c.toPort === name);
             const jackFill  = connected ? (patch.cables.find(c => c.toPm === pm.id && c.toPort === name)?.color || col) : '#eee';
             return `<circle cx="${x+10}" cy="${py}" r="4" fill="${jackFill}" stroke="${col}" stroke-width="1"/>
               <text x="${x+18}" y="${py+3}" font-family="monospace" font-size="7" fill="#888">${name}</text>`;
           }).join('')}
-          ${m.outputs.map((name, i) => {
+          ${m.outputs.map((p, i) => {
+            const name = Patch._portName(p);
             const py = y + HEADER_H + i * PORT_H + PORT_H / 2;
             const connected = patch.cables.some(c => c.fromPm === pm.id && c.fromPort === name);
             const jackFill  = connected ? (patch.cables.find(c => c.fromPm === pm.id && c.fromPort === name)?.color || col) : '#eee';
