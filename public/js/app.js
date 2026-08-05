@@ -126,7 +126,13 @@ const App = {
       const tag = document.activeElement?.tagName;
       const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
       if (e.key === 'Escape') {
-        if (document.querySelector('.modal-bg.open')) this.closeModal();
+        const openModal = document.querySelector('.modal-bg.open');
+        if (openModal) {
+          // The module editor needs its extra field-reset cleanup;
+          // any other modal just needs its 'open' class removed.
+          if (openModal.id === 'module-modal-bg') this.closeModal();
+          else openModal.classList.remove('open');
+        }
         return;
       }
       if (typing) return;
