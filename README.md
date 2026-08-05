@@ -4,6 +4,8 @@
 
 PATCH.doc is a web app for documenting modular synthesizer patches. It runs as a Docker container on your own hardware (NAS, home server, VPS) and is accessible from any browser or mobile device.
 
+**→ [Try it instantly in your browser](https://hendrik-haehner.github.io/patch.doc/)** — no install, no account, runs entirely client-side. See [Two ways to run this](#two-ways-to-run-this) for what that version does and doesn't do compared to self-hosting.
+
 ![PATCH.doc Screenshot](docs/screenshot_patch.png)
 
 ---
