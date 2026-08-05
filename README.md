@@ -1,4 +1,4 @@
-# ▣ PATCH.doc
+# ◉ PATCH.doc
 
 **Eurorack patch documentation — self-hosted, multi-user, Docker-based.**
 

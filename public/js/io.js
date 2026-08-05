@@ -245,7 +245,7 @@ const IO = {
   <div class="page-header">
     <h1>${patch.title || 'Untitled Patch'}</h1>
     <div style="text-align:right">
-      <div class="brand">▣ PATCH.doc</div>
+      <div class="brand">◉ PATCH.doc</div>
       <div class="meta">${dateStr} · ${patch.patchModules.length} module(s) · ${patch.cables.length} cable(s)</div>
     </div>
   </div>
@@ -261,7 +261,7 @@ const IO = {
   <div class="page-header">
     <h1>${patch.title || 'Untitled Patch'}</h1>
     <div style="text-align:right">
-      <div class="brand">▣ PATCH.doc</div>
+      <div class="brand">◉ PATCH.doc</div>
       <div class="meta">${dateStr}</div>
     </div>
   </div>

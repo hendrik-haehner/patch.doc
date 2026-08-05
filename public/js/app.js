@@ -126,7 +126,13 @@ const App = {
       const tag = document.activeElement?.tagName;
       const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
       if (e.key === 'Escape') {
-        if (document.querySelector('.modal-bg.open')) this.closeModal();
+        const openModal = document.querySelector('.modal-bg.open');
+        if (openModal) {
+          // The module editor needs its extra field-reset cleanup;
+          // any other modal just needs its 'open' class removed.
+          if (openModal.id === 'module-modal-bg') this.closeModal();
+          else openModal.classList.remove('open');
+        }
         return;
       }
       if (typing) return;
@@ -144,7 +150,7 @@ const App = {
         case '2': this.switchTab('notes'); break;
         case '3': this.switchTab('params'); break;
         case '4': this.switchTab('io'); break;
-        case 'z': if (e.metaKey || e.ctrlKey) { Undo.undo(); } break;
+        case 'z': if (e.metaKey || e.ctrlKey) { if (e.shiftKey) Undo.redo(); else Undo.undo(); } break;
         case 'y': if (e.metaKey || e.ctrlKey) { Undo.redo(); } break;
       }
     });
@@ -991,10 +997,9 @@ const App = {
       const outCables = patch.cables.filter(c2 => c2.fromPm === pmId);
       const inCables  = patch.cables.filter(c2 => c2.toPm === pmId);
 
-      // Other modules available as connection targets (for the "add" form)
-      // Include self (pmId) for self-patching — shown as "ModuleName (self)" in dropdowns
-      const otherModuleIds = patch.patchModules.map(p => p.id).filter(id => id !== pmId);
-      const allTargetIds   = patch.patchModules.map(p => p.id); // incl. self
+      // Modules available as connection targets (for the "add" form) —
+      // includes self (pmId) for self-patching, shown as "ModuleName (self)"
+      const allTargetIds = patch.patchModules.map(p => p.id);
 
       const editableRow = (cab, fixedSide) => {
         // fixedSide: 'out' → this module is the source, target end is editable
@@ -1053,7 +1058,7 @@ const App = {
         return `<option value="${tid}">${label}</option>`;
       }).join('');
 
-      const addFormHTML = otherModuleIds.length ? `
+      const addFormHTML = allTargetIds.length ? `
         <div class="conn-add-row">
           <select id="conn-new-fromport-${pmId}" class="conn-mini-select">${outputOptions || '<option value="">no outputs</option>'}</select>
           <span class="conn-arrow">→</span>
