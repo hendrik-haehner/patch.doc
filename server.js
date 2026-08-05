@@ -248,7 +248,7 @@ app.get('/login', (req, res) => {
 </head>
 <body>
   <div class="card">
-    <div class="brand">▣ PATCH.doc</div>
+    <div class="brand">◉ PATCH.doc</div>
     <div class="subtitle">Eurorack Patch Documentation</div>
     <form method="POST" action="/api/login">
       ${multi
@@ -655,7 +655,7 @@ app.get('/settings', (req, res) => {
 <body>
   <a href="/" class="back">← back to PATCH.doc</a>
   ${isAdmin(req.user) ? '<a href="/admin" class="back admin-link">⚙ admin panel</a>' : ''}
-  <h1>▣ PATCH.doc</h1>
+  <h1>◉ PATCH.doc</h1>
   <div class="subtitle">Settings · ${req.user}</div>
 
   <h2>CATEGORY COLORS</h2>
@@ -796,7 +796,7 @@ app.get('/admin', (req, res) => {
 </head>
 <body>
   <a href="/" class="back">← back to PATCH.doc</a>
-  <h1>▣ PATCH.doc</h1>
+  <h1>◉ PATCH.doc</h1>
   <div class="subtitle">User Administration · logged in as ${req.user}</div>
 
   <h2>USERS</h2>
