@@ -997,10 +997,9 @@ const App = {
       const outCables = patch.cables.filter(c2 => c2.fromPm === pmId);
       const inCables  = patch.cables.filter(c2 => c2.toPm === pmId);
 
-      // Other modules available as connection targets (for the "add" form)
-      // Include self (pmId) for self-patching — shown as "ModuleName (self)" in dropdowns
-      const otherModuleIds = patch.patchModules.map(p => p.id).filter(id => id !== pmId);
-      const allTargetIds   = patch.patchModules.map(p => p.id); // incl. self
+      // Modules available as connection targets (for the "add" form) —
+      // includes self (pmId) for self-patching, shown as "ModuleName (self)"
+      const allTargetIds = patch.patchModules.map(p => p.id);
 
       const editableRow = (cab, fixedSide) => {
         // fixedSide: 'out' → this module is the source, target end is editable
@@ -1059,7 +1058,7 @@ const App = {
         return `<option value="${tid}">${label}</option>`;
       }).join('');
 
-      const addFormHTML = otherModuleIds.length ? `
+      const addFormHTML = allTargetIds.length ? `
         <div class="conn-add-row">
           <select id="conn-new-fromport-${pmId}" class="conn-mini-select">${outputOptions || '<option value="">no outputs</option>'}</select>
           <span class="conn-arrow">→</span>
