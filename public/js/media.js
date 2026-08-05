@@ -5,6 +5,24 @@ const Media = {
     const el    = document.getElementById('media-content');
     if (!el) return;
 
+    if (window.PATCHDOC_STATIC) {
+      el.innerHTML = `<div style="padding:24px 0;text-align:center">
+        <div style="font-size:32px;margin-bottom:12px;opacity:0.4">📷</div>
+        <div style="font-size:13px;color:var(--text1);margin-bottom:8px">
+          Photo/audio upload is not available in the browser version.
+        </div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">
+          For media attachments, use the self-hosted Docker version.<br>
+          <a href="https://github.com/hendrik-haehner/patch.doc/blob/main/INSTALL.md"
+             target="_blank" rel="noopener"
+             style="color:var(--accent);text-decoration:none">
+            View installation guide →
+          </a>
+        </div>
+      </div>`;
+      return;
+    }
+
     el.innerHTML = '<div style="font-size:11px;color:var(--text2)">loading…</div>';
 
     let files = [];

@@ -47,6 +47,8 @@ const App = {
   },
 
   async init() {
+    // Browser-only build (GitHub Pages) — hide links to server-only routes
+    if (window.PATCHDOC_STATIC) document.documentElement.setAttribute('data-static-mode', '1');
     // Show loading indicator
     document.body.style.opacity = '0.4';
     try {
