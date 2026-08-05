@@ -35,6 +35,16 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 
 ---
 
+## Two ways to run this
+
+**[Try it in your browser](https://hendrik-haehner.github.io/patch.doc/)** — no install, no login. Runs entirely client-side and saves to that browser's local storage only: one device, no sync, no accounts, and no photo/audio/manual uploads (those need a server to store files). Good for trying it out or for casual single-device use.
+
+**Self-host with Docker** (below) — everything above plus multi-user accounts, file uploads, and a shared module/manual library, all on your own hardware. This is the full version.
+
+Patches made in the browser version can be moved into a self-hosted instance later: **export → full backup** in the browser version, then **export → import** in your self-hosted one.
+
+---
+
 ## Requirements
 
 - Docker and Docker Compose
