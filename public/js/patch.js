@@ -59,10 +59,10 @@ const Patch = {
   _portName(p)    { return typeof p === 'object' ? p.name    : p; },
   _portSigType(p) { return typeof p === 'object' ? p.sigType : 'audio'; },
 
-  // Step 1 of the panel-layout feature (see PANEL-LAYOUT-SPEC.md): hardcoded
-  // on for now — no toggle yet. Modules with a `panel` field render as a
-  // front-panel-style grid instead of the list layout; modules without one
-  // are unaffected either way.
+  // Panel-layout feature (see PANEL-LAYOUT-SPEC.md). Modules with a `panel`
+  // field render as a front-panel-style grid instead of the list layout when
+  // this is true; modules without one are unaffected either way. Defaults
+  // on, user-toggleable via togglePanelMode()/persisted — see initPanelMode().
   _panelMode: true,
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -569,6 +569,34 @@ const Patch = {
       btn.style.borderColor = 'var(--accent-border)';
       btn.style.color       = 'var(--accent)';
     }
+  },
+
+  // ── Panel/list layout toggle (step 2 of PANEL-LAYOUT-SPEC.md) ──────────────
+  // Modules without a `panel` field always render as list, regardless of
+  // this — the check is `m.panel && this._panelMode` in render().
+
+  togglePanelMode() {
+    this._panelMode = !this._panelMode;
+    try { localStorage.setItem('patchdoc_panel_mode', this._panelMode ? '1' : '0'); } catch(e) {}
+    this._updatePanelModeBtn();
+    this.render();
+    App.setStatus(this._panelMode ? 'panel view — modules with a panel layout show their front panel' : 'list view');
+  },
+
+  initPanelMode() {
+    try {
+      const saved = localStorage.getItem('patchdoc_panel_mode');
+      if (saved !== null) this._panelMode = saved === '1';
+    } catch(e) {}
+    this._updatePanelModeBtn();
+  },
+
+  _updatePanelModeBtn() {
+    const btn = document.getElementById('panel-mode-btn');
+    if (!btn) return;
+    btn.textContent = this._panelMode ? 'panel view' : 'list view';
+    btn.style.borderColor = this._panelMode ? 'var(--accent-border)' : '';
+    btn.style.color       = this._panelMode ? 'var(--accent)' : '';
   },
 
   // ── Cable visibility (helps untangle dense patches) ────────────────────────

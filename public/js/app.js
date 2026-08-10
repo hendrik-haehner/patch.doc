@@ -68,6 +68,9 @@ const App = {
     if (Store.isAdmin) {
       document.querySelectorAll('.admin-link').forEach(el => el.style.display = 'flex');
     }
+    // Must run before fullRender() — unlike snap (drag-only behavior),
+    // panel mode changes what render() actually outputs.
+    Patch.initPanelMode();
     this.fullRender();
     // Init touch patch dropdown
     this._updateTouchPatchDropdown();
