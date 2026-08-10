@@ -1110,7 +1110,19 @@ html, body {
   border-top: 0.5px solid var(--border);
 }
 .pm-panel-cell { min-width: 0; }
-.pm-panel-cell .port { padding: 2px 0; }
+/* Jacks read like a real front panel: same footprint as a knob cell,
+   jack centered on top, label centered underneath — not the compact
+   side-by-side row list mode uses (overrides .port.output's row-reverse
+   too, since it has equal selector specificity and this rule comes later). */
+.pm-panel-cell .port {
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; width: 100%; padding: 2px 0;
+}
+.pm-panel-cell .port-jack { width: 30px; height: 30px; border-width: 2px; flex-shrink: 0; }
+.pm-panel-cell .port-name {
+  text-align: center; max-width: 100%;
+  font-size: clamp(9px, calc(var(--pm-cell-w, 50px) * 0.14), 9px);
+}
 .pm-panel-label {
   font-size: 9px; color: var(--text1); letter-spacing: 0.08em;
   text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
