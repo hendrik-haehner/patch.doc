@@ -453,10 +453,63 @@
         <label>manual (PDF or link)</label>
         <div id="modal-manuals-content" style="font-size:11px"></div>
       </div>
+
+      <div class="field">
+        <label>front panel layout (optional)</label>
+        <div id="panel-summary" style="font-size:11px;color:var(--text2);margin-bottom:6px">not set — module renders as a list</div>
+        <div style="display:flex;gap:6px">
+          <button class="io-add-btn" onclick="PanelEditor.open()">edit panel layout</button>
+          <button class="io-add-btn" id="panel-remove-btn" style="display:none;color:var(--danger)" onclick="PanelEditor.removePanel()">remove</button>
+        </div>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="App.closeModal()">cancel</button>
       <button id="module-modal-save-btn" class="btn-primary" onclick="App.saveModule()">add to library</button>
+    </div>
+  </div>
+</div>
+
+<!-- panel layout editor modal (opens on top of the module modal) -->
+<div id="panel-editor-modal-bg" class="modal-bg"
+     onmousedown="window._panelEditorMousedownOnBg=(event.target===this)"
+     onmouseup="if(window._panelEditorMousedownOnBg&&event.target===this)PanelEditor.cancel()">
+  <div class="modal panel-editor-modal" role="dialog" aria-label="Panel layout editor">
+    <h3>panel layout — <span id="panel-editor-module-name"></span></h3>
+    <div class="panel-editor-toolbar">
+      <label>columns <input id="panel-editor-cols" type="number" min="1" max="24" onchange="PanelEditor.setCols(this.value)"></label>
+      <label>rows <input id="panel-editor-rows" type="number" min="1" max="40" onchange="PanelEditor.setRows(this.value)"></label>
+      <span class="panel-editor-hint">drag chips onto the grid · click a placed element to resize or remove it</span>
+      <button class="panel-editor-remove-link" onclick="PanelEditor.removePanel()">remove panel layout</button>
+    </div>
+    <div id="panel-editor-inspector" class="panel-editor-inspector" style="display:none">
+      <span id="panel-editor-inspector-badge" class="panel-editor-chip-badge"></span>
+      <span id="panel-editor-inspector-name" class="panel-editor-inspector-name"></span>
+      <input id="panel-editor-inspector-text" type="text" placeholder="text…" style="display:none" oninput="PanelEditor.setSelectedText(this.value)">
+      <label class="panel-editor-inspector-dim">w <input id="panel-editor-inspector-w" type="number" min="1" onchange="PanelEditor.setSelectedSize('w',this.value)"></label>
+      <label class="panel-editor-inspector-dim">h <input id="panel-editor-inspector-h" type="number" min="1" onchange="PanelEditor.setSelectedSize('h',this.value)"></label>
+      <button class="io-add-btn" onclick="PanelEditor.unplaceSelected()">remove from panel</button>
+    </div>
+    <div class="panel-editor-body">
+      <div class="panel-editor-pool">
+        <div class="panel-editor-pool-label">unplaced</div>
+        <div id="panel-editor-pool-list" class="panel-editor-pool-list"
+             ondragover="PanelEditor.onPoolDragOver(event)" ondrop="PanelEditor.onPoolDrop(event)"></div>
+        <div class="panel-editor-add-special">
+          <button class="io-add-btn" onclick="PanelEditor.addSpecial('label')">+ label</button>
+          <button class="io-add-btn" onclick="PanelEditor.addSpecial('divider')">+ divider</button>
+          <button class="io-add-btn" onclick="PanelEditor.addSpecial('button')">+ button</button>
+        </div>
+      </div>
+      <div class="panel-editor-grid-wrap">
+        <div id="panel-editor-grid" class="panel-editor-grid"
+             onclick="PanelEditor.deselectAll()"
+             ondragover="PanelEditor.onGridDragOver(event)" ondrop="PanelEditor.onGridDrop(event)"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="PanelEditor.cancel()">cancel</button>
+      <button class="btn-primary" onclick="PanelEditor.done()">done</button>
     </div>
   </div>
 </div>
@@ -504,6 +557,7 @@
 <script src="js/store.js"></script>
 <script src="js/media.js"></script>
 <script src="js/manuals.js"></script>
+<script src="js/paneleditor.js"></script>
 <script src="js/undo.js"></script>
 <script src="js/patch.js"></script>
 <script src="js/mobile.js"></script>
