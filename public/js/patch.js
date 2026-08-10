@@ -144,7 +144,8 @@ const Patch = {
   },
 
   // Fetch manual lists for every module currently in the patch (deduped
-  // by the cache) and reveal the PDF icon on modules that have one.
+  // by the cache) and reveal the manual icon on modules that have one —
+  // a link glyph for a link-type manual, a PDF glyph otherwise.
   async _showManualIcons(patch) {
     if (window.PATCHDOC_STATIC) return;
     const moduleIds = [...new Set(patch.patchModules.map(pm => pm.moduleId))];
@@ -157,6 +158,10 @@ const Patch = {
       icon.href = files[0].url;
       icon.title = files.length > 1 ? files.length + ' manuals — open first' : 'open manual';
       icon.style.display = 'flex';
+      const isLink = files[0].kind === 'link';
+      icon.classList.toggle('is-link', isLink);
+      const iconGlyph = icon.querySelector('i');
+      if (iconGlyph) iconGlyph.className = 'ti ' + (isLink ? 'ti-link' : 'ti-file-type-pdf');
     });
   },
 
