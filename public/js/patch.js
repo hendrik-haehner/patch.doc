@@ -112,7 +112,12 @@ const Patch = {
       if (usePanel) {
         // Min-width based on panel grid columns (50px/cell + padding).
         // Only a floor, same as the list layout — content can grow beyond it.
-        el.style.minWidth = (m.panel.cols * 50 + 20) + 'px';
+        // 50px/col + the grid's own 4px gaps between columns (cols-1 of them)
+        // + .pm-panel's 12px padding + .patch-module's 2px border. The old
+        // flat "+20" didn't scale with column count, so it only fell short
+        // on wide panels (8 cols = 28px of gaps alone) — narrower ones like
+        // the 3-4 column test panels never showed it.
+        el.style.minWidth = (m.panel.cols * 50 + (m.panel.cols - 1) * 4 + 20) + 'px';
         el.innerHTML = headerHtml + this._renderPanel(pm, m, vals, col);
       } else {
         // Min-width based on param columns: 52px per column + base 30px
