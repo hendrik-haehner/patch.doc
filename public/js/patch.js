@@ -304,13 +304,12 @@ const Patch = {
       const cellSpan  = Math.max(1, Math.min(spanW, spanH));
       const svgSize   = cellSpan * 50 + (cellSpan - 1) * 4 - 12;
       const valFont   = Math.round(10 * (svgSize / 38));
-      const labelFont = Math.round(9 * (svgSize / 38));
       return `<div class="pm-knob-wrap${markCol ? ' marked' : ''}" data-pmid="${pmId}" data-def="${encodeURIComponent(JSON.stringify(def))}" data-val="${v}"
         title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})"
         oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
         ${this._knobSVG(id, pct, col, markRing, svgSize)}
         <div class="pm-ctrl-val" id="val-${id}" style="font-size:${valFont}px">${this._fmtVal(v, def)}</div>
-        <div class="pm-ctrl-label" style="font-size:${labelFont}px">${def.name}</div>
+        <div class="pm-ctrl-label">${def.name}</div>
       </div>`;
     }
     if (def.type === 'toggle') {
