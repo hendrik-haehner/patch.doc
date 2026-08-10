@@ -1092,6 +1092,31 @@ html, body {
   width: 100%;
 }
 
+/* ── panel-mode module layout (optional front-panel-style grid;
+   see PANEL-LAYOUT-SPEC.md / module.panel) ── */
+.pm-panel {
+  --pm-cell-w: 50px;
+  display: grid;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-top: 0.5px solid var(--border);
+}
+.pm-panel-cell { min-width: 0; overflow: hidden; }
+.pm-panel-cell .port { padding: 2px 0; }
+.pm-panel-label {
+  font-size: 9px; color: var(--text1); letter-spacing: 0.08em;
+  text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pm-panel-divider { border-top: 0.5px solid var(--border); width: 100%; }
+.pm-panel-button {
+  width: 100%; min-height: 20px;
+  border: 1.5px solid var(--border2); border-radius: 4px;
+  background: var(--bg2); color: var(--text2);
+  font-size: 9px; display: flex; align-items: center; justify-content: center;
+  text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+
 /* ── param def editor in modal ── */
 .pdef-list {
   min-height: 24px; margin-bottom: 6px;

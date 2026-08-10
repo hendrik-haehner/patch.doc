@@ -59,6 +59,12 @@ const Patch = {
   _portName(p)    { return typeof p === 'object' ? p.name    : p; },
   _portSigType(p) { return typeof p === 'object' ? p.sigType : 'audio'; },
 
+  // Step 1 of the panel-layout feature (see PANEL-LAYOUT-SPEC.md): hardcoded
+  // on for now — no toggle yet. Modules with a `panel` field render as a
+  // front-panel-style grid instead of the list layout; modules without one
+  // are unaffected either way.
+  _panelMode: true,
+
   // ── Render ───────────────────────────────────────────────────────────────
 
   render() {
@@ -69,10 +75,11 @@ const Patch = {
     patch.patchModules.forEach(pm => {
       const m = Store.state.modules.find(x => x.id === pm.moduleId);
       if (!m) return;
-      const col    = m.color || CAT_COLORS[m.cat] || '#888';
-      const catCol = CAT_COLORS[m.cat] || '#888';
-      const defs   = m.paramDefs || [];
-      const vals   = (patch.params[pm.id] || {});
+      const col      = m.color || CAT_COLORS[m.cat] || '#888';
+      const catCol   = CAT_COLORS[m.cat] || '#888';
+      const defs     = m.paramDefs || [];
+      const vals     = (patch.params[pm.id] || {});
+      const usePanel = !!(m.panel && this._panelMode);
 
       const el = document.createElement('div');
       el.className = 'patch-module';
@@ -81,25 +88,13 @@ const Patch = {
       el.style.top      = pm.y + 'px';
       el.style.setProperty('--mod-color', col);
       if (m.color) el.classList.add('has-custom-color');
-      // Min-width based on param columns: 52px per column + base 30px
-      const cols = m.paramCols || 3;
-      el.style.minWidth = (cols * 62 + 30) + 'px';
 
-      // Group defs into separate rows
-      const toggleDefs = defs.filter(d => d.type === 'toggle');
-      const enumDefs   = defs.filter(d => d.type === 'enum' || d.type === 'text');
-      const knobDefs   = defs.filter(d => d.type === 'knob');
-
-      // Build sortedDefs with sentinel dividers
-      const sortedDefs = [
-        ...toggleDefs,
-        ...(toggleDefs.length && enumDefs.length   ? [{ _divider: true }] : []),
-        ...enumDefs,
-        ...((toggleDefs.length || enumDefs.length) && knobDefs.length ? [{ _divider: true }] : []),
-        ...knobDefs
-      ];
-
-      el.innerHTML = `
+      // Header is identical in both layouts. Collapse only applies to the
+      // list layout — a panel mixes ports and controls in one grid, and
+      // hiding ports would break cable rendering (jack lookup needs a
+      // visible, laid-out element), so panel modules skip the collapse
+      // button entirely rather than half-support it.
+      const headerHtml = `
         <div class="pm-header">
           <div class="pm-header-main">
             <span class="pm-maker" style="color:${catCol}">${m.maker}</span>
@@ -108,11 +103,37 @@ const Patch = {
                onclick="event.stopPropagation()">
               <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
             </a>
-            ${defs.length ? `<button class="pm-collapse-btn" onclick="Patch.toggleCollapse(${pm.id},event)" title="${pm.collapsed ? 'show parameters' : 'hide parameters'}" aria-label="toggle parameters">${pm.collapsed ? '▾' : '▴'}</button>` : ''}
+            ${!usePanel && defs.length ? `<button class="pm-collapse-btn" onclick="Patch.toggleCollapse(${pm.id},event)" title="${pm.collapsed ? 'show parameters' : 'hide parameters'}" aria-label="toggle parameters">${pm.collapsed ? '▾' : '▴'}</button>` : ''}
             <button class="pm-remove" onclick="Patch.removeFromPatch(${pm.id})" aria-label="remove">×</button>
           </div>
           <div class="pm-name">${m.name}${pm.instance > 1 ? '<span class="pm-instance">#' + pm.instance + '</span>' : ''}</div>
-        </div>
+        </div>`;
+
+      if (usePanel) {
+        // Min-width based on panel grid columns (50px/cell + padding).
+        // Only a floor, same as the list layout — content can grow beyond it.
+        el.style.minWidth = (m.panel.cols * 50 + 20) + 'px';
+        el.innerHTML = headerHtml + this._renderPanel(pm, m, vals, col);
+      } else {
+        // Min-width based on param columns: 52px per column + base 30px
+        const cols = m.paramCols || 3;
+        el.style.minWidth = (cols * 62 + 30) + 'px';
+
+        // Group defs into separate rows
+        const toggleDefs = defs.filter(d => d.type === 'toggle');
+        const enumDefs   = defs.filter(d => d.type === 'enum' || d.type === 'text');
+        const knobDefs   = defs.filter(d => d.type === 'knob');
+
+        // Build sortedDefs with sentinel dividers
+        const sortedDefs = [
+          ...toggleDefs,
+          ...(toggleDefs.length && enumDefs.length   ? [{ _divider: true }] : []),
+          ...enumDefs,
+          ...((toggleDefs.length || enumDefs.length) && knobDefs.length ? [{ _divider: true }] : []),
+          ...knobDefs
+        ];
+
+        el.innerHTML = headerHtml + `
         <div class="pm-ports">
           <div class="pm-col">
             <div class="pm-col-label">IN</div>
@@ -132,6 +153,7 @@ const Patch = {
           </div>
         </div>
         ${sortedDefs.length && !pm.collapsed ? `<div class="pm-controls" id="pcontrols-${pm.id}" style="grid-template-columns:repeat(${m.paramCols||3},1fr)">${sortedDefs.map(d => d._divider ? `<div class="pm-controls-divider" style="grid-column:1/-1"></div>` : this._renderControl(pm.id, d, vals[d.name], col)).join('')}</div>` : ''}`;
+      }
 
       this._makeDraggable(el, pm);
       canvas.appendChild(el);
@@ -141,6 +163,43 @@ const Patch = {
     this.renderCables();
     this.updateJacks();
     this._showManualIcons(patch);
+  },
+
+  // ── Panel-mode rendering ─────────────────────────────────────────────────
+  // Renders a module's optional `panel` layout (front-panel-style grid) —
+  // see PANEL-LAYOUT-SPEC.md. Deliberately reuses the exact same control
+  // markup (_renderControl) and port markup as the list layout, so cable
+  // rendering, jack lookup (_getPortCenter/updateJacks) and control binding
+  // (_bindControl, matched by JSON-stringified paramDef) all keep working
+  // completely unmodified regardless of which layout a module uses.
+
+  _renderPanel(pm, m, vals, col) {
+    const { cols, rows, elements = [] } = m.panel;
+    const cellsHtml = elements.map(e => this._renderPanelElement(pm, m, e, vals, col)).join('');
+    return `<div class="pm-panel" style="grid-template-columns:repeat(${cols},var(--pm-cell-w,50px));grid-template-rows:repeat(${rows},auto)">${cellsHtml}</div>`;
+  },
+
+  _renderPanelElement(pm, m, e, vals, col) {
+    const pos  = `grid-column:${e.col + 1} / span ${e.w || 1};grid-row:${e.row + 1} / span ${e.h || 1}`;
+    const wrap = inner => `<div class="pm-panel-cell" style="${pos}">${inner}</div>`;
+
+    if (e.type === 'label')   return wrap(`<div class="pm-panel-label">${e.text || ''}</div>`);
+    if (e.type === 'divider') return wrap(`<div class="pm-panel-divider"></div>`);
+    if (e.type === 'button')  return wrap(`<div class="pm-panel-button" title="${e.text || ''}">${e.text || ''}</div>`);
+
+    if (e.type === 'input' || e.type === 'output') {
+      const dir = e.type === 'input' ? 'in' : 'out';
+      return wrap(`
+        <div class="port ${e.type}" onclick="Patch.clickPort(${pm.id},'${dir}','${e.ref}',event)" title="${e.ref}">
+          <span class="port-jack" id="jack-${pm.id}-${dir}-${e.ref}" style="border-color:${col}55"></span>
+          <span class="port-name">${e.ref}</span>
+        </div>`);
+    }
+
+    // knob / switch / enum — same paramDef-driven control as the list layout
+    const def = (m.paramDefs || []).find(d => d.name === e.ref);
+    if (!def) return wrap('');
+    return wrap(this._renderControl(pm.id, def, vals[def.name], col));
   },
 
   // Fetch manual lists for every module currently in the patch (deduped
