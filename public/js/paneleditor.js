@@ -155,7 +155,11 @@ const PanelEditor = {
     let html = '';
     for (let r = 0; r < panel.rows; r++) {
       for (let c = 0; c < panel.cols; c++) {
-        html += `<div class="panel-editor-empty-cell" data-col="${c}" data-row="${r}"></div>`;
+        // Explicit grid-column/grid-row, not auto-placement — otherwise
+        // these compete for slots with the explicitly-positioned placed
+        // elements below, and any empty cell displaced by a collision
+        // overflows into a new implicit row past the declared row count.
+        html += `<div class="panel-editor-empty-cell" data-col="${c}" data-row="${r}" style="grid-column:${c + 1};grid-row:${r + 1}"></div>`;
       }
     }
     html += panel.elements.map((e, i) => this._elementChip(e, i)).join('');
