@@ -1505,6 +1505,7 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
 }
 .manual-file-row:last-child { border-bottom: none; }
 .manual-file-row .ti-file-type-pdf { color: var(--danger); font-size: 15px; flex-shrink: 0; }
+.manual-file-row .ti-link { color: var(--accent); font-size: 15px; flex-shrink: 0; }
 .manual-file-name {
   color: var(--text0); text-decoration: none; flex: 1;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -1519,6 +1520,18 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
 .manual-empty-hint {
   font-size: 11px; color: var(--text2); padding: 8px 10px;
 }
+.manual-link-add-row {
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 10px; border-top: 0.5px solid var(--border);
+}
+.manual-link-add-row input {
+  font-size: 11px; padding: 4px 7px; min-width: 0;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg0); color: var(--text0); font-family: var(--font);
+}
+.manual-link-add-row input:focus { outline: none; border-color: var(--accent-border); }
+.manual-link-name-input { flex: 1; max-width: 140px; }
+.manual-link-url-input { flex: 2; }
 
 /* ── inline PDF viewer ── */
 .manual-viewer {
