@@ -903,8 +903,8 @@ const Patch = {
     // controls they cross.
     const baseWidth   = this._panelMode ? '1.5' : '2.5';
     const hoverWidth  = this._panelMode ? '2.5' : '3.5';
-    const baseOpacity  = this._panelMode ? '0.55' : '0.85';
-    const hoverOpacity = this._panelMode ? '0.85' : '1';
+    const baseOpacity  = this._panelMode ? '0.3' : '0.85';
+    const hoverOpacity = this._panelMode ? '0.7' : '1';
     patch.cables.forEach(c => {
       const from = this._getPortCenter(c.fromPm, 'out', c.fromPort);
       const to   = this._getPortCenter(c.toPm,   'in',  c.toPort);
