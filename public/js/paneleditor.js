@@ -192,7 +192,15 @@ const PanelEditor = {
   gridDragStart(i, e) {
     window._panelDragInfo = { source: 'grid', index: i };
     e.dataTransfer.effectAllowed = 'move';
-    setTimeout(() => e.target.classList.add('dragging'), 0);
+    // Anchor the drag ghost's top-left corner to the cursor, matching how
+    // _cellFromEvent() reads the drop cell — otherwise the ghost trails
+    // wherever inside the chip you happened to grab it, and the cell that
+    // lights up doesn't match what looks like it's under the ghost.
+    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+    // currentTarget is only valid for the duration of this handler — grab
+    // it now, not inside the timeout (it'd be null by the next tick).
+    const el = e.currentTarget;
+    setTimeout(() => el.classList.add('dragging'), 0);
   },
 
   poolDragStart(e) {
@@ -202,11 +210,13 @@ const PanelEditor = {
       ref: d.ref || null, localId: d.localId || null,
     };
     e.dataTransfer.effectAllowed = 'move';
-    setTimeout(() => e.currentTarget.classList.add('dragging'), 0);
+    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+    const el = e.currentTarget;
+    setTimeout(() => el.classList.add('dragging'), 0);
   },
 
   dragEnd(e) {
-    e.target.classList.remove('dragging');
+    e.currentTarget.classList.remove('dragging');
     document.querySelectorAll('.panel-editor-empty-cell.drag-over,.panel-editor-empty-cell.drag-over-invalid')
       .forEach(c => c.classList.remove('drag-over', 'drag-over-invalid'));
   },
