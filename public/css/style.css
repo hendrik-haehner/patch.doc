@@ -473,6 +473,13 @@ html, body {
 .cable-svg path { cursor: pointer; }
 .cable-svg path:hover { opacity: 0.5 !important; }
 
+/* Panel mode: cables read as patch cords crossing the front panel, so they
+   draw above modules instead of behind them (list mode keeps them behind —
+   see the comment in Patch.renderCables()). */
+#patch-canvas.panel-mode .cable-svg { z-index: 5; }
+#patch-canvas.panel-mode .patch-module { z-index: 1; }
+#patch-canvas.panel-mode .patch-module.dragging { z-index: 100; }
+
 /* ── notes view ── */
 #notes-header {
   padding: 10px 14px 8px;

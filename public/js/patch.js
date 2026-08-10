@@ -598,10 +598,14 @@ const Patch = {
 
   _updatePanelModeBtn() {
     const btn = document.getElementById('panel-mode-btn');
-    if (!btn) return;
-    btn.textContent = this._panelMode ? 'panel view' : 'list view';
-    btn.style.borderColor = this._panelMode ? 'var(--accent-border)' : '';
-    btn.style.color       = this._panelMode ? 'var(--accent)' : '';
+    if (btn) {
+      btn.textContent = this._panelMode ? 'panel view' : 'list view';
+      btn.style.borderColor = this._panelMode ? 'var(--accent-border)' : '';
+      btn.style.color       = this._panelMode ? 'var(--accent)' : '';
+    }
+    // Cables draw above modules (and thinner) in panel mode, so they read as
+    // patch cords crossing real jacks instead of vanishing behind the panel.
+    document.getElementById('patch-canvas')?.classList.toggle('panel-mode', !!this._panelMode);
   },
 
   // ── Cable visibility (helps untangle dense patches) ────────────────────────
@@ -894,6 +898,10 @@ const Patch = {
 
     // signal type dash patterns
     const DASH = { audio: 'none', cv: '6 3', gate: '2 4' };
+    // Panel mode draws cables above modules (see .panel-mode CSS), so they
+    // need to stay thin or they'd bury the jacks and controls they cross.
+    const baseWidth  = this._panelMode ? '1.5' : '2.5';
+    const hoverWidth = this._panelMode ? '2.5' : '3.5';
     patch.cables.forEach(c => {
       const from = this._getPortCenter(c.fromPm, 'out', c.fromPort);
       const to   = this._getPortCenter(c.toPm,   'in',  c.toPort);
@@ -909,12 +917,12 @@ const Patch = {
       hit.style.cursor = 'pointer';
       hit.style.pointerEvents = 'stroke'; // SVG container is click-through; only this path intercepts clicks
       hit.addEventListener('click', () => this.removeCable(c.id));
-      hit.addEventListener('mouseenter', () => { vis.setAttribute('opacity', '1'); vis.setAttribute('stroke-width', '3.5'); });
-      hit.addEventListener('mouseleave', () => { vis.setAttribute('opacity', '0.85'); vis.setAttribute('stroke-width', '2.5'); });
+      hit.addEventListener('mouseenter', () => { vis.setAttribute('opacity', '1'); vis.setAttribute('stroke-width', hoverWidth); });
+      hit.addEventListener('mouseleave', () => { vis.setAttribute('opacity', '0.85'); vis.setAttribute('stroke-width', baseWidth); });
       // visible path
       const vis = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       vis.setAttribute('d', d); vis.setAttribute('stroke', c.color);
-      vis.setAttribute('stroke-width', '2.5'); vis.setAttribute('fill', 'none');
+      vis.setAttribute('stroke-width', baseWidth); vis.setAttribute('fill', 'none');
       vis.setAttribute('stroke-linecap', 'round'); vis.setAttribute('opacity', '0.85');
       vis.setAttribute('data-cable-id', c.id);
       if (dash !== 'none') vis.setAttribute('stroke-dasharray', dash);
