@@ -131,11 +131,14 @@ const App = {
       const tag = document.activeElement?.tagName;
       const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
       if (e.key === 'Escape') {
-        const openModal = document.querySelector('.modal-bg.open');
+        // The panel editor can be open on top of the module modal — close
+        // whichever opened last (last in DOM order among the open ones)
+        // first, so Escape backs out one layer at a time.
+        const openModals = document.querySelectorAll('.modal-bg.open');
+        const openModal = openModals[openModals.length - 1];
         if (openModal) {
-          // The module editor needs its extra field-reset cleanup;
-          // any other modal just needs its 'open' class removed.
-          if (openModal.id === 'module-modal-bg') this.closeModal();
+          if (openModal.id === 'panel-editor-modal-bg') PanelEditor.cancel();
+          else if (openModal.id === 'module-modal-bg') this.closeModal();
           else openModal.classList.remove('open');
         }
         return;
@@ -1249,6 +1252,9 @@ const App = {
     window._tempInputs  = m ? m.inputs.map(p  => typeof p === 'object' ? p : { name: p, sigType: this._guessSigType(p) }) : [{name:'v/oct',sigType:'cv'},{name:'cv',sigType:'cv'},{name:'gate',sigType:'gate'}];
     window._tempOutputs = m ? m.outputs.map(p => typeof p === 'object' ? p : { name: p, sigType: this._guessSigType(p) }) : [{name:'out',sigType:'audio'},{name:'aux',sigType:'audio'}];
     window._tempParamDefs = m ? JSON.parse(JSON.stringify(m.paramDefs || [])) : [];
+    window._tempPanel = m && m.panel ? JSON.parse(JSON.stringify(m.panel)) : null;
+    window._panelPool = [];
+    this.updatePanelSummary();
     document.getElementById('m-color').value      = m ? (m.color || '') : '';
     document.getElementById('m-color').dataset.cleared = (m && m.color) ? '' : '1';
     this._renderColorSwatches(m ? (m.color || '') : '');
@@ -1282,6 +1288,20 @@ const App = {
     window._editModuleId = null;
     ['m-name','m-maker'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('m-hp').value = 8;
+  },
+
+  updatePanelSummary() {
+    const el  = document.getElementById('panel-summary');
+    const btn = document.getElementById('panel-remove-btn');
+    if (!el) return;
+    const p = window._tempPanel;
+    if (p) {
+      el.textContent = `${p.cols}×${p.rows} grid, ${p.elements.length} element(s) placed`;
+      if (btn) btn.style.display = 'inline-block';
+    } else {
+      el.textContent = 'not set — module renders as a list';
+      if (btn) btn.style.display = 'none';
+    }
   },
 
   _sigBadge(sigType) {
@@ -1395,7 +1415,8 @@ const App = {
       paramCols:  parseInt(document.getElementById('m-param-cols').value) || 3,
       power12p:   parseFloat(document.getElementById('m-p12p').value) || 0,
       power12n:   parseFloat(document.getElementById('m-p12n').value) || 0,
-      power5:     parseFloat(document.getElementById('m-p5').value)   || 0
+      power5:     parseFloat(document.getElementById('m-p5').value)   || 0,
+      panel:      PanelEditor.sanitize(window._tempPanel, window._tempInputs, window._tempOutputs, window._tempParamDefs) || undefined
     };
     if (window._editModuleId) {
       const existing = Store.state.modules.find(x => x.id === window._editModuleId);

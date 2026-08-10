@@ -1155,6 +1155,98 @@ html, body {
 .pdef-add-row input { width: 100%; }
 .pdef-add-row select { font-size: 11px; padding: 4px 6px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg0); color: var(--text0); font-family: var(--font); width: 90px; }
 
+/* ── panel layout editor (module modal → "edit panel layout") ── */
+.panel-editor-modal { width: 760px; max-width: 96vw; }
+.panel-editor-toolbar {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.panel-editor-toolbar label {
+  display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2);
+}
+.panel-editor-toolbar input[type="number"] {
+  width: 52px; font-size: 12px; padding: 4px 6px;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg0); color: var(--text0); font-family: var(--font);
+}
+.panel-editor-hint { font-size: 10px; color: var(--text2); }
+.panel-editor-remove-link {
+  font-size: 10px; color: var(--text2); background: transparent; border: none;
+  cursor: pointer; text-decoration: underline; padding: 0; margin-left: auto;
+}
+.panel-editor-remove-link:hover { color: var(--danger); }
+
+.panel-editor-inspector {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px; margin-bottom: 10px;
+  border: 0.5px solid var(--accent-border); border-radius: var(--radius);
+  background: var(--accent-bg); font-size: 11px;
+}
+.panel-editor-inspector-name { color: var(--text0); font-weight: 600; }
+.panel-editor-inspector-dim { display: flex; align-items: center; gap: 4px; color: var(--text2); font-size: 10px; }
+.panel-editor-inspector-dim input {
+  width: 40px; font-size: 11px; padding: 3px 5px;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg0); color: var(--text0); font-family: var(--font);
+}
+#panel-editor-inspector-text {
+  flex: 1; min-width: 100px; font-size: 11px; padding: 4px 6px;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg0); color: var(--text0); font-family: var(--font);
+}
+
+.panel-editor-body { display: flex; gap: 14px; align-items: flex-start; }
+.panel-editor-pool {
+  width: 190px; flex-shrink: 0;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  padding: 8px;
+}
+.panel-editor-pool-label {
+  font-size: 10px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.panel-editor-pool-list { display: flex; flex-direction: column; gap: 5px; min-height: 40px; margin-bottom: 8px; }
+.panel-editor-pool-empty { font-size: 10px; color: var(--text2); padding: 6px 0; }
+.panel-editor-add-special { display: flex; gap: 5px; flex-wrap: wrap; border-top: 0.5px solid var(--border); padding-top: 8px; }
+
+.panel-editor-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 7px; border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg2); cursor: grab; font-size: 11px;
+}
+.panel-editor-chip.dragging { opacity: 0.4; }
+.panel-editor-chip-badge {
+  font-size: 8px; padding: 1px 4px; border-radius: 3px; letter-spacing: 0.06em;
+  font-weight: 600; flex-shrink: 0; color: var(--text2); background: var(--bg1);
+  border: 0.5px solid var(--border2);
+}
+.panel-editor-chip-badge-input,
+.panel-editor-chip-badge-output,
+.panel-editor-chip-badge-knob   { color: var(--accent); border-color: var(--accent-border); background: var(--accent-bg); }
+.panel-editor-chip-badge-toggle { color: var(--success); border-color: rgba(42,170,122,0.3); background: rgba(42,170,122,0.1); }
+.panel-editor-chip-badge-enum   { color: #d4963a; border-color: rgba(212,150,58,0.3); background: rgba(212,150,58,0.1); }
+.panel-editor-chip-label { flex: 1; color: var(--text0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.panel-editor-grid-wrap { overflow: auto; max-height: 58vh; padding: 2px; }
+.panel-editor-grid { display: grid; gap: 4px; }
+.panel-editor-empty-cell {
+  width: 50px; height: 44px;
+  border: 0.5px dashed var(--border); border-radius: 3px;
+  background: var(--bg0);
+}
+.panel-editor-empty-cell.drag-over { border-color: var(--accent-border); background: var(--accent-bg); }
+.panel-editor-empty-cell.drag-over-invalid { border-color: var(--danger); background: rgba(200,60,60,0.12); }
+
+.panel-editor-placed {
+  border: 1px solid var(--accent-border); border-radius: 4px;
+  background: var(--accent-bg); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; cursor: grab; padding: 2px 4px; text-align: center;
+  overflow: hidden; min-width: 0;
+}
+.panel-editor-placed .panel-editor-chip-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text0); }
+.panel-editor-placed.dragging { opacity: 0.4; }
+.panel-editor-placed.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+
 /* ── performance mark menu ── */
 .mark-menu {
   position: absolute; z-index: 200;
