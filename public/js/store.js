@@ -2,116 +2,10 @@ const STORE_KEY = 'patchdoc_v1';
 
 const DEFAULT_MODULES = [
   {
-    "id": 1,
-    "maker": "Mutable Instruments",
-    "name": "Plaits",
-    "hp": 12,
-    "cat": "oscillator",
-    "inputs": [
-      "model",
-      "freq",
-      "harm",
-      "timbre",
-      "morph",
-      "trigger",
-      "level"
-    ],
-    "outputs": [
-      "out",
-      "aux"
-    ],
-    "paramDefs": [
-      {
-        "name": "pitch",
-        "type": "knob",
-        "min": -24,
-        "max": 24,
-        "default": 0
-      },
-      {
-        "name": "harm",
-        "type": "knob",
-        "min": 0,
-        "max": 100,
-        "default": 50
-      },
-      {
-        "name": "timbre",
-        "type": "knob",
-        "min": 0,
-        "max": 100,
-        "default": 50
-      },
-      {
-        "name": "morph",
-        "type": "knob",
-        "min": 0,
-        "max": 100,
-        "default": 50
-      },
-      {
-        "name": "model",
-        "type": "enum",
-        "options": "chord,waveshaper,FM,grain,noise,string,modal,kick",
-        "default": "chord"
-      },
-      {
-        "name": "LPG",
-        "type": "toggle",
-        "default": false
-      }
-    ]
-  },
-  {
-    "id": 2,
-    "maker": "Mutable Instruments",
-    "name": "Rings",
-    "hp": 14,
-    "cat": "filter",
-    "power12p": 70,
-    "power12n": 10,
-    "inputs": [
-      "in",
-      "strum",
-      "v/oct",
-      "odd",
-      "even"
-    ],
-    "outputs": [
-      "odd",
-      "even"
-    ]
-  },
-  {
-    "id": 3,
-    "maker": "Make Noise",
-    "name": "Maths",
-    "hp": 20,
-    "cat": "envelope",
-    "power12p": 60,
-    "power12n": 20,
-    "inputs": [
-      "1",
-      "2",
-      "3",
-      "4",
-      "unity",
-      "sum"
-    ],
-    "outputs": [
-      "1",
-      "2",
-      "sum",
-      "inv",
-      "eoc1",
-      "eoc4"
-    ]
-  },
-  {
     "maker": "Behringer",
-    "name": "Waves",
+    "name": "Waves (Tides)",
     "hp": 14,
-    "cat": "other",
+    "cat": "envelope",
     "inputs": [
       {
         "name": "Slope",
@@ -148,23 +42,23 @@ const DEFAULT_MODULES = [
     ],
     "outputs": [
       {
-        "name": "1",
+        "name": "Out 1",
         "sigType": "cv"
       },
       {
-        "name": "2",
+        "name": "Out 2",
         "sigType": "cv"
       },
       {
-        "name": "3",
+        "name": "Out 3",
         "sigType": "cv"
       },
       {
-        "name": "4",
+        "name": "Out 4",
         "sigType": "cv"
       }
     ],
-    "id": 4,
+    "id": 6,
     "paramDefs": [
       {
         "name": "Range",
@@ -255,7 +149,7 @@ const DEFAULT_MODULES = [
         "default": 0
       }
     ],
-    "color": "#000000",
+    "color": "#d4963a",
     "paramCols": 3,
     "power12p": 0,
     "power12n": 0,
@@ -263,9 +157,9 @@ const DEFAULT_MODULES = [
   },
   {
     "maker": "Behringer",
-    "name": "Brains",
+    "name": "Brains (Plaits)",
     "hp": 16,
-    "cat": "other",
+    "cat": "oscillator",
     "inputs": [
       {
         "name": "Model",
@@ -298,15 +192,15 @@ const DEFAULT_MODULES = [
     ],
     "outputs": [
       {
-        "name": "1",
+        "name": "Out 1",
         "sigType": "audio"
       },
       {
-        "name": "2",
+        "name": "Out 2",
         "sigType": "audio"
       }
     ],
-    "id": 5,
+    "id": 7,
     "paramDefs": [
       {
         "name": "Bank",
@@ -370,7 +264,7 @@ const DEFAULT_MODULES = [
         "default": 0
       }
     ],
-    "color": "#000000",
+    "color": "#3e29ff",
     "paramCols": 2,
     "power12p": 0,
     "power12n": 0,
@@ -378,9 +272,9 @@ const DEFAULT_MODULES = [
   },
   {
     "maker": "Behringer",
-    "name": "Abacus",
+    "name": "Abacus (Maths)",
     "hp": 20,
-    "cat": "other",
+    "cat": "utility",
     "inputs": [
       {
         "name": "In 1",
@@ -485,7 +379,7 @@ const DEFAULT_MODULES = [
         "sigType": "gate"
       }
     ],
-    "id": 6,
+    "id": 8,
     "paramDefs": [
       {
         "name": "Rise 1",
@@ -568,8 +462,8 @@ const DEFAULT_MODULES = [
         "default": false
       }
     ],
-    "color": "#000000",
-    "paramCols": 4,
+    "color": "#ff6a00",
+    "paramCols": 3,
     "power12p": 0,
     "power12n": 0,
     "power5": 0
@@ -615,7 +509,7 @@ const DEFAULT_MODULES = [
         "sigType": "audio"
       }
     ],
-    "id": 7,
+    "id": 9,
     "paramDefs": [
       {
         "name": "Preset",
@@ -679,106 +573,653 @@ const DEFAULT_MODULES = [
         "default": 0
       }
     ],
-    "color": "#000000",
+    "color": "#3e29ff",
     "paramCols": 2,
     "power12p": 0,
     "power12n": 0,
     "power5": 0
   },
   {
-    "maker": "Unknown",
+    "maker": "Tunefish",
     "name": "PeaksCV",
     "hp": 8,
-    "cat": "other",
+    "cat": "lfo",
     "inputs": [
-      "cv",
-      "gate",
-      "v/oct"
+      {
+        "name": "Trig 1",
+        "sigType": "gate"
+      },
+      {
+        "name": "Trig 2",
+        "sigType": "gate"
+      },
+      {
+        "name": "1",
+        "sigType": "cv"
+      },
+      {
+        "name": "2",
+        "sigType": "cv"
+      },
+      {
+        "name": "3",
+        "sigType": "cv"
+      },
+      {
+        "name": "4",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "out"
+      {
+        "name": "1",
+        "sigType": "audio"
+      },
+      {
+        "name": "2",
+        "sigType": "audio"
+      }
     ],
-    "id": 8
+    "id": 10,
+    "paramDefs": [
+      {
+        "name": "Split",
+        "type": "toggle",
+        "default": false
+      },
+      {
+        "name": "Mode",
+        "type": "enum",
+        "options": "ENV, LFO, TAP, DRUM",
+        "default": "ENV"
+      },
+      {
+        "name": "1",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "2",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "3",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "4",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "1 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "2 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "3 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "4 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Out 1 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Out 2 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      }
+    ],
+    "color": "#4a9fd4",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0
   },
   {
-    "maker": "Unknown",
-    "name": "Swords",
+    "maker": "Behringer",
+    "name": "Swords (Blades)",
     "hp": 18,
-    "cat": "other",
+    "cat": "filter",
     "inputs": [
-      "cv",
-      "gate",
-      "v/oct"
+      {
+        "name": "In 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "In 2",
+        "sigType": "audio"
+      },
+      {
+        "name": "V/Oct 1",
+        "sigType": "cv"
+      },
+      {
+        "name": "V/Oct 2",
+        "sigType": "cv"
+      },
+      {
+        "name": "Drive 1",
+        "sigType": "cv"
+      },
+      {
+        "name": "Drive 2",
+        "sigType": "cv"
+      },
+      {
+        "name": "Mode 1",
+        "sigType": "cv"
+      },
+      {
+        "name": "Mode 2",
+        "sigType": "cv"
+      },
+      {
+        "name": "Freq 1",
+        "sigType": "cv"
+      },
+      {
+        "name": "Reso 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "Routing",
+        "sigType": "cv"
+      },
+      {
+        "name": "Freq 2",
+        "sigType": "cv"
+      },
+      {
+        "name": "Reso 2",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "out"
+      {
+        "name": "1",
+        "sigType": "audio"
+      },
+      {
+        "name": "2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Main",
+        "sigType": "audio"
+      }
     ],
-    "id": 9
+    "id": 11,
+    "paramDefs": [
+      {
+        "name": "Drive 1",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Drive 1 Waveform",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Drive 2",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Drive 2 Waveform",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Reso 1",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Reso 2",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Freq 1",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Freq 2",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Mode 1",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Mode 2",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Routing",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Freq 1 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Reso 1 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Freq 2 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Reso 2 Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      }
+    ],
+    "color": "#2aaa7a",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0
   },
   {
-    "maker": "Unknown",
-    "name": "Cumulus",
+    "maker": "AfterLater",
+    "name": "Cumulus (Clouds)",
     "hp": 18,
-    "cat": "other",
+    "cat": "effects",
     "inputs": [
-      "cv",
-      "gate",
-      "v/oct"
+      {
+        "name": "L",
+        "sigType": "audio"
+      },
+      {
+        "name": "R",
+        "sigType": "audio"
+      },
+      {
+        "name": "Freeze",
+        "sigType": "cv"
+      },
+      {
+        "name": "Trig",
+        "sigType": "gate"
+      },
+      {
+        "name": "Pos",
+        "sigType": "cv"
+      },
+      {
+        "name": "Dens",
+        "sigType": "cv"
+      },
+      {
+        "name": "Size",
+        "sigType": "cv"
+      },
+      {
+        "name": "Texture",
+        "sigType": "cv"
+      },
+      {
+        "name": "V/Oct",
+        "sigType": "cv"
+      },
+      {
+        "name": "Blend",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "out"
+      {
+        "name": "L",
+        "sigType": "audio"
+      },
+      {
+        "name": "R",
+        "sigType": "audio"
+      }
     ],
-    "id": 10
+    "id": 12,
+    "paramDefs": [
+      {
+        "name": "Freeze",
+        "type": "toggle",
+        "default": false
+      },
+      {
+        "name": "Mode",
+        "type": "enum",
+        "options": "Clouds, Pitch / Time, Looping Delay, Spectral Madness, Mixverb",
+        "default": "Clouds"
+      },
+      {
+        "name": "Position",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "In Gain",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Density",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Texture",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Size",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Pitch",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Blend",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      }
+    ],
+    "color": "#7aaa2a",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0
   },
   {
-    "maker": "Unknown",
-    "name": "SURGES",
+    "maker": "Behringer",
+    "name": "Surges (Ripples)",
     "hp": 8,
-    "cat": "other",
+    "cat": "filter",
     "inputs": [
-      "cv",
-      "gate",
-      "v/oct"
+      {
+        "name": "In 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "In 2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Freq",
+        "sigType": "cv"
+      },
+      {
+        "name": "Reso",
+        "sigType": "cv"
+      },
+      {
+        "name": "V/Oct",
+        "sigType": "cv"
+      },
+      {
+        "name": "Level",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "out"
+      {
+        "name": "HP",
+        "sigType": "audio"
+      },
+      {
+        "name": "BP",
+        "sigType": "audio"
+      },
+      {
+        "name": "LP",
+        "sigType": "audio"
+      }
     ],
-    "id": 11
+    "id": 13,
+    "paramDefs": [
+      {
+        "name": "Freq",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Reso",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "1 Gain",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Freq Attn",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Mode",
+        "type": "enum",
+        "options": "4-pole, 2-pole",
+        "default": "4-pole"
+      }
+    ],
+    "color": "#2aaa7a",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0
   },
   {
-    "maker": "Unknown",
-    "name": "CHAOS",
+    "maker": "Behringer",
+    "name": "CHAOS (Marbles)",
     "hp": 18,
-    "cat": "other",
+    "cat": "utility",
     "inputs": [
-      "cv",
-      "gate",
-      "v/oct"
+      {
+        "name": "Clock X",
+        "sigType": "gate"
+      },
+      {
+        "name": "Clock Y",
+        "sigType": "gate"
+      },
+      {
+        "name": "Feedback",
+        "sigType": "cv"
+      },
+      {
+        "name": "Jitter",
+        "sigType": "cv"
+      },
+      {
+        "name": "Rate",
+        "sigType": "cv"
+      },
+      {
+        "name": "Spread",
+        "sigType": "cv"
+      },
+      {
+        "name": "Steps",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "out"
+      {
+        "name": "t1",
+        "sigType": "cv"
+      },
+      {
+        "name": "t2",
+        "sigType": "cv"
+      },
+      {
+        "name": "t3",
+        "sigType": "cv"
+      },
+      {
+        "name": "x1",
+        "sigType": "cv"
+      },
+      {
+        "name": "x2",
+        "sigType": "cv"
+      },
+      {
+        "name": "x3",
+        "sigType": "cv"
+      }
     ],
-    "id": 12
+    "id": 14,
+    "paramDefs": [
+      {
+        "name": "Feedback",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      }
+    ],
+    "color": "#ff6a00",
+    "paramCols": 3,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0
   },
   {
     "maker": "Zoom",
     "name": "LiveTrak L6",
     "hp": 54,
-    "cat": "other",
+    "cat": "utility",
     "inputs": [
-      "cv",
-      "gate",
-      "v/oct"
+      {
+        "name": "cv",
+        "sigType": "cv"
+      },
+      {
+        "name": "gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "v/oct",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "out"
+      {
+        "name": "out",
+        "sigType": "audio"
+      }
     ],
-    "id": 13,
+    "id": 15,
     "paramDefs": [],
-    "color": "#000000",
+    "color": "#ff6a00",
     "power12p": 0,
     "power12n": 0,
-    "power5": 0
+    "power5": 0,
+    "paramCols": 3
   },
   {
     "maker": "Squarp",
@@ -786,35 +1227,110 @@ const DEFAULT_MODULES = [
     "hp": 26,
     "cat": "sequencer",
     "inputs": [
-      "CV A",
-      "CV B",
-      "CV C",
-      "CV D",
-      "Midi In"
+      {
+        "name": "CV A",
+        "sigType": "cv"
+      },
+      {
+        "name": "CV B",
+        "sigType": "cv"
+      },
+      {
+        "name": "CV C",
+        "sigType": "cv"
+      },
+      {
+        "name": "CV D",
+        "sigType": "cv"
+      },
+      {
+        "name": "Midi In",
+        "sigType": "audio"
+      }
     ],
     "outputs": [
-      "Midi Out",
-      "Reset",
-      "Clock",
-      "1 Gate",
-      "1 CV",
-      "1 Gate",
-      "2 CV",
-      "2 Gate",
-      "3 CV",
-      "3 Gate",
-      "4 CV",
-      "4 Gate",
-      "5 CV",
-      "5 Gate",
-      "6 CV",
-      "6 Gate",
-      "7 CV",
-      "7 Gate",
-      "8 CV",
-      "8 Gate"
+      {
+        "name": "Midi Out",
+        "sigType": "audio"
+      },
+      {
+        "name": "Reset",
+        "sigType": "audio"
+      },
+      {
+        "name": "Clock",
+        "sigType": "gate"
+      },
+      {
+        "name": "1 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "1 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "1 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "2 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "2 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "3 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "3 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "4 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "4 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "5 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "5 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "6 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "6 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "7 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "7 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "8 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "8 Gate",
+        "sigType": "gate"
+      }
     ],
-    "id": 14,
+    "id": 16,
     "paramDefs": [
       {
         "name": "Project name",
@@ -822,7 +1338,7 @@ const DEFAULT_MODULES = [
         "default": ""
       }
     ],
-    "color": "#000000",
+    "color": "#c8612a",
     "power12p": 0,
     "power12n": 0,
     "power5": 0,
@@ -832,34 +1348,100 @@ const DEFAULT_MODULES = [
     "maker": "Strymon",
     "name": "Magneto",
     "hp": 28,
-    "cat": "other",
+    "cat": "effects",
     "inputs": [
-      "L",
-      "R",
-      "Clock",
-      "Rec Gate",
-      "Shift",
-      "Infinite",
-      "Fwd/Bwd",
-      "Play",
-      "Pause",
-      "Tap",
-      "Spring",
-      "Speed",
-      "Wet",
-      "Repeats",
-      "Send"
+      {
+        "name": "In L",
+        "sigType": "audio"
+      },
+      {
+        "name": "In R",
+        "sigType": "audio"
+      },
+      {
+        "name": "Clock",
+        "sigType": "gate"
+      },
+      {
+        "name": "Rec Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "Shift",
+        "sigType": "audio"
+      },
+      {
+        "name": "Infinite",
+        "sigType": "audio"
+      },
+      {
+        "name": "Fwd/Bwd",
+        "sigType": "audio"
+      },
+      {
+        "name": "Play",
+        "sigType": "audio"
+      },
+      {
+        "name": "Pause",
+        "sigType": "audio"
+      },
+      {
+        "name": "Tap",
+        "sigType": "audio"
+      },
+      {
+        "name": "Spring",
+        "sigType": "audio"
+      },
+      {
+        "name": "Speed",
+        "sigType": "audio"
+      },
+      {
+        "name": "Wet",
+        "sigType": "audio"
+      },
+      {
+        "name": "Repeats",
+        "sigType": "audio"
+      },
+      {
+        "name": "Send",
+        "sigType": "audio"
+      }
     ],
     "outputs": [
-      "L",
-      "R",
-      "Return",
-      "Clock 1",
-      "Clock 2",
-      "Clock 3",
-      "Clock 4"
+      {
+        "name": "Out L",
+        "sigType": "audio"
+      },
+      {
+        "name": "Out R",
+        "sigType": "audio"
+      },
+      {
+        "name": "Return",
+        "sigType": "audio"
+      },
+      {
+        "name": "Clock 1",
+        "sigType": "gate"
+      },
+      {
+        "name": "Clock 2",
+        "sigType": "gate"
+      },
+      {
+        "name": "Clock 3",
+        "sigType": "gate"
+      },
+      {
+        "name": "Clock 4",
+        "sigType": "gate"
+      }
     ],
-    "id": 15,
+    "id": 17,
     "paramDefs": [
       {
         "name": "Dry",
@@ -1003,7 +1585,7 @@ const DEFAULT_MODULES = [
         "default": false
       }
     ],
-    "color": "#000000",
+    "color": "#7aaa2a",
     "power12p": 0,
     "power12n": 0,
     "power5": 0,
@@ -1015,18 +1597,42 @@ const DEFAULT_MODULES = [
     "hp": 12,
     "cat": "oscillator",
     "inputs": [
-      "Midi",
-      "Gate",
-      "V/Oct",
-      "Filter",
-      "CV A",
-      "CV B"
+      {
+        "name": "Midi",
+        "sigType": "audio"
+      },
+      {
+        "name": "Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "V/Oct",
+        "sigType": "cv"
+      },
+      {
+        "name": "Filter",
+        "sigType": "audio"
+      },
+      {
+        "name": "CV A",
+        "sigType": "cv"
+      },
+      {
+        "name": "CV B",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "L",
-      "R"
+      {
+        "name": "L",
+        "sigType": "audio"
+      },
+      {
+        "name": "R",
+        "sigType": "audio"
+      }
     ],
-    "id": 16,
+    "id": 18,
     "paramDefs": [
       {
         "name": "Attack",
@@ -1173,7 +1779,7 @@ const DEFAULT_MODULES = [
         "default": 0
       }
     ],
-    "color": "#000000",
+    "color": "#3e29ff",
     "power12p": 0,
     "power12n": 0,
     "power5": 0,
@@ -1183,24 +1789,68 @@ const DEFAULT_MODULES = [
     "maker": "Doepfer",
     "name": "A-135-2 Quad VCA",
     "hp": 8,
-    "cat": "other",
+    "cat": "vca",
     "inputs": [
-      "Ch 1",
-      "Ch 2",
-      "Ch 3",
-      "Ch 4",
-      "CV 1",
-      "CV 2",
-      "CV 3",
-      "CV 4"
+      {
+        "name": "Ch 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 3",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 4",
+        "sigType": "audio"
+      },
+      {
+        "name": "CV 1",
+        "sigType": "cv"
+      },
+      {
+        "name": "CV 2",
+        "sigType": "cv"
+      },
+      {
+        "name": "CV 3",
+        "sigType": "cv"
+      },
+      {
+        "name": "CV 4",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "Ch 1",
-      "Ch 2",
-      "Ch 3",
-      "Ch 4"
+      {
+        "name": "Ch 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 3",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 4",
+        "sigType": "audio"
+      },
+      {
+        "name": "Selected",
+        "sigType": "audio"
+      },
+      {
+        "name": "All",
+        "sigType": "audio"
+      }
     ],
-    "id": 17,
+    "id": 19,
     "paramDefs": [
       {
         "name": "CV 1",
@@ -1229,9 +1879,37 @@ const DEFAULT_MODULES = [
         "min": 0,
         "max": 100,
         "default": 0
+      },
+      {
+        "name": "Level 1",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "level 2",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Level 3",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Level 4",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
       }
     ],
-    "color": "#000000",
+    "color": "#c45c82",
     "power12p": 0,
     "power12n": 0,
     "power5": 0,
@@ -1241,17 +1919,32 @@ const DEFAULT_MODULES = [
     "maker": "Expert Sleepers",
     "name": "Disting mk4",
     "hp": 4,
-    "cat": "other",
+    "cat": "utility",
     "inputs": [
-      "Z",
-      "X",
-      "Y"
+      {
+        "name": "Z",
+        "sigType": "audio"
+      },
+      {
+        "name": "X",
+        "sigType": "audio"
+      },
+      {
+        "name": "Y",
+        "sigType": "audio"
+      }
     ],
     "outputs": [
-      "A",
-      "B"
+      {
+        "name": "A",
+        "sigType": "audio"
+      },
+      {
+        "name": "B",
+        "sigType": "audio"
+      }
     ],
-    "id": 18,
+    "id": 20,
     "paramDefs": [
       {
         "name": "Program",
@@ -1260,55 +1953,111 @@ const DEFAULT_MODULES = [
         "default": "A1"
       }
     ],
-    "color": "#000000",
+    "color": "#ff6a00",
     "power12p": 0,
     "power12n": 0,
-    "power5": 0
+    "power5": 0,
+    "paramCols": 3
   },
   {
     "maker": "Doepfer",
-    "name": "A-180-3",
+    "name": "A-180-3 Multiple",
     "hp": 4,
-    "cat": "other",
+    "cat": "utility",
     "inputs": [
-      "1",
-      "2"
+      {
+        "name": "1",
+        "sigType": "audio"
+      },
+      {
+        "name": "2",
+        "sigType": "audio"
+      }
     ],
     "outputs": [
-      "1-1",
-      "1-2",
-      "1-3",
-      "2-1",
-      "2-2",
-      "2-3"
+      {
+        "name": "1-1",
+        "sigType": "audio"
+      },
+      {
+        "name": "1-2",
+        "sigType": "audio"
+      },
+      {
+        "name": "1-3",
+        "sigType": "audio"
+      },
+      {
+        "name": "2-1",
+        "sigType": "audio"
+      },
+      {
+        "name": "2-2",
+        "sigType": "audio"
+      },
+      {
+        "name": "2-3",
+        "sigType": "audio"
+      }
     ],
-    "id": 19,
+    "id": 21,
     "paramDefs": [],
-    "color": "#000000",
+    "color": "#ff6a00",
     "power12p": 0,
     "power12n": 0,
-    "power5": 0
+    "power5": 0,
+    "paramCols": 3
   },
   {
-    "maker": "Unknown",
+    "maker": "AfterLater Audio",
     "name": "uRings",
     "hp": 8,
-    "cat": "other",
+    "cat": "oscillator",
     "inputs": [
-      "Position",
-      "Brite",
-      "Shape",
-      "Damp",
-      "FM",
-      "V/Oct",
-      "Strum",
-      "Audio"
+      {
+        "name": "Position",
+        "sigType": "audio"
+      },
+      {
+        "name": "Brite",
+        "sigType": "audio"
+      },
+      {
+        "name": "Shape",
+        "sigType": "audio"
+      },
+      {
+        "name": "Damp",
+        "sigType": "cv"
+      },
+      {
+        "name": "FM",
+        "sigType": "cv"
+      },
+      {
+        "name": "V/Oct",
+        "sigType": "cv"
+      },
+      {
+        "name": "Strum",
+        "sigType": "audio"
+      },
+      {
+        "name": "Audio",
+        "sigType": "audio"
+      }
     ],
     "outputs": [
-      "Odd",
-      "Even"
+      {
+        "name": "Odd",
+        "sigType": "audio"
+      },
+      {
+        "name": "Even",
+        "sigType": "audio"
+      }
     ],
-    "id": 20,
+    "id": 22,
     "paramDefs": [
       {
         "name": "Poly",
@@ -1393,7 +2142,7 @@ const DEFAULT_MODULES = [
         "default": 0
       }
     ],
-    "color": "#000000",
+    "color": "#3e29ff",
     "power12p": 0,
     "power12n": 0,
     "power5": 0,
@@ -1403,22 +2152,52 @@ const DEFAULT_MODULES = [
     "maker": "Doepfer",
     "name": "A-140-2 Dual ADSR",
     "hp": 8,
-    "cat": "other",
+    "cat": "envelope",
     "inputs": [
-      "Ch 1 Gate",
-      "Ch 1 Retr",
-      "Ch 1 CV",
-      "Ch 2 Gate",
-      "Ch 2 Retr",
-      "Ch 2 CV"
+      {
+        "name": "Ch 1 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "Ch 1 Retr",
+        "sigType": "gate"
+      },
+      {
+        "name": "Ch 1 CV",
+        "sigType": "cv"
+      },
+      {
+        "name": "Ch 2 Gate",
+        "sigType": "gate"
+      },
+      {
+        "name": "Ch 2 Retr",
+        "sigType": "gate"
+      },
+      {
+        "name": "Ch 2 CV",
+        "sigType": "cv"
+      }
     ],
     "outputs": [
-      "Ch 1-1",
-      "Ch 1-2",
-      "Ch 2-1",
-      "Ch 2-2"
+      {
+        "name": "Ch 1-1",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 1-2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 2-1",
+        "sigType": "audio"
+      },
+      {
+        "name": "Ch 2-2",
+        "sigType": "audio"
+      }
     ],
-    "id": 21,
+    "id": 23,
     "paramDefs": [
       {
         "name": "Ch 1 A",
@@ -1477,7 +2256,7 @@ const DEFAULT_MODULES = [
         "default": 0
       }
     ],
-    "color": "#000000",
+    "color": "#d4963a",
     "paramCols": 4,
     "power12p": 0,
     "power12n": 0,
@@ -1485,23 +2264,50 @@ const DEFAULT_MODULES = [
   },
   {
     "maker": "Doepfer",
-    "name": "A-160-2",
+    "name": "A-160-2 Divider",
     "hp": 4,
-    "cat": "other",
+    "cat": "utility",
     "inputs": [
-      "Clock",
-      "Reset"
+      {
+        "name": "Clock",
+        "sigType": "gate"
+      },
+      {
+        "name": "Reset",
+        "sigType": "audio"
+      }
     ],
     "outputs": [
-      "2/2/2",
-      "4/3/3",
-      "8/5/4",
-      "16/7/5",
-      "32/11/6",
-      "64/13/7",
-      "128/17/8"
+      {
+        "name": "2/2/2",
+        "sigType": "audio"
+      },
+      {
+        "name": "4/3/3",
+        "sigType": "audio"
+      },
+      {
+        "name": "8/5/4",
+        "sigType": "audio"
+      },
+      {
+        "name": "16/7/5",
+        "sigType": "audio"
+      },
+      {
+        "name": "32/11/6",
+        "sigType": "audio"
+      },
+      {
+        "name": "64/13/7",
+        "sigType": "audio"
+      },
+      {
+        "name": "128/17/8",
+        "sigType": "audio"
+      }
     ],
-    "id": 22,
+    "id": 24,
     "paramDefs": [
       {
         "name": "Mode",
@@ -1516,7 +2322,7 @@ const DEFAULT_MODULES = [
         "default": "2^"
       }
     ],
-    "color": "#000000",
+    "color": "#ff6a00",
     "power12p": 0,
     "power12n": 0,
     "power5": 0,
@@ -1526,17 +2332,1069 @@ const DEFAULT_MODULES = [
     "maker": "Ableton",
     "name": "Move",
     "hp": 8,
-    "cat": "other",
+    "cat": "sequencer",
     "inputs": [],
     "outputs": [
-      "Midi"
+      {
+        "name": "Midi  1",
+        "sigType": "audio"
+      },
+      {
+        "name": "Midi  2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Midi  3",
+        "sigType": "audio"
+      },
+      {
+        "name": "Midi  4",
+        "sigType": "audio"
+      }
     ],
-    "paramDefs": [],
-    "color": "#000000",
+    "paramDefs": [
+      {
+        "name": "Set",
+        "type": "text",
+        "default": ""
+      }
+    ],
+    "color": "#c8612a",
     "power12p": 0,
     "power12n": 0,
     "power5": 0,
-    "id": 23
+    "id": 26,
+    "paramCols": 2
+  },
+  {
+    "maker": "vpme",
+    "name": "Zeroscope",
+    "hp": 8,
+    "cat": "utility",
+    "inputs": [
+      {
+        "name": "v/oct",
+        "sigType": "cv"
+      },
+      {
+        "name": "cv",
+        "sigType": "cv"
+      },
+      {
+        "name": "gate",
+        "sigType": "gate"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "sigType": "audio"
+      },
+      {
+        "name": "aux",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#ff6a00",
+    "paramCols": 3,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 27
+  },
+  {
+    "maker": "Endorphin.es",
+    "name": "Ghost",
+    "hp": 16,
+    "cat": "effects",
+    "inputs": [
+      {
+        "name": "1",
+        "sigType": "audio"
+      },
+      {
+        "name": "2",
+        "sigType": "audio"
+      },
+      {
+        "name": "distortion",
+        "sigType": "cv"
+      },
+      {
+        "name": "vcf",
+        "sigType": "cv"
+      },
+      {
+        "name": "pre vca",
+        "sigType": "cv"
+      },
+      {
+        "name": "post vca",
+        "sigType": "cv"
+      },
+      {
+        "name": "trig in",
+        "sigType": "gate"
+      },
+      {
+        "name": "resonance",
+        "sigType": "cv"
+      },
+      {
+        "name": "delay dry/wet",
+        "sigType": "cv"
+      },
+      {
+        "name": "time / v/oct",
+        "sigType": "cv"
+      },
+      {
+        "name": "repeats",
+        "sigType": "cv"
+      },
+      {
+        "name": "reverb dry/wet",
+        "sigType": "cv"
+      },
+      {
+        "name": "tail",
+        "sigType": "cv"
+      },
+      {
+        "name": "clock",
+        "sigType": "gate"
+      },
+      {
+        "name": "freeze",
+        "sigType": "gate"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "1",
+        "sigType": "audio"
+      },
+      {
+        "name": "2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Envelope",
+        "sigType": "cv"
+      }
+    ],
+    "paramDefs": [
+      {
+        "name": "Tone",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Gain (S)",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Volume",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Drive (s)",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Compressor",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Distortion",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Sidechain",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Env depth (S)",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Cutoff",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Frequency",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Resonance",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Reverb",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Repeats",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Tone (S)",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Time/Div",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Tail",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Predelay (S)",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Freeze",
+        "type": "toggle",
+        "default": false
+      },
+      {
+        "name": "Bandbass",
+        "type": "toggle",
+        "default": false
+      },
+      {
+        "name": "Comb (S)",
+        "type": "toggle",
+        "default": false
+      }
+    ],
+    "color": "#7aaa2a",
+    "paramCols": 4,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 28
+  },
+  {
+    "maker": "vpme",
+    "name": "ZeroScope",
+    "hp": 6,
+    "cat": "utility",
+    "inputs": [
+      {
+        "name": "In 1",
+        "sigType": "cv"
+      },
+      {
+        "name": "In 2",
+        "sigType": "cv"
+      },
+      {
+        "name": "In T",
+        "sigType": "gate"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Out 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "Out 2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Out T",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#ff6a00",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 29
+  },
+  {
+    "maker": "Unknown",
+    "name": "Kick",
+    "hp": 8,
+    "cat": "placeholder",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "out",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#bfbfbf",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 30
+  },
+  {
+    "maker": "Unknown",
+    "name": "Melody",
+    "hp": 8,
+    "cat": "placeholder",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "out",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#bfbfbf",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 31
+  },
+  {
+    "maker": "Unknown",
+    "name": "Clock Multiplier",
+    "hp": 8,
+    "cat": "placeholder",
+    "inputs": [
+      {
+        "name": "gate",
+        "sigType": "gate"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "x2",
+        "sigType": "gate"
+      },
+      {
+        "name": "x4",
+        "sigType": "gate"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#bfbfbf",
+    "paramCols": 3,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 32
+  },
+  {
+    "maker": "Unknown",
+    "name": "OSC",
+    "hp": 8,
+    "cat": "placeholder",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "out",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#bfbfbf",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 33
+  },
+  {
+    "maker": "Unknown",
+    "name": "AUDIO",
+    "hp": 8,
+    "cat": "placeholder",
+    "inputs": [
+      {
+        "name": "1",
+        "sigType": "audio"
+      },
+      {
+        "name": "2",
+        "sigType": "audio"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "1",
+        "sigType": "audio"
+      },
+      {
+        "name": "2",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#bfbfbf",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 34
+  },
+  {
+    "maker": "Unknown",
+    "name": "OUT",
+    "hp": 8,
+    "cat": "placeholder",
+    "inputs": [
+      {
+        "name": "output",
+        "sigType": "audio"
+      }
+    ],
+    "outputs": [],
+    "paramDefs": [],
+    "color": "#bfbfbf",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 35
+  },
+  {
+    "maker": "Unknown",
+    "name": "IN",
+    "hp": 8,
+    "cat": "placeholder",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "out",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#bfbfbf",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 36
+  },
+  {
+    "maker": "Unknown",
+    "name": "TRIGGER",
+    "hp": 8,
+    "cat": "placeholder",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "1",
+        "sigType": "gate"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#bfbfbf",
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 37
+  },
+  {
+    "maker": "Behringer",
+    "name": "960 Sequential Controller",
+    "hp": 56,
+    "cat": "sequencer",
+    "inputs": [
+      {
+        "name": "OSC ON",
+        "sigType": "gate"
+      },
+      {
+        "name": "OSC OFF",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 1 In",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 2 In",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 3 In",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 4 In",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 5 In",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 6 In",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 7 In",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 8 In",
+        "sigType": "gate"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Step 1 Out",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 2 Out",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 3 Out",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 4 Out",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 5 Out",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 6 Out",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 7 Out",
+        "sigType": "gate"
+      },
+      {
+        "name": "Step 8 Out",
+        "sigType": "gate"
+      }
+    ],
+    "paramDefs": [
+      {
+        "name": "Step 1",
+        "type": "enum",
+        "options": "Normal, Skip, Stop",
+        "default": "Normal"
+      },
+      {
+        "name": "Step 2",
+        "type": "enum",
+        "options": "Normal, Skip, Stop",
+        "default": "Normal"
+      },
+      {
+        "name": "Step 3",
+        "type": "enum",
+        "options": "Normal, Skip, Stop",
+        "default": "Normal"
+      },
+      {
+        "name": "Step 4",
+        "type": "enum",
+        "options": "Normal, Skip, Stop",
+        "default": "Normal"
+      },
+      {
+        "name": "Step 5",
+        "type": "enum",
+        "options": "Normal, Skip, Stop",
+        "default": "Normal"
+      },
+      {
+        "name": "Step 6",
+        "type": "enum",
+        "options": "Normal, Skip, Stop",
+        "default": "Normal"
+      },
+      {
+        "name": "Step 7",
+        "type": "enum",
+        "options": "Normal, Skip, Stop",
+        "default": "Normal"
+      },
+      {
+        "name": "Step 8",
+        "type": "enum",
+        "options": "Normal, Skip, Stop",
+        "default": "Normal"
+      },
+      {
+        "name": "All",
+        "type": "enum",
+        "options": "Skip, Stop",
+        "default": "Skip"
+      },
+      {
+        "name": "Range 1",
+        "type": "enum",
+        "options": "X1, X2, X4",
+        "default": "X1"
+      },
+      {
+        "name": "Range 2",
+        "type": "enum",
+        "options": "X1, X2, X4",
+        "default": "X1"
+      },
+      {
+        "name": "Range 3",
+        "type": "enum",
+        "options": "X1, X2, X3",
+        "default": "X1"
+      },
+      {
+        "name": "Fr Range",
+        "type": "knob",
+        "min": 1,
+        "max": 6,
+        "default": 1
+      },
+      {
+        "name": "Fr Vernier",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "type": "divider",
+        "name": ""
+      },
+      {
+        "name": "1-A",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "2-A",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "3-A",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "4-A",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "5-A",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "6-A",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "7-A",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "8-A",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "1-B",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "2-B",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "3-B",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "4-B",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "5-B",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "6-B",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "7-B",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "8-B",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "1-C",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "2-C",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "3-C",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "4-C",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "5-C",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "6-C",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "7-C",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "8-C",
+        "type": "knob",
+        "min": 0,
+        "max": 20,
+        "default": 0
+      },
+      {
+        "name": "3rdRowTime",
+        "type": "toggle",
+        "default": false
+      }
+    ],
+    "color": "#c8612a",
+    "paramCols": 8,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 38
+  },
+  {
+    "maker": "Behringer",
+    "name": "962 Sequential Switch",
+    "hp": 8,
+    "cat": "utility",
+    "inputs": [
+      {
+        "name": "Trig 1",
+        "sigType": "gate"
+      },
+      {
+        "name": "Trig 2",
+        "sigType": "gate"
+      },
+      {
+        "name": "Trig 3",
+        "sigType": "gate"
+      },
+      {
+        "name": "Shift",
+        "sigType": "gate"
+      },
+      {
+        "name": "Sig In 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "Sig In 2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Sig In 3",
+        "sigType": "audio"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "out 2",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [],
+    "color": "#ff6a00",
+    "paramCols": 3,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 39
+  },
+  {
+    "maker": "Behringer",
+    "name": "Brassmaster Fuzz",
+    "hp": 8,
+    "cat": "guitar pedal",
+    "inputs": [
+      {
+        "name": "In",
+        "sigType": "audio"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Out",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [
+      {
+        "name": "Brass Vol.",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Sens.",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Ball Vol.",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Brass",
+        "type": "toggle",
+        "default": false
+      },
+      {
+        "name": "Harmonic",
+        "type": "toggle",
+        "default": false
+      }
+    ],
+    "color": null,
+    "paramCols": 3,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 40
+  },
+  {
+    "maker": "Tunefish Modular",
+    "name": "Warps",
+    "hp": 10,
+    "cat": "effects",
+    "inputs": [
+      {
+        "name": "Level 1",
+        "sigType": "cv"
+      },
+      {
+        "name": "Level 2",
+        "sigType": "cv"
+      },
+      {
+        "name": "Algo",
+        "sigType": "cv"
+      },
+      {
+        "name": "Timbre",
+        "sigType": "cv"
+      },
+      {
+        "name": "In 1",
+        "sigType": "audio"
+      },
+      {
+        "name": "In 2",
+        "sigType": "audio"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Out 1 & 2",
+        "sigType": "audio"
+      },
+      {
+        "name": "Aux",
+        "sigType": "audio"
+      }
+    ],
+    "paramDefs": [
+      {
+        "name": "Algorithm",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Timbre",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Int OSC",
+        "type": "toggle",
+        "default": false
+      },
+      {
+        "name": "Level 1",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      },
+      {
+        "name": "Level 2",
+        "type": "knob",
+        "min": 0,
+        "max": 100,
+        "default": 0
+      }
+    ],
+    "color": null,
+    "paramCols": 2,
+    "power12p": 0,
+    "power12n": 0,
+    "power5": 0,
+    "id": 41
   }
 ];
 
@@ -1544,7 +3402,7 @@ function defaultState() {
   return {
     version: 2,
     modules: JSON.parse(JSON.stringify(DEFAULT_MODULES)),
-    nextModuleId: 24,
+    nextModuleId: 42,
     patches: [
       {
         id: 'patch_1',
