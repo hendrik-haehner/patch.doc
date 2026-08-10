@@ -899,9 +899,12 @@ const Patch = {
     // signal type dash patterns
     const DASH = { audio: 'none', cv: '6 3', gate: '2 4' };
     // Panel mode draws cables above modules (see .panel-mode CSS), so they
-    // need to stay thin or they'd bury the jacks and controls they cross.
-    const baseWidth  = this._panelMode ? '1.5' : '2.5';
-    const hoverWidth = this._panelMode ? '2.5' : '3.5';
+    // need to stay thin and translucent or they'd bury the jacks and
+    // controls they cross.
+    const baseWidth   = this._panelMode ? '1.5' : '2.5';
+    const hoverWidth  = this._panelMode ? '2.5' : '3.5';
+    const baseOpacity  = this._panelMode ? '0.55' : '0.85';
+    const hoverOpacity = this._panelMode ? '0.85' : '1';
     patch.cables.forEach(c => {
       const from = this._getPortCenter(c.fromPm, 'out', c.fromPort);
       const to   = this._getPortCenter(c.toPm,   'in',  c.toPort);
@@ -917,13 +920,13 @@ const Patch = {
       hit.style.cursor = 'pointer';
       hit.style.pointerEvents = 'stroke'; // SVG container is click-through; only this path intercepts clicks
       hit.addEventListener('click', () => this.removeCable(c.id));
-      hit.addEventListener('mouseenter', () => { vis.setAttribute('opacity', '1'); vis.setAttribute('stroke-width', hoverWidth); });
-      hit.addEventListener('mouseleave', () => { vis.setAttribute('opacity', '0.85'); vis.setAttribute('stroke-width', baseWidth); });
+      hit.addEventListener('mouseenter', () => { vis.setAttribute('opacity', hoverOpacity); vis.setAttribute('stroke-width', hoverWidth); });
+      hit.addEventListener('mouseleave', () => { vis.setAttribute('opacity', baseOpacity); vis.setAttribute('stroke-width', baseWidth); });
       // visible path
       const vis = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       vis.setAttribute('d', d); vis.setAttribute('stroke', c.color);
       vis.setAttribute('stroke-width', baseWidth); vis.setAttribute('fill', 'none');
-      vis.setAttribute('stroke-linecap', 'round'); vis.setAttribute('opacity', '0.85');
+      vis.setAttribute('stroke-linecap', 'round'); vis.setAttribute('opacity', baseOpacity);
       vis.setAttribute('data-cable-id', c.id);
       if (dash !== 'none') vis.setAttribute('stroke-dasharray', dash);
       vis.style.pointerEvents = 'none';
