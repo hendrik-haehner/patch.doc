@@ -204,7 +204,7 @@ const Patch = {
     // knob / switch / enum — same paramDef-driven control as the list layout
     const def = (m.paramDefs || []).find(d => d.name === e.ref);
     if (!def) return wrap('');
-    return wrap(this._renderControl(pm.id, def, vals[def.name], col));
+    return wrap(this._renderControl(pm.id, def, vals[def.name], col, e.w || 1, e.h || 1));
   },
 
   // Fetch manual lists for every module currently in the patch (deduped
@@ -288,7 +288,7 @@ const Patch = {
     return `ctrl-${pmId}-${name.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
   },
 
-  _renderControl(pmId, def, val, col) {
+  _renderControl(pmId, def, val, col, spanW = 1, spanH = 1) {
     const id = this._safeId(pmId, def.name);
     if (def.type === 'knob') {
       const min = def.min ?? 0, max = def.max ?? 100;
@@ -296,12 +296,21 @@ const Patch = {
       const pct = (v - min) / (max - min);
       const markCol = this._markColor(pmId, def.name);
       const markRing = markCol ? `<circle cx="19" cy="19" r="18" fill="none" stroke="${markCol}" stroke-width="2" opacity="0.9"/>` : '';
+      // A knob placed on a panel can span multiple cells (e.g. a 2x2 knob
+      // for a "hero" parameter) \u2014 scale it to fill that footprint. At the
+      // default 1x1 span this resolves to exactly 38px, the original fixed
+      // size, so list-mode controls and existing single-cell panels are
+      // pixel-identical to before.
+      const cellSpan  = Math.max(1, Math.min(spanW, spanH));
+      const svgSize   = cellSpan * 50 + (cellSpan - 1) * 4 - 12;
+      const valFont   = Math.round(10 * (svgSize / 38));
+      const labelFont = Math.round(9 * (svgSize / 38));
       return `<div class="pm-knob-wrap${markCol ? ' marked' : ''}" data-pmid="${pmId}" data-def="${encodeURIComponent(JSON.stringify(def))}" data-val="${v}"
         title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})"
         oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
-        ${this._knobSVG(id, pct, col, markRing)}
-        <div class="pm-ctrl-val" id="val-${id}">${this._fmtVal(v, def)}</div>
-        <div class="pm-ctrl-label">${def.name}</div>
+        ${this._knobSVG(id, pct, col, markRing, svgSize)}
+        <div class="pm-ctrl-val" id="val-${id}" style="font-size:${valFont}px">${this._fmtVal(v, def)}</div>
+        <div class="pm-ctrl-label" style="font-size:${labelFont}px">${def.name}</div>
       </div>`;
     }
     if (def.type === 'toggle') {
@@ -348,12 +357,15 @@ const Patch = {
     return '';
   },
 
-  _knobSVG(id, pct, col, markRing = '') {
+  _knobSVG(id, pct, col, markRing = '', size = 38) {
     // r=15, circumference=94.248, arc=270° → arc_length=70.686, gap=23.562
     const CIRC = 94.248, ARC = 70.686, GAP = 23.562;
     const deg  = pct * 270 - 135;  // tick rotation: -135° (min) to +135° (max)
     const dashoffset = (GAP + ARC * (1 - pct)).toFixed(2);
-    return `<svg class="pm-knob-svg" width="38" height="38" viewBox="0 0 38 38" id="svg-${id}">
+    // viewBox stays fixed at the original 38x38 coordinate space — width/
+    // height alone scale the rendered size, so every internal circle/line
+    // coordinate below keeps working unmodified at any size.
+    return `<svg class="pm-knob-svg" width="${size}" height="${size}" viewBox="0 0 38 38" id="svg-${id}">
       <circle cx="19" cy="19" r="15" fill="none" stroke="var(--border2)" stroke-width="2.5"
         stroke-dasharray="${ARC} ${GAP}" stroke-linecap="round" transform="rotate(135 19 19)"/>
       <circle cx="19" cy="19" r="15" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round"
