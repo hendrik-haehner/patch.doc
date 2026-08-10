@@ -461,18 +461,36 @@ app.post('/api/manuals/:moduleId', (req, res) => {
   uploadManual.single('file')(req, res, err => {
     if (err) return res.status(500).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'no file' });
-    res.json({ id: req.file.filename, name: req.file.originalname, type: req.file.mimetype, size: req.file.size, url: `/api/manuals/${req.params.moduleId}/${req.file.filename}` });
+    res.json({ kind: 'file', id: req.file.filename, name: req.file.originalname, type: req.file.mimetype, size: req.file.size, url: `/api/manuals/${req.params.moduleId}/${req.file.filename}` });
   });
+});
+
+// Add a link-type manual — for manuals that only exist as a web page and
+// don't export well to PDF (e.g. an interactive manufacturer manual site).
+app.post('/api/manuals/:moduleId/link', (req, res) => {
+  const { name, url } = req.body || {};
+  if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) {
+    return res.status(400).json({ error: 'a valid http(s) URL is required' });
+  }
+  const links = _manualLinks(req.params.moduleId);
+  const id = 'link_' + crypto.randomBytes(8).toString('hex');
+  links[id] = { name: (name || url).trim(), url: url.trim() };
+  _saveManualLinks(req.params.moduleId, links);
+  res.json({ kind: 'link', id, ...links[id] });
 });
 
 app.get('/api/manuals/:moduleId', (req, res) => {
   const d = path.join(MANUALS_DIR, req.params.moduleId);
-  if (!fs.existsSync(d)) return res.json([]);
   const meta = _manualMeta(req.params.moduleId);
-  res.json(fs.readdirSync(d).filter(f => !f.endsWith('.meta.json')).map(f => ({
-    id: f, name: meta[f]?.name || f, type: meta[f]?.type || 'application/pdf',
-    size: fs.statSync(path.join(d, f)).size, url: `/api/manuals/${req.params.moduleId}/${f}`
-  })));
+  const files = fs.existsSync(d)
+    ? fs.readdirSync(d).filter(f => !f.endsWith('.meta.json') && !f.endsWith('.links.json')).map(f => ({
+        kind: 'file', id: f, name: meta[f]?.name || f, type: meta[f]?.type || 'application/pdf',
+        size: fs.statSync(path.join(d, f)).size, url: `/api/manuals/${req.params.moduleId}/${f}`
+      }))
+    : [];
+  const links = Object.entries(_manualLinks(req.params.moduleId))
+    .map(([id, l]) => ({ kind: 'link', id, name: l.name, url: l.url }));
+  res.json([...files, ...links]);
 });
 
 app.get('/api/manuals/:moduleId/:filename', (req, res) => {
@@ -481,18 +499,32 @@ app.get('/api/manuals/:moduleId/:filename', (req, res) => {
   res.sendFile(f);
 });
 
-app.patch('/api/manuals/:moduleId/:filename', (req, res) => {
+// :id is either a real filename (uploaded PDF) or a "link_…" id (link entry)
+app.patch('/api/manuals/:moduleId/:id', (req, res) => {
+  if (req.params.id.startsWith('link_')) {
+    const links = _manualLinks(req.params.moduleId);
+    if (!links[req.params.id]) return res.status(404).json({ error: 'not found' });
+    links[req.params.id] = { ...links[req.params.id], ...req.body };
+    _saveManualLinks(req.params.moduleId, links);
+    return res.json({ ok: true });
+  }
   const meta = _manualMeta(req.params.moduleId);
-  meta[req.params.filename] = { ...meta[req.params.filename], ...req.body };
+  meta[req.params.id] = { ...meta[req.params.id], ...req.body };
   _saveManualMeta(req.params.moduleId, meta);
   res.json({ ok: true });
 });
 
-app.delete('/api/manuals/:moduleId/:filename', (req, res) => {
-  const f = path.join(MANUALS_DIR, req.params.moduleId, req.params.filename);
+app.delete('/api/manuals/:moduleId/:id', (req, res) => {
+  if (req.params.id.startsWith('link_')) {
+    const links = _manualLinks(req.params.moduleId);
+    delete links[req.params.id];
+    _saveManualLinks(req.params.moduleId, links);
+    return res.json({ ok: true });
+  }
+  const f = path.join(MANUALS_DIR, req.params.moduleId, req.params.id);
   if (fs.existsSync(f)) fs.unlinkSync(f);
   const meta = _manualMeta(req.params.moduleId);
-  delete meta[req.params.filename];
+  delete meta[req.params.id];
   _saveManualMeta(req.params.moduleId, meta);
   res.json({ ok: true });
 });
@@ -505,6 +537,16 @@ function _saveManualMeta(moduleId, meta) {
   const d = path.join(MANUALS_DIR, moduleId);
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
   fs.writeFileSync(path.join(d, '.meta.json'), JSON.stringify(meta, null, 2));
+}
+
+function _manualLinks(moduleId) {
+  const f = path.join(MANUALS_DIR, moduleId, '.links.json');
+  try { return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {}; } catch(e) { return {}; }
+}
+function _saveManualLinks(moduleId, links) {
+  const d = path.join(MANUALS_DIR, moduleId);
+  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+  fs.writeFileSync(path.join(d, '.links.json'), JSON.stringify(links, null, 2));
 }
 
 // ── API: shared patches ──────────────────────────────────────────────────────

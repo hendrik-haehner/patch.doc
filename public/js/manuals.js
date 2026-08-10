@@ -28,10 +28,10 @@ const Manuals = {
       el.innerHTML = `<div style="padding:24px 0;text-align:center">
         <div style="font-size:32px;margin-bottom:12px;opacity:0.4">📄</div>
         <div style="font-size:13px;color:var(--text1);margin-bottom:8px">
-          Manual upload is not available in the browser version.
+          Manual upload/links are not available in the browser version.
         </div>
         <div style="font-size:12px;color:var(--text2);line-height:1.6">
-          For PDF manuals, use the self-hosted Docker version.<br>
+          For PDF manuals or manual links, use the self-hosted Docker version.<br>
           <a href="https://github.com/hendrik-haehner/patch.doc/blob/main/INSTALL.md"
              target="_blank" rel="noopener"
              style="color:var(--accent);text-decoration:none">
@@ -95,7 +95,7 @@ const Manuals = {
   },
 
   _moduleRow(m) {
-    const files = this._cache[m.id] || [];
+    const entries = this._cache[m.id] || [];
     return `<div class="manual-module-row">
       <div class="manual-module-header">
         <span class="module-dot" style="background:${CAT_COLORS[m.cat] || '#888'}"></span>
@@ -107,19 +107,32 @@ const Manuals = {
             onchange="Manuals.upload(event, ${m.id})">
         </label>
       </div>
-      ${files.length ? `
+      ${entries.length ? `
         <div class="manual-file-list">
-          ${files.map(f => this._fileRow(f, m.id)).join('')}
+          ${entries.map(f => this._fileRow(f, m.id)).join('')}
         </div>` : `<div class="manual-empty-hint">no manual uploaded yet</div>`}
+      <div class="manual-link-add-row">
+        <input type="text" class="manual-link-name-input" id="manual-link-name-${m.id}" placeholder="name (optional)">
+        <input type="text" class="manual-link-url-input" id="manual-link-url-${m.id}" placeholder="https://… (manual web page)"
+          onkeydown="if(event.key==='Enter')Manuals.addLink(${m.id})">
+        <button class="io-add-btn" onclick="Manuals.addLink(${m.id})" title="add manual link" aria-label="add manual link">+ link</button>
+      </div>
       <div id="manual-viewer-${m.id}" class="manual-viewer" style="display:none"></div>
     </div>`;
   },
 
   _fileRow(f, moduleId) {
+    if (f.kind === 'link') {
+      return `<div class="manual-file-row">
+        <i class="ti ti-link" aria-hidden="true"></i>
+        <a href="${f.url}" target="_blank" rel="noopener" class="manual-file-name">${f.name}</a>
+        <span class="manual-file-size">link</span>
+        <button class="conn-del" onclick="Manuals.deleteFile(${moduleId},'${f.id}')" aria-label="delete manual link">×</button>
+      </div>`;
+    }
     const size = f.size > 1024*1024
       ? (f.size/1024/1024).toFixed(1) + ' MB'
       : (f.size/1024).toFixed(0) + ' KB';
-    const viewerId = 'manual-viewer-' + moduleId + '-' + f.id;
     return `<div class="manual-file-row">
       <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
       <a href="javascript:void(0)" class="manual-file-name" onclick="Manuals.toggleViewer(${moduleId},'${f.id}','${f.url}')">${f.name}</a>
@@ -129,6 +142,24 @@ const Manuals = {
       </a>
       <button class="conn-del" onclick="Manuals.deleteFile(${moduleId},'${f.id}')" aria-label="delete manual">×</button>
     </div>`;
+  },
+
+  async addLink(moduleId) {
+    const nameInput = document.getElementById('manual-link-name-' + moduleId);
+    const urlInput  = document.getElementById('manual-link-url-' + moduleId);
+    const url = urlInput.value.trim();
+    if (!url) { urlInput.focus(); return; }
+    try {
+      const res = await fetch(`/api/manuals/${moduleId}/link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nameInput.value.trim(), url })
+      });
+      const data = await res.json();
+      if (!res.ok) { App.setStatus('link failed: ' + (data.error || 'unknown error')); return; }
+      App.setStatus('manual link added');
+      this.render();
+    } catch(e) { App.setStatus('link failed: ' + e.message); }
   },
 
   // Toggle an inline PDF preview directly under the module's manual list.
@@ -205,27 +236,50 @@ const Manuals = {
     const el = document.getElementById('modal-manuals-content');
     if (!el) return;
     el.innerHTML = '<span style="color:var(--text2)">loading…</span>';
-    let files = [];
+    let entries = [];
     try {
       const res = await fetch(`/api/manuals/${moduleId}`);
-      files = await res.json();
+      entries = await res.json();
     } catch(e) {
       el.innerHTML = '<span style="color:var(--danger)">could not load manuals</span>';
       return;
     }
-    this._cache[moduleId] = files;
+    this._cache[moduleId] = entries;
     el.innerHTML = `
-      ${files.map(f => `
+      ${entries.map(f => `
         <div class="manual-file-row" style="padding:4px 0">
-          <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
+          <i class="ti ${f.kind === 'link' ? 'ti-link' : 'ti-file-type-pdf'}" aria-hidden="true"></i>
           <a href="${f.url}" target="_blank" rel="noopener" class="manual-file-name">${f.name}</a>
           <button class="conn-del" onclick="Manuals.deleteFromModal(${moduleId},'${f.id}')" aria-label="delete manual">×</button>
         </div>`).join('')}
       <label class="btn-action" style="cursor:pointer;margin-top:4px;display:inline-flex">
-        <i class="ti ti-file-plus" aria-hidden="true"></i> ${files.length ? 'add another PDF' : 'upload PDF'}
+        <i class="ti ti-file-plus" aria-hidden="true"></i> ${entries.some(f => f.kind !== 'link') ? 'add another PDF' : 'upload PDF'}
         <input type="file" accept="application/pdf" style="display:none"
           onchange="Manuals.uploadFromModal(event, ${moduleId})">
-      </label>`;
+      </label>
+      <div class="manual-link-add-row" style="margin-top:6px">
+        <input type="text" class="manual-link-name-input" id="modal-manual-link-name-${moduleId}" placeholder="name (optional)">
+        <input type="text" class="manual-link-url-input" id="modal-manual-link-url-${moduleId}" placeholder="https://… (manual web page)"
+          onkeydown="if(event.key==='Enter')Manuals.addLinkFromModal(${moduleId})">
+        <button class="io-add-btn" onclick="Manuals.addLinkFromModal(${moduleId})" title="add manual link" aria-label="add manual link">+ link</button>
+      </div>`;
+  },
+
+  async addLinkFromModal(moduleId) {
+    const nameInput = document.getElementById('modal-manual-link-name-' + moduleId);
+    const urlInput  = document.getElementById('modal-manual-link-url-' + moduleId);
+    const url = urlInput.value.trim();
+    if (!url) { urlInput.focus(); return; }
+    try {
+      const res = await fetch(`/api/manuals/${moduleId}/link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nameInput.value.trim(), url })
+      });
+      const data = await res.json();
+      if (!res.ok) { App.setStatus('link failed: ' + (data.error || 'unknown error')); return; }
+      this.renderInModal(moduleId);
+    } catch(e) { App.setStatus('link failed: ' + e.message); }
   },
 
   uploadFromModal(event, moduleId) {
