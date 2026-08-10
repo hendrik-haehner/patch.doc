@@ -1113,12 +1113,13 @@ html, body {
 /* Jacks read like a real front panel: same footprint as a knob cell,
    jack centered on top, label centered underneath — not the compact
    side-by-side row list mode uses (overrides .port.output's row-reverse
-   too, since it has equal selector specificity and this rule comes later). */
+   too, since it has equal selector specificity and this rule comes later).
+   Jack diameter stays the list-mode size — only the layout changes. */
 .pm-panel-cell .port {
   flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; width: 100%; padding: 2px 0;
 }
-.pm-panel-cell .port-jack { width: 30px; height: 30px; border-width: 2px; flex-shrink: 0; }
+.pm-panel-cell .port-jack { flex-shrink: 0; }
 .pm-panel-cell .port-name {
   text-align: center; max-width: 100%;
   font-size: clamp(9px, calc(var(--pm-cell-w, 50px) * 0.14), 9px);
