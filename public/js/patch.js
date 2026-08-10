@@ -158,10 +158,8 @@ const Patch = {
       icon.href = files[0].url;
       icon.title = files.length > 1 ? files.length + ' manuals — open first' : 'open manual';
       icon.style.display = 'flex';
-      const isLink = files[0].kind === 'link';
-      icon.classList.toggle('is-link', isLink);
       const iconGlyph = icon.querySelector('i');
-      if (iconGlyph) iconGlyph.className = 'ti ' + (isLink ? 'ti-link' : 'ti-file-type-pdf');
+      if (iconGlyph) iconGlyph.className = 'ti ' + (files[0].kind === 'link' ? 'ti-link' : 'ti-file-type-pdf');
     });
   },
 
