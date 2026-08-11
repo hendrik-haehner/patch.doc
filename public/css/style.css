@@ -1258,11 +1258,32 @@ html, body {
   font-weight: 600; flex-shrink: 0; color: var(--text2); background: var(--bg1);
   border: 0.5px solid var(--border2);
 }
+/* One color per element type, applied both to the pool-chip badge (the
+   small span) and to the placed item's own box on the grid (compound
+   selector — needs higher specificity than .panel-editor-placed's base
+   colors below, not just to come later in the file). */
 .panel-editor-chip-badge-input,
+.panel-editor-placed.panel-editor-chip-badge-input  { color: #4a8fd4; border-color: rgba(74,143,212,0.35); background: rgba(74,143,212,0.12); }
 .panel-editor-chip-badge-output,
-.panel-editor-chip-badge-knob   { color: var(--accent); border-color: var(--accent-border); background: var(--accent-bg); }
-.panel-editor-chip-badge-toggle { color: var(--success); border-color: rgba(42,170,122,0.3); background: rgba(42,170,122,0.1); }
-.panel-editor-chip-badge-enum   { color: #d4963a; border-color: rgba(212,150,58,0.3); background: rgba(212,150,58,0.1); }
+.panel-editor-placed.panel-editor-chip-badge-output { color: #c8612a; border-color: rgba(200,97,42,0.35); background: rgba(200,97,42,0.12); }
+.panel-editor-chip-badge-knob,
+.panel-editor-placed.panel-editor-chip-badge-knob   { color: #8f86e8; border-color: rgba(143,134,232,0.35); background: rgba(143,134,232,0.12); }
+.panel-editor-chip-badge-toggle,
+.panel-editor-placed.panel-editor-chip-badge-toggle { color: #2aaa7a; border-color: rgba(42,170,122,0.35); background: rgba(42,170,122,0.12); }
+.panel-editor-chip-badge-enum,
+.panel-editor-placed.panel-editor-chip-badge-enum   { color: #d4963a; border-color: rgba(212,150,58,0.35); background: rgba(212,150,58,0.12); }
+.panel-editor-chip-badge-text,
+.panel-editor-placed.panel-editor-chip-badge-text   { color: #4ac4c4; border-color: rgba(74,196,196,0.35); background: rgba(74,196,196,0.12); }
+.panel-editor-chip-badge-label,
+.panel-editor-placed.panel-editor-chip-badge-label  { color: #9a9a9a; border-color: rgba(154,154,154,0.35); background: rgba(154,154,154,0.12); }
+.panel-editor-chip-badge-button,
+.panel-editor-placed.panel-editor-chip-badge-button { color: #d44aaa; border-color: rgba(212,74,170,0.35); background: rgba(212,74,170,0.12); }
+.panel-editor-chip-badge-divider,
+.panel-editor-chip-badge-divider-h,
+.panel-editor-chip-badge-divider-v,
+.panel-editor-placed.panel-editor-chip-badge-divider,
+.panel-editor-placed.panel-editor-chip-badge-divider-h,
+.panel-editor-placed.panel-editor-chip-badge-divider-v { color: #7a8a78; border-color: rgba(122,138,120,0.35); background: rgba(122,138,120,0.12); }
 .panel-editor-chip-label { flex: 1; color: var(--text0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .panel-editor-grid-wrap { overflow: auto; max-height: 58vh; padding: 2px; }
@@ -1276,8 +1297,10 @@ html, body {
 .panel-editor-empty-cell.drag-over-invalid { border-color: var(--danger); background: rgba(200,60,60,0.12); }
 
 .panel-editor-placed {
-  border: 1px solid var(--accent-border); border-radius: 4px;
-  background: var(--accent-bg); color: var(--accent);
+  /* Neutral fallback — the .panel-editor-chip-badge-<type> compound rules
+     above override border-color/background/color per element type. */
+  border: 1px solid var(--border2); border-radius: 4px;
+  background: var(--bg2); color: var(--text1);
   display: flex; align-items: center; justify-content: center;
   font-size: 9px; cursor: grab; padding: 2px 4px; text-align: center;
   overflow: hidden; min-width: 0;
