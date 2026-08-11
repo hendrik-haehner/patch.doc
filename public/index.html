@@ -379,7 +379,8 @@
     <div class="field">
       <label>inputs</label>
       <div class="io-builder" id="inputs-builder"></div>
-      <div style="display:grid;grid-template-columns:1fr 24px;gap:5px;margin-top:6px">
+      <div class="io-add-row-grid">
+        <span></span>
         <input id="input-add-field" type="text" placeholder="add input port..."
                style="min-width:0"
                onkeydown="if(event.key==='Enter')App.addIO('in')">
@@ -389,7 +390,8 @@
     <div class="field">
       <label>outputs</label>
       <div class="io-builder" id="outputs-builder"></div>
-      <div style="display:grid;grid-template-columns:1fr 24px;gap:5px;margin-top:6px">
+      <div class="io-add-row-grid">
+        <span></span>
         <input id="output-add-field" type="text" placeholder="add output port..."
                style="min-width:0"
                onkeydown="if(event.key==='Enter')App.addIO('out')">
