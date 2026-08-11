@@ -1153,7 +1153,7 @@ html, body {
   font-size: 9px; color: var(--text1); letter-spacing: 0.08em;
   text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.pm-panel-divider { border-top: 0.5px solid var(--border); width: 100%; }
+.pm-panel-divider-h { border-top: 0.5px solid var(--border); width: 100%; }
 .pm-panel-divider-v { border-left: 0.5px solid var(--border); height: 100%; justify-self: center; }
 .pm-panel-cell-stretch { align-self: stretch; }
 .pm-panel-button {

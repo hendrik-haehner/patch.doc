@@ -87,7 +87,7 @@ const PanelEditor = {
   },
 
   _returnToPool(el) {
-    if (['label', 'divider', 'divider-v', 'button'].includes(el.type)) {
+    if (['label', 'divider', 'divider-h', 'divider-v', 'button'].includes(el.type)) {
       window._panelPool.push({ localId: this._uid(), type: el.type, text: el.text || '' });
     }
     // ports/params need no bookkeeping — they reappear in the pool
@@ -112,7 +112,7 @@ const PanelEditor = {
     const placedInput  = new Set(panel.elements.filter(e => e.type === 'input').map(e => e.ref));
     const placedOutput = new Set(panel.elements.filter(e => e.type === 'output').map(e => e.ref));
     const placedParam  = new Set(panel.elements
-      .filter(e => !['input', 'output', 'label', 'divider', 'divider-v', 'button'].includes(e.type))
+      .filter(e => !['input', 'output', 'label', 'divider', 'divider-h', 'divider-v', 'button'].includes(e.type))
       .map(e => e.ref));
 
     const chips = [];
@@ -169,7 +169,7 @@ const PanelEditor = {
   _elementChip(e, i) {
     const pos = `grid-column:${e.col + 1} / span ${e.w || 1};grid-row:${e.row + 1} / span ${e.h || 1}`;
     const label = (e.type === 'label' || e.type === 'button') ? (e.text || '')
-      : e.type === 'divider' ? '──' : e.type === 'divider-v' ? '│' : (e.ref || '');
+      : (e.type === 'divider' || e.type === 'divider-h') ? '──' : e.type === 'divider-v' ? '│' : (e.ref || '');
     const selected = window._panelSelectedIdx === i ? ' selected' : '';
     return `<div class="panel-editor-placed panel-editor-chip-badge-${e.type}${selected}" style="${pos}" draggable="true"
       onclick="PanelEditor.selectElement(${i},event)"
@@ -383,7 +383,7 @@ const PanelEditor = {
     const outputNames = new Set((outputs || []).map(p => p.name));
     const paramNames  = new Set((paramDefs || []).filter(d => d.type !== 'divider').map(d => d.name));
     const elements = panel.elements.filter(e => {
-      if (['label', 'divider', 'divider-v', 'button'].includes(e.type)) return true;
+      if (['label', 'divider', 'divider-h', 'divider-v', 'button'].includes(e.type)) return true;
       if (e.type === 'input')  return inputNames.has(e.ref);
       if (e.type === 'output') return outputNames.has(e.ref);
       return paramNames.has(e.ref);
@@ -397,7 +397,9 @@ const PanelEditor = {
   },
 
   _specialLabel(type) {
-    return type === 'divider-v' ? 'v-divider' : type;
+    if (type === 'divider-v') return 'v-divider';
+    if (type === 'divider' || type === 'divider-h') return 'h-divider';
+    return type;
   },
 
   _attrEsc(s) {

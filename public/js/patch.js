@@ -187,8 +187,10 @@ const Patch = {
     const pos  = `grid-column:${e.col + 1} / span ${e.w || 1};grid-row:${e.row + 1} / span ${e.h || 1}`;
     const wrap = (inner, extraClass = '') => `<div class="pm-panel-cell${extraClass ? ' ' + extraClass : ''}" style="${pos}">${inner}</div>`;
 
-    if (e.type === 'label')     return wrap(`<div class="pm-panel-label">${e.text || ''}</div>`);
-    if (e.type === 'divider')   return wrap(`<div class="pm-panel-divider"></div>`);
+    if (e.type === 'label') return wrap(`<div class="pm-panel-label">${e.text || ''}</div>`);
+    // 'divider' is the pre-rename type string — still read for panels saved
+    // before the horizontal/vertical split, alongside the current 'divider-h'.
+    if (e.type === 'divider' || e.type === 'divider-h') return wrap(`<div class="pm-panel-divider-h"></div>`);
     // .pm-panel's align-items:center only sizes a cell to its own content,
     // so a vertical divider's height:100% has nothing definite to resolve
     // against unless its own cell is told to stretch to the row's height.
