@@ -1136,18 +1136,17 @@ html, body {
   text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
 }
 
-/* ── param def editor in modal ── */
-.pdef-list {
-  min-height: 24px; margin-bottom: 6px;
-  border: 0.5px solid var(--border); border-radius: var(--radius);
-  overflow: hidden;
-}
+/* ── param def editor in modal ──
+   Same "individual bordered pill per row" language as .io-port-row,
+   instead of one shared bordered list with divider lines between rows. */
+.pdef-list { min-height: 24px; margin-bottom: 6px; }
 .pdef-empty { font-size: 10px; color: var(--text2); padding: 6px 8px; }
 .pdef-row {
   display: flex; align-items: center; gap: 6px;
-  padding: 4px 8px; border-bottom: 0.5px solid var(--border); font-size: 11px;
+  padding: 6px 8px; margin-bottom: 4px; font-size: 13px;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg0);
 }
-.pdef-row:last-child { border-bottom: none; }
 .pdef-type {
   font-size: 9px; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.06em;
   font-weight: 600; flex-shrink: 0;
@@ -1159,7 +1158,7 @@ html, body {
 .pdef-detail { font-size: 9px; color: var(--text2); }
 .pdef-del {
   background: transparent; border: none; color: var(--text2);
-  cursor: pointer; font-size: 13px; padding: 0; line-height: 1;
+  cursor: pointer; font-size: 14px; padding: 0; line-height: 1;
 }
 .pdef-del:hover { color: var(--danger); }
 .pdef-add-area { margin-top: 4px; }
@@ -1442,7 +1441,7 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
 .pdef-handle:active { cursor: grabbing; }
 .pdef-edit {
   background: transparent; border: none; color: var(--text2);
-  cursor: pointer; font-size: 13px; padding: 0; line-height: 1; margin-left: auto;
+  cursor: pointer; font-size: 14px; padding: 0; line-height: 1; margin-left: auto;
 }
 .pdef-edit:hover { color: var(--accent); }
 .pdef-row { transition: opacity 0.15s, background 0.1s; }
