@@ -1139,6 +1139,11 @@ html, body {
   font-size: clamp(9px, calc(var(--pm-cell-w, 50px) * 0.14), 9px);
   white-space: normal; overflow-wrap: break-word; line-height: 1.15;
 }
+/* Same wrap treatment for knob/switch/enum labels — rows auto-size their
+   height, so a long parameter name gets a second line instead of "...". */
+.pm-panel-cell .pm-ctrl-label {
+  white-space: normal; overflow-wrap: break-word; line-height: 1.15;
+}
 .pm-panel-label {
   font-size: 9px; color: var(--text1); letter-spacing: 0.08em;
   text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
