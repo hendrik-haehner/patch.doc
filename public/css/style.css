@@ -1477,14 +1477,6 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
 }
 .module-cat-header:first-child { border-top: none; margin-top: 0; }
 
-/* ── IO signal type selector ── */
-.io-sig-select {
-  font-size: 10px; padding: 3px 5px;
-  border: 0.5px solid var(--border2); border-radius: var(--radius);
-  background: var(--bg0); color: var(--text1);
-  font-family: var(--font); width: 72px; flex-shrink: 0;
-}
-
 /* ── IO port rows (editable, sortable via drag & drop) ── */
 .io-port-row {
   display: grid; grid-template-columns: 16px 1fr 72px 18px;

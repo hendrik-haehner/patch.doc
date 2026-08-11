@@ -1375,22 +1375,15 @@ const App = {
     this._renderIOTags();
   },
 
-  updateIOSigGuess(dir) {
-    const field = document.getElementById(dir === 'in' ? 'input-add-field' : 'output-add-field');
-    const sel   = document.getElementById(dir === 'in' ? 'input-sig-type' : 'output-sig-type');
-    if (sel) sel.value = this._guessSigType(field.value);
-  },
-
   addIO(dir) {
-    const field   = document.getElementById(dir === 'in' ? 'input-add-field' : 'output-add-field');
-    const sigSel  = document.getElementById(dir === 'in' ? 'input-sig-type' : 'output-sig-type');
-    const v       = field.value.trim();
+    const field = document.getElementById(dir === 'in' ? 'input-add-field' : 'output-add-field');
+    const v     = field.value.trim();
     if (!v) return;
-    const sigType = sigSel ? sigSel.value : this._guessSigType(v);
-    const port    = { name: v, sigType };
+    // Signal type is auto-guessed from the port name; adjust it afterward
+    // via the cycling badge next to each port (App.cycleSigType).
+    const port = { name: v, sigType: this._guessSigType(v) };
     if (dir === 'in') window._tempInputs.push(port); else window._tempOutputs.push(port);
     field.value = '';
-    if (sigSel) sigSel.value = 'audio';
     this._renderIOTags();
   },
 
