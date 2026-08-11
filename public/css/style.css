@@ -1118,7 +1118,10 @@ html, body {
 .pm-panel {
   --pm-cell-w: 50px;
   display: grid;
-  align-items: center;
+  /* Top-align, not center — a cell made taller by a wrapped label
+     shouldn't push shorter cells' knobs/jacks down out of alignment
+     with the rest of the row. */
+  align-items: start;
   gap: 4px;
   padding: 6px;
   border-top: 0.5px solid var(--border);
