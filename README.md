@@ -19,6 +19,7 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 ## Features
 
 - **Patch canvas** — visual layout of modules with cables and connections
+- **Panel layout** — optional front-panel-style view per module, with a visual editor to place ports, knobs, switches, labels and dividers on a grid (see [below](#panel-layout))
 - **Connections tab** — dropdown-based cable editor, works on mobile without drag gestures
 - **Parameters** — document knob positions, switches and settings per module
 - **Performance marks** — color-mark parameters (green / yellow / red) for live performance reference
@@ -34,6 +35,20 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **PWA** — installable as a home screen app on iOS and Android
 - **Multi-user** — each user has their own patches and media; modules and manuals are shared
 - **Admin panel** — manage users at `/admin` without restarting the container
+
+---
+
+## Panel layout
+
+Any module can optionally render as a scaled front-panel mockup instead of a plain list — ports and controls sit roughly where they do on the real hardware, cables cross the panel translucently so they don't hide anything underneath, and a knob can span multiple cells to stand out.
+
+![Panel layout view](docs/screenshot_panel-view.png)
+
+Turn it on per-module from the module editor's **edit panel layout** button: drag ports, knobs, switches, labels and dividers onto a grid, resize anything by cell, and reposition by drag. It only arranges what's already defined on the module — inputs, outputs and parameters are still added the usual way.
+
+![Panel layout editor](docs/screenshot_panel-editor.png)
+
+Panel view is a display option, toggleable at any time from the patch toolbar (**panel view** / **list view**) — modules without a panel layout always render as a list either way.
 
 ---
 
