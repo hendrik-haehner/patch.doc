@@ -180,7 +180,26 @@ const Patch = {
   _renderPanel(pm, m, vals, col) {
     const { cols, rows, elements = [] } = m.panel;
     const cellsHtml = elements.map(e => this._renderPanelElement(pm, m, e, vals, col)).join('');
-    return `<div class="pm-panel" style="grid-template-columns:repeat(${cols},var(--pm-cell-w,50px));grid-template-rows:repeat(${rows},auto)">${cellsHtml}</div>`;
+    const colTemplate = this._panelColTemplate(cols, elements);
+    return `<div class="pm-panel" style="grid-template-columns:${colTemplate};grid-template-rows:repeat(${rows},auto)">${cellsHtml}</div>`;
+  },
+
+  // A column that's used only by vertical dividers (never by a port, knob,
+  // label etc.) renders narrow instead of claiming a full --pm-cell-w slot
+  // — a divider is a thin line, not a control, and a full-width column next
+  // to it wastes most of its own width as dead space. Columns with any
+  // other content, or with nothing at all, keep the normal cell width. The
+  // panel editor's own grid stays uniform on purpose — this only affects
+  // the final rendered view, not the placement UI.
+  _panelColTemplate(cols, elements) {
+    const touchedBy = Array.from({ length: cols }, () => []);
+    elements.forEach(e => {
+      const w = e.w || 1;
+      for (let c = e.col; c < e.col + w && c < cols; c++) touchedBy[c].push(e.type);
+    });
+    return touchedBy
+      .map(types => (types.length && types.every(t => t === 'divider-v')) ? '14px' : 'var(--pm-cell-w,50px)')
+      .join(' ');
   },
 
   _renderPanelElement(pm, m, e, vals, col) {
