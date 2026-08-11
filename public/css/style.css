@@ -1479,13 +1479,17 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
 
 /* ── IO port rows (editable, sortable via drag & drop) ── */
 .io-port-row {
-  display: grid; grid-template-columns: 16px 1fr 72px 18px;
+  display: grid; grid-template-columns: 16px 1fr 18px;
   gap: 5px; align-items: center; margin-bottom: 4px;
   transition: opacity 0.15s, background 0.1s;
   border-radius: var(--radius);
 }
 .io-port-row.dragging { opacity: 0.4; }
 .io-port-row.drag-over { background: var(--accent-bg); outline: 1px dashed var(--accent-border); }
+/* Same leading spacer width as .io-port-row's drag handle, so the "add
+   port" field lines up under the port name inputs above it instead of
+   sitting further left. */
+.io-add-row-grid { display: grid; grid-template-columns: 16px 1fr 24px; gap: 5px; margin-top: 6px; }
 .io-port-handle {
   color: var(--text2); cursor: grab; font-size: 13px;
   text-align: center; flex-shrink: 0; line-height: 1;
