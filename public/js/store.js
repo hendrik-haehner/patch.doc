@@ -7,56 +7,20 @@ const DEFAULT_MODULES = [
     "hp": 14,
     "cat": "envelope",
     "inputs": [
-      {
-        "name": "Slope",
-        "sigType": "cv"
-      },
-      {
-        "name": "Freq",
-        "sigType": "cv"
-      },
-      {
-        "name": "Smoothness",
-        "sigType": "cv"
-      },
-      {
-        "name": "Shape",
-        "sigType": "cv"
-      },
-      {
-        "name": "Shift/Level",
-        "sigType": "cv"
-      },
-      {
-        "name": "V/Oct",
-        "sigType": "cv"
-      },
-      {
-        "name": "Trig",
-        "sigType": "gate"
-      },
-      {
-        "name": "Clock",
-        "sigType": "gate"
-      }
+      "Slope",
+      "Freq",
+      "Smoothness",
+      "Shape",
+      "Shift/Level",
+      "V/Oct",
+      "Trig",
+      "Clock"
     ],
     "outputs": [
-      {
-        "name": "Out 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "Out 2",
-        "sigType": "cv"
-      },
-      {
-        "name": "Out 3",
-        "sigType": "cv"
-      },
-      {
-        "name": "Out 4",
-        "sigType": "cv"
-      }
+      "Out 1",
+      "Out 2",
+      "Out 3",
+      "Out 4"
     ],
     "id": 6,
     "paramDefs": [
@@ -161,44 +125,17 @@ const DEFAULT_MODULES = [
     "hp": 16,
     "cat": "oscillator",
     "inputs": [
-      {
-        "name": "Model",
-        "sigType": "cv"
-      },
-      {
-        "name": "Harmonics",
-        "sigType": "cv"
-      },
-      {
-        "name": "V/Oct",
-        "sigType": "cv"
-      },
-      {
-        "name": "FM",
-        "sigType": "cv"
-      },
-      {
-        "name": "Level",
-        "sigType": "cv"
-      },
-      {
-        "name": "Morph",
-        "sigType": "cv"
-      },
-      {
-        "name": "Trig",
-        "sigType": "gate"
-      }
+      "Model",
+      "Harmonics",
+      "V/Oct",
+      "FM",
+      "Level",
+      "Morph",
+      "Trig"
     ],
     "outputs": [
-      {
-        "name": "Out 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Out 2",
-        "sigType": "audio"
-      }
+      "Out 1",
+      "Out 2"
     ],
     "id": 7,
     "paramDefs": [
@@ -276,108 +213,33 @@ const DEFAULT_MODULES = [
     "hp": 20,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "In 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Trig 1",
-        "sigType": "gate"
-      },
-      {
-        "name": "Rise 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "Both 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "Fall 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "Cycle 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "In 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "In 3",
-        "sigType": "audio"
-      },
-      {
-        "name": "In 4",
-        "sigType": "audio"
-      },
-      {
-        "name": "Trig 4",
-        "sigType": "gate"
-      },
-      {
-        "name": "Rise 4",
-        "sigType": "cv"
-      },
-      {
-        "name": "Both 4",
-        "sigType": "cv"
-      },
-      {
-        "name": "Fall 4",
-        "sigType": "cv"
-      },
-      {
-        "name": "Cycle 4",
-        "sigType": "cv"
-      }
+      "In 1",
+      "Trig 1",
+      "Rise 1",
+      "Both 1",
+      "Fall 1",
+      "Cycle 1",
+      "In 2",
+      "In 3",
+      "In 4",
+      "Trig 4",
+      "Rise 4",
+      "Both 4",
+      "Fall 4",
+      "Cycle 4"
     ],
     "outputs": [
-      {
-        "name": "Out 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Out 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Out 3",
-        "sigType": "audio"
-      },
-      {
-        "name": "Out 4",
-        "sigType": "audio"
-      },
-      {
-        "name": "EOR 1",
-        "sigType": "gate"
-      },
-      {
-        "name": "Func 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "OR",
-        "sigType": "audio"
-      },
-      {
-        "name": "SUM",
-        "sigType": "audio"
-      },
-      {
-        "name": "INV",
-        "sigType": "audio"
-      },
-      {
-        "name": "Func 4",
-        "sigType": "audio"
-      },
-      {
-        "name": "EOC 4",
-        "sigType": "gate"
-      }
+      "Out 1",
+      "Out 2",
+      "Out 3",
+      "Out 4",
+      "EOR 1",
+      "Func 1",
+      "OR",
+      "SUM",
+      "INV",
+      "Func 4",
+      "EOC 4"
     ],
     "id": 8,
     "paramDefs": [
@@ -474,40 +336,16 @@ const DEFAULT_MODULES = [
     "hp": 12,
     "cat": "oscillator",
     "inputs": [
-      {
-        "name": "Pitch",
-        "sigType": "cv"
-      },
-      {
-        "name": "Trig",
-        "sigType": "gate"
-      },
-      {
-        "name": "Velocity",
-        "sigType": "cv"
-      },
-      {
-        "name": "X",
-        "sigType": "cv"
-      },
-      {
-        "name": "Mod",
-        "sigType": "cv"
-      },
-      {
-        "name": "Decay",
-        "sigType": "cv"
-      },
-      {
-        "name": "Y",
-        "sigType": "cv"
-      }
+      "Pitch",
+      "Trig",
+      "Velocity",
+      "X",
+      "Mod",
+      "Decay",
+      "Y"
     ],
     "outputs": [
-      {
-        "name": "Out",
-        "sigType": "audio"
-      }
+      "Out"
     ],
     "id": 9,
     "paramDefs": [
@@ -585,40 +423,16 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "lfo",
     "inputs": [
-      {
-        "name": "Trig 1",
-        "sigType": "gate"
-      },
-      {
-        "name": "Trig 2",
-        "sigType": "gate"
-      },
-      {
-        "name": "1",
-        "sigType": "cv"
-      },
-      {
-        "name": "2",
-        "sigType": "cv"
-      },
-      {
-        "name": "3",
-        "sigType": "cv"
-      },
-      {
-        "name": "4",
-        "sigType": "cv"
-      }
+      "Trig 1",
+      "Trig 2",
+      "1",
+      "2",
+      "3",
+      "4"
     ],
     "outputs": [
-      {
-        "name": "1",
-        "sigType": "audio"
-      },
-      {
-        "name": "2",
-        "sigType": "audio"
-      }
+      "1",
+      "2"
     ],
     "id": 10,
     "paramDefs": [
@@ -716,72 +530,24 @@ const DEFAULT_MODULES = [
     "hp": 18,
     "cat": "filter",
     "inputs": [
-      {
-        "name": "In 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "In 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "V/Oct 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "V/Oct 2",
-        "sigType": "cv"
-      },
-      {
-        "name": "Drive 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "Drive 2",
-        "sigType": "cv"
-      },
-      {
-        "name": "Mode 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "Mode 2",
-        "sigType": "cv"
-      },
-      {
-        "name": "Freq 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "Reso 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Routing",
-        "sigType": "cv"
-      },
-      {
-        "name": "Freq 2",
-        "sigType": "cv"
-      },
-      {
-        "name": "Reso 2",
-        "sigType": "cv"
-      }
+      "In 1",
+      "In 2",
+      "V/Oct 1",
+      "V/Oct 2",
+      "Drive 1",
+      "Drive 2",
+      "Mode 1",
+      "Mode 2",
+      "Freq 1",
+      "Reso 1",
+      "Routing",
+      "Freq 2",
+      "Reso 2"
     ],
     "outputs": [
-      {
-        "name": "1",
-        "sigType": "audio"
-      },
-      {
-        "name": "2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Main",
-        "sigType": "audio"
-      }
+      "1",
+      "2",
+      "Main"
     ],
     "id": 11,
     "paramDefs": [
@@ -903,56 +669,20 @@ const DEFAULT_MODULES = [
     "hp": 18,
     "cat": "effects",
     "inputs": [
-      {
-        "name": "L",
-        "sigType": "audio"
-      },
-      {
-        "name": "R",
-        "sigType": "audio"
-      },
-      {
-        "name": "Freeze",
-        "sigType": "cv"
-      },
-      {
-        "name": "Trig",
-        "sigType": "gate"
-      },
-      {
-        "name": "Pos",
-        "sigType": "cv"
-      },
-      {
-        "name": "Dens",
-        "sigType": "cv"
-      },
-      {
-        "name": "Size",
-        "sigType": "cv"
-      },
-      {
-        "name": "Texture",
-        "sigType": "cv"
-      },
-      {
-        "name": "V/Oct",
-        "sigType": "cv"
-      },
-      {
-        "name": "Blend",
-        "sigType": "cv"
-      }
+      "L",
+      "R",
+      "Freeze",
+      "Trig",
+      "Pos",
+      "Dens",
+      "Size",
+      "Texture",
+      "V/Oct",
+      "Blend"
     ],
     "outputs": [
-      {
-        "name": "L",
-        "sigType": "audio"
-      },
-      {
-        "name": "R",
-        "sigType": "audio"
-      }
+      "L",
+      "R"
     ],
     "id": 12,
     "paramDefs": [
@@ -1029,44 +759,17 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "filter",
     "inputs": [
-      {
-        "name": "In 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "In 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Freq",
-        "sigType": "cv"
-      },
-      {
-        "name": "Reso",
-        "sigType": "cv"
-      },
-      {
-        "name": "V/Oct",
-        "sigType": "cv"
-      },
-      {
-        "name": "Level",
-        "sigType": "cv"
-      }
+      "In 1",
+      "In 2",
+      "Freq",
+      "Reso",
+      "V/Oct",
+      "Level"
     ],
     "outputs": [
-      {
-        "name": "HP",
-        "sigType": "audio"
-      },
-      {
-        "name": "BP",
-        "sigType": "audio"
-      },
-      {
-        "name": "LP",
-        "sigType": "audio"
-      }
+      "HP",
+      "BP",
+      "LP"
     ],
     "id": 13,
     "paramDefs": [
@@ -1117,60 +820,21 @@ const DEFAULT_MODULES = [
     "hp": 18,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "Clock X",
-        "sigType": "gate"
-      },
-      {
-        "name": "Clock Y",
-        "sigType": "gate"
-      },
-      {
-        "name": "Feedback",
-        "sigType": "cv"
-      },
-      {
-        "name": "Jitter",
-        "sigType": "cv"
-      },
-      {
-        "name": "Rate",
-        "sigType": "cv"
-      },
-      {
-        "name": "Spread",
-        "sigType": "cv"
-      },
-      {
-        "name": "Steps",
-        "sigType": "cv"
-      }
+      "Clock X",
+      "Clock Y",
+      "Feedback",
+      "Jitter",
+      "Rate",
+      "Spread",
+      "Steps"
     ],
     "outputs": [
-      {
-        "name": "t1",
-        "sigType": "cv"
-      },
-      {
-        "name": "t2",
-        "sigType": "cv"
-      },
-      {
-        "name": "t3",
-        "sigType": "cv"
-      },
-      {
-        "name": "x1",
-        "sigType": "cv"
-      },
-      {
-        "name": "x2",
-        "sigType": "cv"
-      },
-      {
-        "name": "x3",
-        "sigType": "cv"
-      }
+      "t1",
+      "t2",
+      "t3",
+      "x1",
+      "x2",
+      "x3"
     ],
     "id": 14,
     "paramDefs": [
@@ -1194,24 +858,12 @@ const DEFAULT_MODULES = [
     "hp": 54,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "cv",
-        "sigType": "cv"
-      },
-      {
-        "name": "gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "v/oct",
-        "sigType": "cv"
-      }
+      "cv",
+      "gate",
+      "v/oct"
     ],
     "outputs": [
-      {
-        "name": "out",
-        "sigType": "audio"
-      }
+      "out"
     ],
     "id": 15,
     "paramDefs": [],
@@ -1227,108 +879,33 @@ const DEFAULT_MODULES = [
     "hp": 26,
     "cat": "sequencer",
     "inputs": [
-      {
-        "name": "CV A",
-        "sigType": "cv"
-      },
-      {
-        "name": "CV B",
-        "sigType": "cv"
-      },
-      {
-        "name": "CV C",
-        "sigType": "cv"
-      },
-      {
-        "name": "CV D",
-        "sigType": "cv"
-      },
-      {
-        "name": "Midi In",
-        "sigType": "audio"
-      }
+      "CV A",
+      "CV B",
+      "CV C",
+      "CV D",
+      "Midi In"
     ],
     "outputs": [
-      {
-        "name": "Midi Out",
-        "sigType": "audio"
-      },
-      {
-        "name": "Reset",
-        "sigType": "audio"
-      },
-      {
-        "name": "Clock",
-        "sigType": "gate"
-      },
-      {
-        "name": "1 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "1 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "1 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "2 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "2 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "3 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "3 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "4 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "4 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "5 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "5 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "6 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "6 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "7 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "7 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "8 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "8 Gate",
-        "sigType": "gate"
-      }
+      "Midi Out",
+      "Reset",
+      "Clock",
+      "1 Gate",
+      "1 CV",
+      "1 Gate",
+      "2 CV",
+      "2 Gate",
+      "3 CV",
+      "3 Gate",
+      "4 CV",
+      "4 Gate",
+      "5 CV",
+      "5 Gate",
+      "6 CV",
+      "6 Gate",
+      "7 CV",
+      "7 Gate",
+      "8 CV",
+      "8 Gate"
     ],
     "id": 16,
     "paramDefs": [
@@ -1350,96 +927,30 @@ const DEFAULT_MODULES = [
     "hp": 28,
     "cat": "effects",
     "inputs": [
-      {
-        "name": "In L",
-        "sigType": "audio"
-      },
-      {
-        "name": "In R",
-        "sigType": "audio"
-      },
-      {
-        "name": "Clock",
-        "sigType": "gate"
-      },
-      {
-        "name": "Rec Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "Shift",
-        "sigType": "audio"
-      },
-      {
-        "name": "Infinite",
-        "sigType": "audio"
-      },
-      {
-        "name": "Fwd/Bwd",
-        "sigType": "audio"
-      },
-      {
-        "name": "Play",
-        "sigType": "audio"
-      },
-      {
-        "name": "Pause",
-        "sigType": "audio"
-      },
-      {
-        "name": "Tap",
-        "sigType": "audio"
-      },
-      {
-        "name": "Spring",
-        "sigType": "audio"
-      },
-      {
-        "name": "Speed",
-        "sigType": "audio"
-      },
-      {
-        "name": "Wet",
-        "sigType": "audio"
-      },
-      {
-        "name": "Repeats",
-        "sigType": "audio"
-      },
-      {
-        "name": "Send",
-        "sigType": "audio"
-      }
+      "In L",
+      "In R",
+      "Clock",
+      "Rec Gate",
+      "Shift",
+      "Infinite",
+      "Fwd/Bwd",
+      "Play",
+      "Pause",
+      "Tap",
+      "Spring",
+      "Speed",
+      "Wet",
+      "Repeats",
+      "Send"
     ],
     "outputs": [
-      {
-        "name": "Out L",
-        "sigType": "audio"
-      },
-      {
-        "name": "Out R",
-        "sigType": "audio"
-      },
-      {
-        "name": "Return",
-        "sigType": "audio"
-      },
-      {
-        "name": "Clock 1",
-        "sigType": "gate"
-      },
-      {
-        "name": "Clock 2",
-        "sigType": "gate"
-      },
-      {
-        "name": "Clock 3",
-        "sigType": "gate"
-      },
-      {
-        "name": "Clock 4",
-        "sigType": "gate"
-      }
+      "Out L",
+      "Out R",
+      "Return",
+      "Clock 1",
+      "Clock 2",
+      "Clock 3",
+      "Clock 4"
     ],
     "id": 17,
     "paramDefs": [
@@ -1597,40 +1108,16 @@ const DEFAULT_MODULES = [
     "hp": 12,
     "cat": "oscillator",
     "inputs": [
-      {
-        "name": "Midi",
-        "sigType": "audio"
-      },
-      {
-        "name": "Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "V/Oct",
-        "sigType": "cv"
-      },
-      {
-        "name": "Filter",
-        "sigType": "audio"
-      },
-      {
-        "name": "CV A",
-        "sigType": "cv"
-      },
-      {
-        "name": "CV B",
-        "sigType": "cv"
-      }
+      "Midi",
+      "Gate",
+      "V/Oct",
+      "Filter",
+      "CV A",
+      "CV B"
     ],
     "outputs": [
-      {
-        "name": "L",
-        "sigType": "audio"
-      },
-      {
-        "name": "R",
-        "sigType": "audio"
-      }
+      "L",
+      "R"
     ],
     "id": 18,
     "paramDefs": [
@@ -1791,64 +1278,22 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "vca",
     "inputs": [
-      {
-        "name": "Ch 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 3",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 4",
-        "sigType": "audio"
-      },
-      {
-        "name": "CV 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "CV 2",
-        "sigType": "cv"
-      },
-      {
-        "name": "CV 3",
-        "sigType": "cv"
-      },
-      {
-        "name": "CV 4",
-        "sigType": "cv"
-      }
+      "Ch 1",
+      "Ch 2",
+      "Ch 3",
+      "Ch 4",
+      "CV 1",
+      "CV 2",
+      "CV 3",
+      "CV 4"
     ],
     "outputs": [
-      {
-        "name": "Ch 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 3",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 4",
-        "sigType": "audio"
-      },
-      {
-        "name": "Selected",
-        "sigType": "audio"
-      },
-      {
-        "name": "All",
-        "sigType": "audio"
-      }
+      "Ch 1",
+      "Ch 2",
+      "Ch 3",
+      "Ch 4",
+      "Selected",
+      "All"
     ],
     "id": 19,
     "paramDefs": [
@@ -1921,28 +1366,13 @@ const DEFAULT_MODULES = [
     "hp": 4,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "Z",
-        "sigType": "audio"
-      },
-      {
-        "name": "X",
-        "sigType": "audio"
-      },
-      {
-        "name": "Y",
-        "sigType": "audio"
-      }
+      "Z",
+      "X",
+      "Y"
     ],
     "outputs": [
-      {
-        "name": "A",
-        "sigType": "audio"
-      },
-      {
-        "name": "B",
-        "sigType": "audio"
-      }
+      "A",
+      "B"
     ],
     "id": 20,
     "paramDefs": [
@@ -1965,40 +1395,16 @@ const DEFAULT_MODULES = [
     "hp": 4,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "1",
-        "sigType": "audio"
-      },
-      {
-        "name": "2",
-        "sigType": "audio"
-      }
+      "1",
+      "2"
     ],
     "outputs": [
-      {
-        "name": "1-1",
-        "sigType": "audio"
-      },
-      {
-        "name": "1-2",
-        "sigType": "audio"
-      },
-      {
-        "name": "1-3",
-        "sigType": "audio"
-      },
-      {
-        "name": "2-1",
-        "sigType": "audio"
-      },
-      {
-        "name": "2-2",
-        "sigType": "audio"
-      },
-      {
-        "name": "2-3",
-        "sigType": "audio"
-      }
+      "1-1",
+      "1-2",
+      "1-3",
+      "2-1",
+      "2-2",
+      "2-3"
     ],
     "id": 21,
     "paramDefs": [],
@@ -2014,48 +1420,18 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "oscillator",
     "inputs": [
-      {
-        "name": "Position",
-        "sigType": "audio"
-      },
-      {
-        "name": "Brite",
-        "sigType": "audio"
-      },
-      {
-        "name": "Shape",
-        "sigType": "audio"
-      },
-      {
-        "name": "Damp",
-        "sigType": "cv"
-      },
-      {
-        "name": "FM",
-        "sigType": "cv"
-      },
-      {
-        "name": "V/Oct",
-        "sigType": "cv"
-      },
-      {
-        "name": "Strum",
-        "sigType": "audio"
-      },
-      {
-        "name": "Audio",
-        "sigType": "audio"
-      }
+      "Position",
+      "Brite",
+      "Shape",
+      "Damp",
+      "FM",
+      "V/Oct",
+      "Strum",
+      "Audio"
     ],
     "outputs": [
-      {
-        "name": "Odd",
-        "sigType": "audio"
-      },
-      {
-        "name": "Even",
-        "sigType": "audio"
-      }
+      "Odd",
+      "Even"
     ],
     "id": 22,
     "paramDefs": [
@@ -2154,48 +1530,18 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "envelope",
     "inputs": [
-      {
-        "name": "Ch 1 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "Ch 1 Retr",
-        "sigType": "gate"
-      },
-      {
-        "name": "Ch 1 CV",
-        "sigType": "cv"
-      },
-      {
-        "name": "Ch 2 Gate",
-        "sigType": "gate"
-      },
-      {
-        "name": "Ch 2 Retr",
-        "sigType": "gate"
-      },
-      {
-        "name": "Ch 2 CV",
-        "sigType": "cv"
-      }
+      "Ch 1 Gate",
+      "Ch 1 Retr",
+      "Ch 1 CV",
+      "Ch 2 Gate",
+      "Ch 2 Retr",
+      "Ch 2 CV"
     ],
     "outputs": [
-      {
-        "name": "Ch 1-1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 1-2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 2-1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Ch 2-2",
-        "sigType": "audio"
-      }
+      "Ch 1-1",
+      "Ch 1-2",
+      "Ch 2-1",
+      "Ch 2-2"
     ],
     "id": 23,
     "paramDefs": [
@@ -2268,44 +1614,17 @@ const DEFAULT_MODULES = [
     "hp": 4,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "Clock",
-        "sigType": "gate"
-      },
-      {
-        "name": "Reset",
-        "sigType": "audio"
-      }
+      "Clock",
+      "Reset"
     ],
     "outputs": [
-      {
-        "name": "2/2/2",
-        "sigType": "audio"
-      },
-      {
-        "name": "4/3/3",
-        "sigType": "audio"
-      },
-      {
-        "name": "8/5/4",
-        "sigType": "audio"
-      },
-      {
-        "name": "16/7/5",
-        "sigType": "audio"
-      },
-      {
-        "name": "32/11/6",
-        "sigType": "audio"
-      },
-      {
-        "name": "64/13/7",
-        "sigType": "audio"
-      },
-      {
-        "name": "128/17/8",
-        "sigType": "audio"
-      }
+      "2/2/2",
+      "4/3/3",
+      "8/5/4",
+      "16/7/5",
+      "32/11/6",
+      "64/13/7",
+      "128/17/8"
     ],
     "id": 24,
     "paramDefs": [
@@ -2335,22 +1654,10 @@ const DEFAULT_MODULES = [
     "cat": "sequencer",
     "inputs": [],
     "outputs": [
-      {
-        "name": "Midi  1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Midi  2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Midi  3",
-        "sigType": "audio"
-      },
-      {
-        "name": "Midi  4",
-        "sigType": "audio"
-      }
+      "Midi  1",
+      "Midi  2",
+      "Midi  3",
+      "Midi  4"
     ],
     "paramDefs": [
       {
@@ -2372,28 +1679,13 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "v/oct",
-        "sigType": "cv"
-      },
-      {
-        "name": "cv",
-        "sigType": "cv"
-      },
-      {
-        "name": "gate",
-        "sigType": "gate"
-      }
+      "v/oct",
+      "cv",
+      "gate"
     ],
     "outputs": [
-      {
-        "name": "out",
-        "sigType": "audio"
-      },
-      {
-        "name": "aux",
-        "sigType": "audio"
-      }
+      "out",
+      "aux"
     ],
     "paramDefs": [],
     "color": "#ff6a00",
@@ -2409,80 +1701,26 @@ const DEFAULT_MODULES = [
     "hp": 16,
     "cat": "effects",
     "inputs": [
-      {
-        "name": "1",
-        "sigType": "audio"
-      },
-      {
-        "name": "2",
-        "sigType": "audio"
-      },
-      {
-        "name": "distortion",
-        "sigType": "cv"
-      },
-      {
-        "name": "vcf",
-        "sigType": "cv"
-      },
-      {
-        "name": "pre vca",
-        "sigType": "cv"
-      },
-      {
-        "name": "post vca",
-        "sigType": "cv"
-      },
-      {
-        "name": "trig in",
-        "sigType": "gate"
-      },
-      {
-        "name": "resonance",
-        "sigType": "cv"
-      },
-      {
-        "name": "delay dry/wet",
-        "sigType": "cv"
-      },
-      {
-        "name": "time / v/oct",
-        "sigType": "cv"
-      },
-      {
-        "name": "repeats",
-        "sigType": "cv"
-      },
-      {
-        "name": "reverb dry/wet",
-        "sigType": "cv"
-      },
-      {
-        "name": "tail",
-        "sigType": "cv"
-      },
-      {
-        "name": "clock",
-        "sigType": "gate"
-      },
-      {
-        "name": "freeze",
-        "sigType": "gate"
-      }
+      "1",
+      "2",
+      "distortion",
+      "vcf",
+      "pre vca",
+      "post vca",
+      "trig in",
+      "resonance",
+      "delay dry/wet",
+      "time / v/oct",
+      "repeats",
+      "reverb dry/wet",
+      "tail",
+      "clock",
+      "freeze"
     ],
     "outputs": [
-      {
-        "name": "1",
-        "sigType": "audio"
-      },
-      {
-        "name": "2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Envelope",
-        "sigType": "cv"
-      }
+      "1",
+      "2",
+      "Envelope"
     ],
     "paramDefs": [
       {
@@ -2633,32 +1871,14 @@ const DEFAULT_MODULES = [
     "hp": 6,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "In 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "In 2",
-        "sigType": "cv"
-      },
-      {
-        "name": "In T",
-        "sigType": "gate"
-      }
+      "In 1",
+      "In 2",
+      "In T"
     ],
     "outputs": [
-      {
-        "name": "Out 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Out 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Out T",
-        "sigType": "audio"
-      }
+      "Out 1",
+      "Out 2",
+      "Out T"
     ],
     "paramDefs": [],
     "color": "#ff6a00",
@@ -2675,10 +1895,7 @@ const DEFAULT_MODULES = [
     "cat": "placeholder",
     "inputs": [],
     "outputs": [
-      {
-        "name": "out",
-        "sigType": "audio"
-      }
+      "out"
     ],
     "paramDefs": [],
     "color": "#bfbfbf",
@@ -2695,10 +1912,7 @@ const DEFAULT_MODULES = [
     "cat": "placeholder",
     "inputs": [],
     "outputs": [
-      {
-        "name": "out",
-        "sigType": "audio"
-      }
+      "out"
     ],
     "paramDefs": [],
     "color": "#bfbfbf",
@@ -2714,20 +1928,11 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "placeholder",
     "inputs": [
-      {
-        "name": "gate",
-        "sigType": "gate"
-      }
+      "gate"
     ],
     "outputs": [
-      {
-        "name": "x2",
-        "sigType": "gate"
-      },
-      {
-        "name": "x4",
-        "sigType": "gate"
-      }
+      "x2",
+      "x4"
     ],
     "paramDefs": [],
     "color": "#bfbfbf",
@@ -2744,10 +1949,7 @@ const DEFAULT_MODULES = [
     "cat": "placeholder",
     "inputs": [],
     "outputs": [
-      {
-        "name": "out",
-        "sigType": "audio"
-      }
+      "out"
     ],
     "paramDefs": [],
     "color": "#bfbfbf",
@@ -2763,24 +1965,12 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "placeholder",
     "inputs": [
-      {
-        "name": "1",
-        "sigType": "audio"
-      },
-      {
-        "name": "2",
-        "sigType": "audio"
-      }
+      "1",
+      "2"
     ],
     "outputs": [
-      {
-        "name": "1",
-        "sigType": "audio"
-      },
-      {
-        "name": "2",
-        "sigType": "audio"
-      }
+      "1",
+      "2"
     ],
     "paramDefs": [],
     "color": "#bfbfbf",
@@ -2796,10 +1986,7 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "placeholder",
     "inputs": [
-      {
-        "name": "output",
-        "sigType": "audio"
-      }
+      "output"
     ],
     "outputs": [],
     "paramDefs": [],
@@ -2817,10 +2004,7 @@ const DEFAULT_MODULES = [
     "cat": "placeholder",
     "inputs": [],
     "outputs": [
-      {
-        "name": "out",
-        "sigType": "audio"
-      }
+      "out"
     ],
     "paramDefs": [],
     "color": "#bfbfbf",
@@ -2837,10 +2021,7 @@ const DEFAULT_MODULES = [
     "cat": "placeholder",
     "inputs": [],
     "outputs": [
-      {
-        "name": "1",
-        "sigType": "gate"
-      }
+      "1"
     ],
     "paramDefs": [],
     "color": "#bfbfbf",
@@ -2856,80 +2037,26 @@ const DEFAULT_MODULES = [
     "hp": 56,
     "cat": "sequencer",
     "inputs": [
-      {
-        "name": "OSC ON",
-        "sigType": "gate"
-      },
-      {
-        "name": "OSC OFF",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 1 In",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 2 In",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 3 In",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 4 In",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 5 In",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 6 In",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 7 In",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 8 In",
-        "sigType": "gate"
-      }
+      "OSC ON",
+      "OSC OFF",
+      "Step 1 In",
+      "Step 2 In",
+      "Step 3 In",
+      "Step 4 In",
+      "Step 5 In",
+      "Step 6 In",
+      "Step 7 In",
+      "Step 8 In"
     ],
     "outputs": [
-      {
-        "name": "Step 1 Out",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 2 Out",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 3 Out",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 4 Out",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 5 Out",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 6 Out",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 7 Out",
-        "sigType": "gate"
-      },
-      {
-        "name": "Step 8 Out",
-        "sigType": "gate"
-      }
+      "Step 1 Out",
+      "Step 2 Out",
+      "Step 3 Out",
+      "Step 4 Out",
+      "Step 5 Out",
+      "Step 6 Out",
+      "Step 7 Out",
+      "Step 8 Out"
     ],
     "paramDefs": [
       {
@@ -3209,44 +2336,17 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "utility",
     "inputs": [
-      {
-        "name": "Trig 1",
-        "sigType": "gate"
-      },
-      {
-        "name": "Trig 2",
-        "sigType": "gate"
-      },
-      {
-        "name": "Trig 3",
-        "sigType": "gate"
-      },
-      {
-        "name": "Shift",
-        "sigType": "gate"
-      },
-      {
-        "name": "Sig In 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "Sig In 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Sig In 3",
-        "sigType": "audio"
-      }
+      "Trig 1",
+      "Trig 2",
+      "Trig 3",
+      "Shift",
+      "Sig In 1",
+      "Sig In 2",
+      "Sig In 3"
     ],
     "outputs": [
-      {
-        "name": "out 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "out 2",
-        "sigType": "audio"
-      }
+      "out 1",
+      "out 2"
     ],
     "paramDefs": [],
     "color": "#ff6a00",
@@ -3262,16 +2362,10 @@ const DEFAULT_MODULES = [
     "hp": 8,
     "cat": "guitar pedal",
     "inputs": [
-      {
-        "name": "In",
-        "sigType": "audio"
-      }
+      "In"
     ],
     "outputs": [
-      {
-        "name": "Out",
-        "sigType": "audio"
-      }
+      "Out"
     ],
     "paramDefs": [
       {
@@ -3319,40 +2413,16 @@ const DEFAULT_MODULES = [
     "hp": 10,
     "cat": "effects",
     "inputs": [
-      {
-        "name": "Level 1",
-        "sigType": "cv"
-      },
-      {
-        "name": "Level 2",
-        "sigType": "cv"
-      },
-      {
-        "name": "Algo",
-        "sigType": "cv"
-      },
-      {
-        "name": "Timbre",
-        "sigType": "cv"
-      },
-      {
-        "name": "In 1",
-        "sigType": "audio"
-      },
-      {
-        "name": "In 2",
-        "sigType": "audio"
-      }
+      "Level 1",
+      "Level 2",
+      "Algo",
+      "Timbre",
+      "In 1",
+      "In 2"
     ],
     "outputs": [
-      {
-        "name": "Out 1 & 2",
-        "sigType": "audio"
-      },
-      {
-        "name": "Aux",
-        "sigType": "audio"
-      }
+      "Out 1 & 2",
+      "Aux"
     ],
     "paramDefs": [
       {

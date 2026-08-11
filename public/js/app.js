@@ -1215,13 +1215,6 @@ const App = {
     Patch.render();
   },
 
-  _guessSigType(name) {
-    const s = name.toLowerCase();
-    if (/gate|trig|tr$|clock|clk|sync|eoc|eof/.test(s)) return 'gate';
-    if (/cv|mod|lfo|env|pitch|v\/oct|freq|harm|timbre|morph|level|fm|am|exp|v.oct/.test(s)) return 'cv';
-    return 'audio';
-  },
-
   _renderColorSwatches(current) {
     const wrap = document.getElementById('m-color-swatches');
     if (!wrap) return;
@@ -1248,9 +1241,10 @@ const App = {
     if (e) e.stopPropagation();
     window._editModuleId = editId || null;
     const m = editId ? Store.state.modules.find(x => x.id === editId) : null;
-    // ports stored as {name, sigType} objects or plain strings (legacy)
-    window._tempInputs  = m ? m.inputs.map(p  => typeof p === 'object' ? p : { name: p, sigType: this._guessSigType(p) }) : [{name:'v/oct',sigType:'cv'},{name:'cv',sigType:'cv'},{name:'gate',sigType:'gate'}];
-    window._tempOutputs = m ? m.outputs.map(p => typeof p === 'object' ? p : { name: p, sigType: this._guessSigType(p) }) : [{name:'out',sigType:'audio'},{name:'aux',sigType:'audio'}];
+    // ports stored as {name} objects, or plain strings / {name,sigType}
+    // objects from before the connection-type concept was removed (legacy)
+    window._tempInputs  = m ? m.inputs.map(p  => ({ name: Patch._portName(p) })) : [{name:'v/oct'},{name:'cv'},{name:'gate'}];
+    window._tempOutputs = m ? m.outputs.map(p => ({ name: Patch._portName(p) })) : [{name:'out'},{name:'aux'}];
     window._tempParamDefs = m ? JSON.parse(JSON.stringify(m.paramDefs || [])) : [];
     window._tempPanel = m && m.panel ? JSON.parse(JSON.stringify(m.panel)) : null;
     window._panelPool = [];
@@ -1304,11 +1298,6 @@ const App = {
     }
   },
 
-  _sigBadge(sigType) {
-    const colors = { audio: 'var(--text2)', cv: 'var(--accent)', gate: 'var(--success)' };
-    return `<span style="font-size:8px;color:${colors[sigType]||'var(--text2)'}">${sigType}</span>`;
-  },
-
   _renderIOTags() {
     const render = (arr, dir) => arr.map((p, i) => `
       <div class="io-port-row" draggable="true"
@@ -1321,9 +1310,6 @@ const App = {
         <input class="io-port-name-input" type="text" value="${p.name}"
           onchange="App.renameIO('${dir}',${i},this.value)"
           onclick="event.stopPropagation()" />
-        <button class="io-sig-badge io-sig-${p.sigType||'audio'}"
-          onclick="App.cycleSigType('${dir}',${i})"
-          title="click to change signal type">${p.sigType||'audio'}</button>
         <button class="io-tag-del" onclick="App.removeIO('${dir}',${i})">×</button>
       </div>`).join('');
     document.getElementById('inputs-builder').innerHTML  = render(window._tempInputs,  'in');
@@ -1367,22 +1353,11 @@ const App = {
     if (arr[idx]) arr[idx].name = name.trim() || arr[idx].name;
   },
 
-  cycleSigType(dir, idx) {
-    const arr   = dir === 'in' ? window._tempInputs : window._tempOutputs;
-    const types = ['audio', 'cv', 'gate'];
-    const cur   = arr[idx].sigType || 'audio';
-    arr[idx].sigType = types[(types.indexOf(cur) + 1) % types.length];
-    this._renderIOTags();
-  },
-
   addIO(dir) {
     const field = document.getElementById(dir === 'in' ? 'input-add-field' : 'output-add-field');
     const v     = field.value.trim();
     if (!v) return;
-    // Signal type is auto-guessed from the port name; adjust it afterward
-    // via the cycling badge next to each port (App.cycleSigType).
-    const port = { name: v, sigType: this._guessSigType(v) };
-    if (dir === 'in') window._tempInputs.push(port); else window._tempOutputs.push(port);
+    if (dir === 'in') window._tempInputs.push({ name: v }); else window._tempOutputs.push({ name: v });
     field.value = '';
     this._renderIOTags();
   },
@@ -1401,8 +1376,8 @@ const App = {
       name,
       hp:         parseInt(document.getElementById('m-hp').value) || 8,
       cat:        document.getElementById('m-cat').value,
-      inputs:     window._tempInputs.map(p  => typeof p === 'object' ? p : { name: p, sigType: 'audio' }),
-      outputs:    window._tempOutputs.map(p => typeof p === 'object' ? p : { name: p, sigType: 'audio' }),
+      inputs:     window._tempInputs,
+      outputs:    window._tempOutputs,
       paramDefs:  window._tempParamDefs || [],
       color:      document.getElementById('m-color').dataset.cleared === '1' ? null : (document.getElementById('m-color').value || null),
       paramCols:  parseInt(document.getElementById('m-param-cols').value) || 3,

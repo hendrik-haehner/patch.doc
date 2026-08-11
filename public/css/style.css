@@ -1498,15 +1498,6 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
   font-family: var(--font); width: 100%;
 }
 .io-port-name-input:focus { outline: none; border-color: var(--accent-border); }
-.io-sig-badge {
-  font-size: 9px; padding: 2px 4px; border-radius: 3px;
-  cursor: pointer; border: 0.5px solid; font-family: var(--font);
-  font-weight: 600; text-align: center;
-}
-.io-sig-audio { color: var(--text2); border-color: var(--border2); background: transparent; }
-.io-sig-cv    { color: var(--accent); border-color: var(--accent-border); background: var(--accent-bg); }
-.io-sig-gate  { color: var(--success); border-color: rgba(42,170,122,0.35); background: rgba(42,170,122,0.1); }
-.io-sig-badge:hover { opacity: 0.75; }
 .io-tag-del {
   background: transparent; border: none; cursor: pointer;
   font-size: 14px; color: var(--text2); padding: 0; line-height: 1;
