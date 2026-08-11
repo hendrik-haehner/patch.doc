@@ -439,12 +439,14 @@
         <div id="modal-manuals-content" style="font-size:11px"></div>
       </div>
 
-      <div class="field">
-        <label>front panel layout (optional)</label>
-        <div id="panel-summary" style="font-size:11px;color:var(--text2);margin-bottom:6px">not set — module renders as a list</div>
-        <div style="display:flex;gap:6px">
-          <button class="io-add-btn" onclick="PanelEditor.open()">edit panel layout</button>
-          <button class="io-add-btn" id="panel-remove-btn" style="display:none;color:var(--danger)" onclick="PanelEditor.removePanel()">remove</button>
+      <div class="field panel-layout-field">
+        <div class="panel-layout-card">
+          <div class="panel-layout-heading">front panel layout <span class="panel-layout-optional">optional</span></div>
+          <div id="panel-summary" style="font-size:11px;color:var(--text2);margin-bottom:8px">not set — module renders as a list</div>
+          <div style="display:flex;gap:6px">
+            <button class="io-add-btn" onclick="PanelEditor.open()">edit panel layout</button>
+            <button class="io-add-btn" id="panel-remove-btn" style="display:none;color:var(--danger)" onclick="PanelEditor.removePanel()">remove</button>
+          </div>
         </div>
       </div>
     </div>
