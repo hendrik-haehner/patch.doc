@@ -365,7 +365,6 @@ html, body {
 #patch-status { flex: 1; min-width: 200px; }
 .statusbar-sep { display: none; }
 #hp-sum { flex-shrink: 0; }
-#statusbar-cable-legend { font-size: 9px; color: var(--text2); flex-shrink: 0; white-space: nowrap; margin-left: auto; }
 
 .patch-module {
   position: absolute; background: var(--module-bg);

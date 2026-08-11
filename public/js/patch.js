@@ -907,8 +907,6 @@ const Patch = {
     // do with, which looked worse than the occasional partial overlap.)
     document.getElementById('cable-svg-overlay')?.remove();
 
-    // signal type dash patterns
-    const DASH = { audio: 'none', cv: '6 3', gate: '2 4' };
     // Panel mode draws cables above modules (see .panel-mode CSS), so they
     // need to stay thin and translucent or they'd bury the jacks and
     // controls they cross.
@@ -923,7 +921,6 @@ const Patch = {
       const totalDx = to.x - from.x;
       const totalDy = to.y - from.y;
       const d = this._cablePath(from, to, totalDx, totalDy);
-      const dash = DASH[c.sigType] || 'none';
       // hit area (wider invisible path for easier clicking)
       const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       hit.setAttribute('d', d); hit.setAttribute('stroke', 'transparent');
@@ -939,7 +936,6 @@ const Patch = {
       vis.setAttribute('stroke-width', baseWidth); vis.setAttribute('fill', 'none');
       vis.setAttribute('stroke-linecap', 'round'); vis.setAttribute('opacity', baseOpacity);
       vis.setAttribute('data-cable-id', c.id);
-      if (dash !== 'none') vis.setAttribute('stroke-dasharray', dash);
       vis.style.pointerEvents = 'none';
       const label = c.sigType && c.sigType !== 'audio' ? ` [${c.sigType}]` : '';
       vis.title = c.fromPort + ' → ' + c.toPort + label;
