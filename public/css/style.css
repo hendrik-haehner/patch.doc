@@ -606,6 +606,21 @@ html, body {
 }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent-border); }
 
+/* ── panel-layout field: set off from the fields above it, more visual
+   weight than a plain field since it opens its own editor ── */
+.panel-layout-field { margin-top: 16px; padding-top: 16px; border-top: 0.5px solid var(--border); }
+.panel-layout-card {
+  border: 0.5px solid var(--accent-border); border-radius: var(--radius-lg);
+  background: var(--accent-bg); padding: 12px 14px;
+}
+.panel-layout-heading {
+  font-size: 13px; font-weight: 600; color: var(--text0); margin-bottom: 8px;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.panel-layout-optional {
+  font-size: 10px; font-weight: 400; color: var(--text2); letter-spacing: 0.08em;
+}
+
 /* ── module color swatch picker ── */
 .color-swatch-row {
   display: grid; grid-template-columns: repeat(8, 1fr);
