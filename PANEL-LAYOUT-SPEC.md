@@ -50,7 +50,7 @@ Erweiterung eines Moduls in `data/modules.json`:
       { ref: "CV 1",  type: "input",  col: 1, row: 0 },
       { ref: "Out 1", type: "output", col: 3, row: 0 },
       { ref: "Lvl 1", type: "knob",   col: 0, row: 2, w: 2 },
-      { ref: null,    type: "divider", col: 0, row: 4, w: 4 },
+      { ref: null,    type: "divider-h", col: 0, row: 4, w: 4 },
       { ref: null,    type: "label",   col: 0, row: 5, w: 4, text: "CHANNEL 2" }
     ]
   }
@@ -70,7 +70,7 @@ Erweiterung eines Moduls in `data/modules.json`:
 | `text` | nein | nur bei `label` |
 | `size` | nein | nur bei `knob`: `s` / `m` / `l`, Default `m` |
 
-¹ `null` bei `label`, `divider` und `button`.
+¹ `null` bei `label`, `divider-h`, `divider-v` und `button`.
 
 ### Elementtypen
 
@@ -83,7 +83,12 @@ Erweiterung eines Moduls in `data/modules.json`:
 | `output` | `outputs` | Buchse, klickbar für Kabelverbindung |
 | `button` | — | **neu**, reine Deko (Momentary-Taster ohne Zustand) |
 | `label` | — | Textbeschriftung |
-| `divider` | — | horizontale Trennlinie |
+| `divider-h` | — | horizontale Trennlinie |
+| `divider-v` | — | vertikale Trennlinie |
+
+Legacy: Panels, die vor dieser Umbenennung gespeichert wurden, können noch
+`type: "divider"` enthalten (der alte Name für `divider-h`) — der Renderer
+liest beide, aber der Editor erzeugt beim Neuplatzieren nur noch `divider-h`.
 
 **Zu `button`:** Ein Taster hat keinen speicherbaren Wert — er ist eine
 Aktion, kein Zustand. Wird nur gezeichnet, damit das Panel wiedererkennbar
