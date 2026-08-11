@@ -493,6 +493,7 @@ const Patch = {
       patch.cables.filter(c => c.fromPm === pmId || c.toPm === pmId).map(c => c.id)
     );
     if (!connectedIds.size) return;
+    const { baseWidth, baseOpacity } = this._cableBaseStyle();
     patch.cables.forEach(c => {
       const path = this._findCablePath(c.id);
       if (!path) return;
@@ -506,8 +507,8 @@ const Patch = {
           path.setAttribute('opacity', '0.15');
         }
       } else {
-        path.setAttribute('stroke-width', '2.5');
-        path.setAttribute('opacity', '0.85');
+        path.setAttribute('stroke-width', baseWidth);
+        path.setAttribute('opacity', baseOpacity);
         path.style.filter = '';
       }
     });
@@ -895,6 +896,17 @@ const Patch = {
     return `M${from.x},${from.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${to.x},${to.y}`;
   },
 
+  // Panel mode draws cables above modules (see .panel-mode CSS), so they
+  // need to stay thin and translucent or they'd bury the jacks and
+  // controls they cross. Shared by renderCables() and _highlightCables()
+  // so un-hovering a module resets cables to the right mode's baseline
+  // instead of the other mode's.
+  _cableBaseStyle() {
+    return this._panelMode
+      ? { baseWidth: '1.5', hoverWidth: '2.5', baseOpacity: '0.15', hoverOpacity: '0.4' }
+      : { baseWidth: '2.5', hoverWidth: '3.5', baseOpacity: '0.85', hoverOpacity: '1' };
+  },
+
   renderCables() {
     const patch = Store.getActivePatch();
     const svg   = document.getElementById('cable-svg');
@@ -907,13 +919,7 @@ const Patch = {
     // do with, which looked worse than the occasional partial overlap.)
     document.getElementById('cable-svg-overlay')?.remove();
 
-    // Panel mode draws cables above modules (see .panel-mode CSS), so they
-    // need to stay thin and translucent or they'd bury the jacks and
-    // controls they cross.
-    const baseWidth   = this._panelMode ? '1.5' : '2.5';
-    const hoverWidth  = this._panelMode ? '2.5' : '3.5';
-    const baseOpacity  = this._panelMode ? '0.15' : '0.85';
-    const hoverOpacity = this._panelMode ? '0.4' : '1';
+    const { baseWidth, hoverWidth, baseOpacity, hoverOpacity } = this._cableBaseStyle();
     patch.cables.forEach(c => {
       const from = this._getPortCenter(c.fromPm, 'out', c.fromPort);
       const to   = this._getPortCenter(c.toPm,   'in',  c.toPort);
