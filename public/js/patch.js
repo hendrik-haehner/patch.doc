@@ -897,13 +897,13 @@ const Patch = {
   },
 
   // Panel mode draws cables above modules (see .panel-mode CSS), so they
-  // need to stay thin and translucent or they'd bury the jacks and
-  // controls they cross. Shared by renderCables() and _highlightCables()
-  // so un-hovering a module resets cables to the right mode's baseline
-  // instead of the other mode's.
+  // need to stay translucent or they'd bury the jacks and controls they
+  // cross — but same width as list mode. Shared by renderCables() and
+  // _highlightCables() so un-hovering a module resets cables to the right
+  // mode's baseline instead of the other mode's.
   _cableBaseStyle() {
     return this._panelMode
-      ? { baseWidth: '1.5', hoverWidth: '2.5', baseOpacity: '0.15', hoverOpacity: '0.4' }
+      ? { baseWidth: '2.5', hoverWidth: '3.5', baseOpacity: '0.15', hoverOpacity: '0.4' }
       : { baseWidth: '2.5', hoverWidth: '3.5', baseOpacity: '0.85', hoverOpacity: '1' };
   },
 
