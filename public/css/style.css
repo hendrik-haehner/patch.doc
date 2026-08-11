@@ -1118,7 +1118,10 @@ html, body {
 .pm-panel {
   --pm-cell-w: 50px;
   display: grid;
-  align-items: center;
+  /* Top-align, not center — a cell made taller by a wrapped label
+     shouldn't push shorter cells' knobs/jacks down out of alignment
+     with the rest of the row. */
+  align-items: start;
   gap: 4px;
   padding: 6px;
   border-top: 0.5px solid var(--border);
@@ -1137,6 +1140,11 @@ html, body {
 .pm-panel-cell .port-name {
   text-align: center; max-width: 100%;
   font-size: clamp(9px, calc(var(--pm-cell-w, 50px) * 0.14), 9px);
+  white-space: normal; overflow-wrap: break-word; line-height: 1.15;
+}
+/* Same wrap treatment for knob/switch/enum labels — rows auto-size their
+   height, so a long parameter name gets a second line instead of "...". */
+.pm-panel-cell .pm-ctrl-label {
   white-space: normal; overflow-wrap: break-word; line-height: 1.15;
 }
 .pm-panel-label {
