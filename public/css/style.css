@@ -1154,6 +1154,8 @@ html, body {
   text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .pm-panel-divider { border-top: 0.5px solid var(--border); width: 100%; }
+.pm-panel-divider-v { border-left: 0.5px solid var(--border); height: 100%; justify-self: center; }
+.pm-panel-cell-stretch { align-self: stretch; }
 .pm-panel-button {
   width: 100%; min-height: 20px;
   border: 1.5px solid var(--border2); border-radius: 4px;

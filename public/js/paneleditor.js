@@ -87,7 +87,7 @@ const PanelEditor = {
   },
 
   _returnToPool(el) {
-    if (el.type === 'label' || el.type === 'divider' || el.type === 'button') {
+    if (['label', 'divider', 'divider-v', 'button'].includes(el.type)) {
       window._panelPool.push({ localId: this._uid(), type: el.type, text: el.text || '' });
     }
     // ports/params need no bookkeeping — they reappear in the pool
@@ -112,7 +112,7 @@ const PanelEditor = {
     const placedInput  = new Set(panel.elements.filter(e => e.type === 'input').map(e => e.ref));
     const placedOutput = new Set(panel.elements.filter(e => e.type === 'output').map(e => e.ref));
     const placedParam  = new Set(panel.elements
-      .filter(e => !['input', 'output', 'label', 'divider', 'button'].includes(e.type))
+      .filter(e => !['input', 'output', 'label', 'divider', 'divider-v', 'button'].includes(e.type))
       .map(e => e.ref));
 
     const chips = [];
@@ -126,7 +126,7 @@ const PanelEditor = {
       if (!placedParam.has(d.name)) chips.push(this._chip({ kind: 'param', type: d.type, ref: d.name, label: d.name, badge: d.type }));
     });
     (window._panelPool || []).forEach(p => {
-      chips.push(this._chip({ kind: 'special', type: p.type, localId: p.localId, label: p.text || p.type, badge: p.type }));
+      chips.push(this._chip({ kind: 'special', type: p.type, localId: p.localId, label: p.text || this._specialLabel(p.type), badge: p.type }));
     });
 
     el.innerHTML = chips.join('') || '<div class="panel-editor-pool-empty">everything placed</div>';
@@ -169,7 +169,7 @@ const PanelEditor = {
   _elementChip(e, i) {
     const pos = `grid-column:${e.col + 1} / span ${e.w || 1};grid-row:${e.row + 1} / span ${e.h || 1}`;
     const label = (e.type === 'label' || e.type === 'button') ? (e.text || '')
-      : e.type === 'divider' ? '──' : (e.ref || '');
+      : e.type === 'divider' ? '──' : e.type === 'divider-v' ? '│' : (e.ref || '');
     const selected = window._panelSelectedIdx === i ? ' selected' : '';
     return `<div class="panel-editor-placed panel-editor-chip-badge-${e.type}${selected}" style="${pos}" draggable="true"
       onclick="PanelEditor.selectElement(${i},event)"
@@ -331,8 +331,7 @@ const PanelEditor = {
     const badge = document.getElementById('panel-editor-inspector-badge');
     badge.textContent = el.type;
     badge.className = 'panel-editor-chip-badge panel-editor-chip-badge-' + el.type;
-    document.getElementById('panel-editor-inspector-name').textContent =
-      el.ref || (el.type === 'divider' ? 'divider' : el.type === 'label' ? 'label' : el.type === 'button' ? 'button' : '');
+    document.getElementById('panel-editor-inspector-name').textContent = el.ref || this._specialLabel(el.type);
     const textInput = document.getElementById('panel-editor-inspector-text');
     if (el.type === 'label' || el.type === 'button') {
       textInput.style.display = 'block';
@@ -384,7 +383,7 @@ const PanelEditor = {
     const outputNames = new Set((outputs || []).map(p => p.name));
     const paramNames  = new Set((paramDefs || []).filter(d => d.type !== 'divider').map(d => d.name));
     const elements = panel.elements.filter(e => {
-      if (e.type === 'label' || e.type === 'divider' || e.type === 'button') return true;
+      if (['label', 'divider', 'divider-v', 'button'].includes(e.type)) return true;
       if (e.type === 'input')  return inputNames.has(e.ref);
       if (e.type === 'output') return outputNames.has(e.ref);
       return paramNames.has(e.ref);
@@ -395,6 +394,10 @@ const PanelEditor = {
 
   _uid() {
     return 'p' + Math.random().toString(36).slice(2, 9);
+  },
+
+  _specialLabel(type) {
+    return type === 'divider-v' ? 'v-divider' : type;
   },
 
   _attrEsc(s) {

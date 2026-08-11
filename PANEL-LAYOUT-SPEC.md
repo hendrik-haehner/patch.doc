@@ -70,7 +70,7 @@ Erweiterung eines Moduls in `data/modules.json`:
 | `text` | nein | nur bei `label` |
 | `size` | nein | nur bei `knob`: `s` / `m` / `l`, Default `m` |
 
-¹ `null` bei `label`, `divider` und `button`.
+¹ `null` bei `label`, `divider`, `divider-v` und `button`.
 
 ### Elementtypen
 
@@ -84,6 +84,7 @@ Erweiterung eines Moduls in `data/modules.json`:
 | `button` | — | **neu**, reine Deko (Momentary-Taster ohne Zustand) |
 | `label` | — | Textbeschriftung |
 | `divider` | — | horizontale Trennlinie |
+| `divider-v` | — | vertikale Trennlinie |
 
 **Zu `button`:** Ein Taster hat keinen speicherbaren Wert — er ist eine
 Aktion, kein Zustand. Wird nur gezeichnet, damit das Panel wiedererkennbar

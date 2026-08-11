@@ -185,11 +185,15 @@ const Patch = {
 
   _renderPanelElement(pm, m, e, vals, col) {
     const pos  = `grid-column:${e.col + 1} / span ${e.w || 1};grid-row:${e.row + 1} / span ${e.h || 1}`;
-    const wrap = inner => `<div class="pm-panel-cell" style="${pos}">${inner}</div>`;
+    const wrap = (inner, extraClass = '') => `<div class="pm-panel-cell${extraClass ? ' ' + extraClass : ''}" style="${pos}">${inner}</div>`;
 
-    if (e.type === 'label')   return wrap(`<div class="pm-panel-label">${e.text || ''}</div>`);
-    if (e.type === 'divider') return wrap(`<div class="pm-panel-divider"></div>`);
-    if (e.type === 'button')  return wrap(`<div class="pm-panel-button" title="${e.text || ''}">${e.text || ''}</div>`);
+    if (e.type === 'label')     return wrap(`<div class="pm-panel-label">${e.text || ''}</div>`);
+    if (e.type === 'divider')   return wrap(`<div class="pm-panel-divider"></div>`);
+    // .pm-panel's align-items:center only sizes a cell to its own content,
+    // so a vertical divider's height:100% has nothing definite to resolve
+    // against unless its own cell is told to stretch to the row's height.
+    if (e.type === 'divider-v') return wrap(`<div class="pm-panel-divider-v"></div>`, 'pm-panel-cell-stretch');
+    if (e.type === 'button')    return wrap(`<div class="pm-panel-button" title="${e.text || ''}">${e.text || ''}</div>`);
 
     if (e.type === 'input' || e.type === 'output') {
       const dir = e.type === 'input' ? 'in' : 'out';
