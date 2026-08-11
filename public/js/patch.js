@@ -56,8 +56,7 @@ function _applyZoom() {
 const Patch = {
 
   // ── Port helpers ──────────────────────────────────────────────────────────
-  _portName(p)    { return typeof p === 'object' ? p.name    : p; },
-  _portSigType(p) { return typeof p === 'object' ? p.sigType : 'audio'; },
+  _portName(p) { return typeof p === 'object' ? p.name : p; },
 
   // Panel-layout feature (see PANEL-LAYOUT-SPEC.md). Modules with a `panel`
   // field render as a front-panel-style grid instead of the list layout when
@@ -500,7 +499,7 @@ const Patch = {
       const isConnected = connectedIds.has(c.id);
       if (on) {
         if (isConnected) {
-          path.setAttribute('stroke-width', '4');
+          path.setAttribute('stroke-width', baseWidth);
           path.setAttribute('opacity', '1');
           path.style.filter = 'drop-shadow(0 0 5px ' + c.color + ')';
         } else {
@@ -761,13 +760,8 @@ const Patch = {
     if (patch.cables.find(c => c.fromPm === fromPmId && c.fromPort === fromPort && c.toPm === toPmId && c.toPort === toPort)) {
       return null; // already exists
     }
-    const color  = CABLE_COLORS[patch.cableColorIdx++ % CABLE_COLORS.length];
-    const m_from = Store.state.modules.find(x => x.id === patch.patchModules.find(p => p.id === fromPmId)?.moduleId);
-    const p_from = m_from?.outputs.find(p => this._portName(p) === fromPort);
-    const sigType = this._portSigType(p_from) !== 'audio'
-      ? this._portSigType(p_from)
-      : this._guessSigType(fromPort, toPort);
-    const cable = { id: Date.now(), fromPm: fromPmId, fromPort, toPm: toPmId, toPort, color, sigType };
+    const color = CABLE_COLORS[patch.cableColorIdx++ % CABLE_COLORS.length];
+    const cable = { id: Date.now(), fromPm: fromPmId, fromPort, toPm: toPmId, toPort, color };
     patch.cables.push(cable);
     Store.updatePatch(patch.id, { cables: patch.cables, cableColorIdx: patch.cableColorIdx });
     Undo.snapshot();
@@ -788,12 +782,6 @@ const Patch = {
     );
     if (dup) return false;
     Object.assign(cable, changes);
-    // Re-evaluate signal type if the ports changed
-    const m_from = Store.state.modules.find(x => x.id === patch.patchModules.find(p => p.id === cable.fromPm)?.moduleId);
-    const p_from = m_from?.outputs.find(p => this._portName(p) === cable.fromPort);
-    cable.sigType = this._portSigType(p_from) !== 'audio'
-      ? this._portSigType(p_from)
-      : this._guessSigType(cable.fromPort, cable.toPort);
     Store.updatePatch(patch.id, { cables: patch.cables });
     Undo.snapshot();
     return true;
@@ -898,13 +886,15 @@ const Patch = {
 
   // Panel mode draws cables above modules (see .panel-mode CSS), so they
   // need to stay translucent or they'd bury the jacks and controls they
-  // cross — but same width as list mode. Shared by renderCables() and
-  // _highlightCables() so un-hovering a module resets cables to the right
-  // mode's baseline instead of the other mode's.
+  // cross — but same width as list mode, and width never changes on
+  // highlight/hover, only opacity (hoverWidth === baseWidth on purpose).
+  // Shared by renderCables() and _highlightCables() so un-hovering a
+  // module resets cables to the right mode's baseline instead of the
+  // other mode's.
   _cableBaseStyle() {
     return this._panelMode
-      ? { baseWidth: '2.5', hoverWidth: '3.5', baseOpacity: '0.15', hoverOpacity: '0.4' }
-      : { baseWidth: '2.5', hoverWidth: '3.5', baseOpacity: '0.85', hoverOpacity: '1' };
+      ? { baseWidth: '2.5', hoverWidth: '2.5', baseOpacity: '0.15', hoverOpacity: '0.4' }
+      : { baseWidth: '2.5', hoverWidth: '2.5', baseOpacity: '0.85', hoverOpacity: '1' };
   },
 
   renderCables() {
@@ -943,18 +933,10 @@ const Patch = {
       vis.setAttribute('stroke-linecap', 'round'); vis.setAttribute('opacity', baseOpacity);
       vis.setAttribute('data-cable-id', c.id);
       vis.style.pointerEvents = 'none';
-      const label = c.sigType && c.sigType !== 'audio' ? ` [${c.sigType}]` : '';
-      vis.title = c.fromPort + ' → ' + c.toPort + label;
+      vis.title = c.fromPort + ' → ' + c.toPort;
       svg.appendChild(vis);
       svg.appendChild(hit);
     });
-  },
-
-  _guessSigType(fromPort, toPort) {
-    const s = (fromPort + ' ' + toPort).toLowerCase();
-    if (/gate|trig|tr|clock|clk|sync|eoc|eof/.test(s)) return 'gate';
-    if (/cv|mod|lfo|env|pitch|v\/oct|freq|harm|timbre|morph|level|fm|am|exp/.test(s)) return 'cv';
-    return 'audio';
   },
 
   removeCable(id) {

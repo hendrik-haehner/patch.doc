@@ -379,32 +379,20 @@
     <div class="field">
       <label>inputs</label>
       <div class="io-builder" id="inputs-builder"></div>
-      <div style="display:grid;grid-template-columns:1fr 72px 24px;gap:5px;margin-top:6px">
+      <div style="display:grid;grid-template-columns:1fr 24px;gap:5px;margin-top:6px">
         <input id="input-add-field" type="text" placeholder="add input port..."
                style="min-width:0"
-               onkeydown="if(event.key==='Enter')App.addIO('in')"
-               oninput="App.updateIOSigGuess('in')">
-        <select id="input-sig-type" class="io-sig-select">
-          <option value="audio">audio</option>
-          <option value="cv">cv</option>
-          <option value="gate">gate</option>
-        </select>
+               onkeydown="if(event.key==='Enter')App.addIO('in')">
         <button class="io-add-btn" onclick="App.addIO('in')">+</button>
       </div>
     </div>
     <div class="field">
       <label>outputs</label>
       <div class="io-builder" id="outputs-builder"></div>
-      <div style="display:grid;grid-template-columns:1fr 72px 24px;gap:5px;margin-top:6px">
+      <div style="display:grid;grid-template-columns:1fr 24px;gap:5px;margin-top:6px">
         <input id="output-add-field" type="text" placeholder="add output port..."
                style="min-width:0"
-               onkeydown="if(event.key==='Enter')App.addIO('out')"
-               oninput="App.updateIOSigGuess('out')">
-        <select id="output-sig-type" class="io-sig-select">
-          <option value="audio">audio</option>
-          <option value="cv">cv</option>
-          <option value="gate">gate</option>
-        </select>
+               onkeydown="if(event.key==='Enter')App.addIO('out')">
         <button class="io-add-btn" onclick="App.addIO('out')">+</button>
       </div>
     </div>
