@@ -1118,10 +1118,7 @@ html, body {
 .pm-panel {
   --pm-cell-w: 50px;
   display: grid;
-  /* Top-align, not center — a cell made taller by a wrapped label
-     shouldn't push shorter cells' knobs/jacks down out of alignment
-     with the rest of the row. */
-  align-items: start;
+  align-items: center;
   gap: 4px;
   padding: 6px;
   border-top: 0.5px solid var(--border);
@@ -1137,15 +1134,20 @@ html, body {
   gap: 3px; width: 100%; padding: 2px 0;
 }
 .pm-panel-cell .port-jack { flex-shrink: 0; }
+/* Wraps a label onto up to 2 lines instead of truncating with "...", and
+   reserves that 2-line height whether or not a given label actually needs
+   it — so every cell in a row is the same height regardless of its own
+   label length, and .pm-panel's align-items:center keeps knobs/jacks
+   aligned across the row without depending on which labels happen to wrap. */
+.pm-panel-cell .port-name,
+.pm-panel-cell .pm-ctrl-label {
+  white-space: normal; overflow-wrap: break-word; line-height: 1.15;
+  min-height: calc(1.15em * 2);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .pm-panel-cell .port-name {
   text-align: center; max-width: 100%;
   font-size: clamp(9px, calc(var(--pm-cell-w, 50px) * 0.14), 9px);
-  white-space: normal; overflow-wrap: break-word; line-height: 1.15;
-}
-/* Same wrap treatment for knob/switch/enum labels — rows auto-size their
-   height, so a long parameter name gets a second line instead of "...". */
-.pm-panel-cell .pm-ctrl-label {
-  white-space: normal; overflow-wrap: break-word; line-height: 1.15;
 }
 .pm-panel-label {
   font-size: 9px; color: var(--text1); letter-spacing: 0.08em;
