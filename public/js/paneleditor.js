@@ -126,7 +126,12 @@ const PanelEditor = {
       if (!placedOutput.has(p.name)) chips.push(this._chip({ kind: 'port', type: 'output', ref: p.name, label: p.name, badge: 'output' }));
     });
     (window._tempParamDefs || []).filter(d => d.type !== 'divider').forEach(d => {
-      if (!placedParam.has(d.type + ' ' + d.name)) chips.push(this._chip({ kind: 'param', type: d.type, ref: d.name, label: d.name, badge: d.type }));
+      if (!placedParam.has(d.type + ' ' + d.name)) {
+        const note = d.type === 'knob' && d.display === 'clock' ? 'clock'
+                   : d.type === 'knob' && d.display === 'freq'  ? 'Hz'
+                   : '';
+        chips.push(this._chip({ kind: 'param', type: d.type, ref: d.name, label: d.name, badge: d.type, note }));
+      }
     });
     (window._panelPool || []).forEach(p => {
       chips.push(this._chip({ kind: 'special', type: p.type, localId: p.localId, label: p.text || this._specialLabel(p.type), badge: p.type }));
@@ -135,7 +140,7 @@ const PanelEditor = {
     el.innerHTML = chips.join('') || '<div class="panel-editor-pool-empty">everything placed</div>';
   },
 
-  _chip({ kind, type, ref, localId, label, badge }) {
+  _chip({ kind, type, ref, localId, label, badge, note }) {
     return `<div class="panel-editor-chip" draggable="true"
       data-kind="${kind}" data-type="${type}"
       data-ref="${ref != null ? this._attrEsc(ref) : ''}" data-local-id="${localId || ''}"
@@ -143,6 +148,7 @@ const PanelEditor = {
       ondragend="PanelEditor.dragEnd(event)">
       <span class="panel-editor-chip-badge panel-editor-chip-badge-${type}">${badge}</span>
       <span class="panel-editor-chip-label">${this._attrEsc(label)}</span>
+      ${note ? `<span class="panel-editor-chip-note">${this._attrEsc(note)}</span>` : ''}
     </div>`;
   },
 
