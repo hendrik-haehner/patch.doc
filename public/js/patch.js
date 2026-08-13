@@ -341,7 +341,7 @@ const Patch = {
         title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})"
         oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
         ${this._knobSVG(id, pct, col, markRing, svgSize)}
-        <div class="pm-ctrl-val" id="val-${id}" style="font-size:${valFont}px">${this._fmtVal(v, def)}</div>
+        <div class="pm-ctrl-val" id="val-${id}" style="font-size:${valFont}px">${this._fmtDisplay(v, pct, def)}</div>
         <div class="pm-ctrl-label">${def.name}</div>
       </div>`;
     }
@@ -417,6 +417,43 @@ const Patch = {
     return range >= 10 ? Math.round(n) : n.toFixed(1);
   },
 
+  // Knob label text, in whichever of the three notations def.display picks
+  // (raw number by default). "clock" and "freq" are alternate readouts of
+  // the same underlying value, not a different value — the number in the
+  // tooltip (see _renderControl) is always the plain _fmtVal figure.
+  _fmtDisplay(v, pct, def) {
+    if (def.display === 'clock') return this._fmtClock(pct);
+    if (def.display === 'freq')  return this._fmtFreq(v);
+    return this._fmtVal(v, def);
+  },
+
+  // Maps the knob's 0..1 position onto its physical sweep (-135deg..+135deg,
+  // i.e. 270deg / 9 clock-hours) and reads that off as a clock position —
+  // the "12 o'clock = centered" convention hardware pots are described by.
+  // Quantized to 15-minute steps since this is a visual/verbal metaphor,
+  // not a precision readout (the tooltip still has the exact number).
+  _fmtClock(pct) {
+    const hoursFrom12 = pct * 9 - 4.5;
+    let totalMin = Math.round((12 + hoursFrom12) * 60 / 15) * 15;
+    totalMin = ((totalMin % 720) + 720) % 720;
+    let hh = Math.floor(totalMin / 60);
+    const mm = totalMin % 60;
+    if (hh === 0) hh = 12;
+    return hh + ':' + String(mm).padStart(2, '0');
+  },
+
+  // Assumes the stored value already IS Hz (def.min/max define the knob's
+  // own Hz range) — this only reformats it with audio-gear-style notation
+  // (kHz above 1000, two decimals below 10) rather than remapping it.
+  _fmtFreq(v) {
+    const n = parseFloat(v);
+    if (isNaN(n)) return v;
+    const abs = Math.abs(n);
+    if (abs >= 1000) return parseFloat((n / 1000).toFixed(abs >= 10000 ? 1 : 2)) + ' kHz';
+    if (abs < 10) return n.toFixed(2) + ' Hz';
+    return Math.round(n) + ' Hz';
+  },
+
   // Round a stored value the same way it is displayed — whole numbers for
   // large ranges, one decimal for small/fine ranges (e.g. 0–1 mix knobs).
   _roundVal(v, def) {
@@ -444,7 +481,7 @@ const Patch = {
       const valEl = document.getElementById(`val-${id}`);
       if (arc)   arc.setAttribute('stroke-dashoffset', (GAP + ARC * (1 - pct)).toFixed(2));
       if (tick)  tick.setAttribute('transform', `rotate(${(pct * 270 - 135).toFixed(1)} 19 19)`);
-      if (valEl) valEl.textContent = this._fmtVal(val, def);
+      if (valEl) valEl.textContent = this._fmtDisplay(val, pct, def);
     };
 
     // Use pointer capture — clean, no global listeners needed
