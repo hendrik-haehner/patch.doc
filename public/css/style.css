@@ -609,7 +609,7 @@ html, body {
 /* Sets off the module editor's "type something here" entry points (add
    port, add parameter, its type/value-range) from the plain list/display
    fields around them, so it reads at a glance as still-editable. */
-#input-add-field, #output-add-field, #pdef-name, #pdef-type, #pdef-min, #pdef-max {
+#input-add-field, #output-add-field, #pdef-name, #pdef-type, #pdef-display, #pdef-min, #pdef-max {
   background: var(--accent-bg);
   border-color: var(--accent-border);
 }
