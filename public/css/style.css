@@ -606,14 +606,18 @@ html, body {
 }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent-border); }
 
-/* ── panel-layout field: set off from the fields above it, more visual
-   weight than a plain field since it opens its own editor ── */
-.panel-layout-field { margin-top: 16px; padding-top: 16px; border-top: 0.5px solid var(--border); }
-.panel-layout-card {
+/* ── panel-layout / manuals fields: set off from the fields above them,
+   more visual weight than a plain field since each opens its own editor
+   (panel layout) or holds file/link management (manuals) ── */
+.panel-layout-field,
+.manuals-field { margin-top: 16px; padding-top: 16px; border-top: 0.5px solid var(--border); }
+.panel-layout-card,
+.manuals-card {
   border: 0.5px solid var(--accent-border); border-radius: var(--radius-lg);
   background: var(--accent-bg); padding: 12px 14px;
 }
-.panel-layout-heading {
+.panel-layout-heading,
+.manuals-heading {
   font-size: 13px; font-weight: 600; color: var(--text0); margin-bottom: 8px;
   display: flex; align-items: baseline; gap: 6px;
 }
