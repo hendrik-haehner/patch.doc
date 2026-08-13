@@ -1198,8 +1198,23 @@ html, body {
 .pdef-add-row input { width: 100%; }
 .pdef-add-row select { font-size: 11px; padding: 4px 6px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg0); color: var(--text0); font-family: var(--font); width: 90px; }
 
-/* ── panel layout editor (module modal → "edit panel layout") ── */
-.panel-editor-modal { width: 760px; max-width: 96vw; }
+/* ── panel layout editor (module modal → "edit panel layout") ──
+   Fixed size, not content-sized — otherwise the dialog visibly shrinks as
+   the "unplaced" pool empties out while you work. The header/toolbar/
+   inspector/actions stay their natural size (flex-shrink:0 below); the
+   body (pool + grid) is the one region that stretches to fill whatever
+   space is left, with its own internal scrolling, so the outer dialog
+   never resizes based on how much is left to place. */
+.panel-editor-modal {
+  width: 760px; max-width: 96vw;
+  height: 680px; max-height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden; /* .modal's own overflow-y:auto would scroll the whole dialog instead */
+}
+.panel-editor-modal h3,
+.panel-editor-modal .panel-editor-toolbar,
+.panel-editor-modal #panel-editor-inspector,
+.panel-editor-modal .modal-actions { flex-shrink: 0; }
 .panel-editor-toolbar {
   display: flex; align-items: center; gap: 14px; margin-bottom: 10px; flex-wrap: wrap;
 }
@@ -1237,19 +1252,23 @@ html, body {
   background: var(--bg0); color: var(--text0); font-family: var(--font);
 }
 
-.panel-editor-body { display: flex; gap: 14px; align-items: flex-start; }
+.panel-editor-body { display: flex; gap: 14px; align-items: stretch; flex: 1; min-height: 0; }
 .panel-editor-pool {
   width: 190px; flex-shrink: 0;
   border: 0.5px solid var(--border2); border-radius: var(--radius);
   padding: 8px;
+  display: flex; flex-direction: column; min-height: 0;
 }
 .panel-editor-pool-label {
   font-size: 10px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 6px; flex-shrink: 0;
 }
-.panel-editor-pool-list { display: flex; flex-direction: column; gap: 5px; min-height: 40px; margin-bottom: 8px; }
+.panel-editor-pool-list {
+  display: flex; flex-direction: column; gap: 5px;
+  flex: 1; min-height: 40px; margin-bottom: 8px; overflow-y: auto;
+}
 .panel-editor-pool-empty { font-size: 10px; color: var(--text2); padding: 6px 0; }
-.panel-editor-add-special { display: flex; gap: 5px; flex-wrap: wrap; border-top: 0.5px solid var(--border); padding-top: 8px; }
+.panel-editor-add-special { display: flex; gap: 5px; flex-wrap: wrap; border-top: 0.5px solid var(--border); padding-top: 8px; flex-shrink: 0; }
 
 .panel-editor-chip {
   display: flex; align-items: center; gap: 6px;
@@ -1290,7 +1309,7 @@ html, body {
 .panel-editor-placed.panel-editor-chip-badge-divider-v { color: #7a8a78; border-color: rgba(122,138,120,0.35); background: rgba(122,138,120,0.12); }
 .panel-editor-chip-label { flex: 1; color: var(--text0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.panel-editor-grid-wrap { overflow: auto; max-height: 58vh; padding: 2px; }
+.panel-editor-grid-wrap { overflow: auto; flex: 1; min-height: 0; padding: 2px; }
 .panel-editor-grid { display: grid; gap: 4px; }
 .panel-editor-empty-cell {
   width: 50px; height: 44px;
