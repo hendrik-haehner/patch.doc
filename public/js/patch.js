@@ -209,11 +209,13 @@ const Patch = {
     if (e.type === 'label') return wrap(`<div class="pm-panel-label">${e.text || ''}</div>`);
     // 'divider' is the pre-rename type string — still read for panels saved
     // before the horizontal/vertical split, alongside the current 'divider-h'.
-    if (e.type === 'divider' || e.type === 'divider-h') return wrap(`<div class="pm-panel-divider-h"></div>`);
+    // Dividers stay plain lines — no tinted/rounded cell backdrop, that's
+    // reserved for actual content.
+    if (e.type === 'divider' || e.type === 'divider-h') return wrap(`<div class="pm-panel-divider-h"></div>`, 'pm-panel-cell-plain');
     // .pm-panel's align-items:center only sizes a cell to its own content,
     // so a vertical divider's height:100% has nothing definite to resolve
     // against unless its own cell is told to stretch to the row's height.
-    if (e.type === 'divider-v') return wrap(`<div class="pm-panel-divider-v"></div>`, 'pm-panel-cell-stretch');
+    if (e.type === 'divider-v') return wrap(`<div class="pm-panel-divider-v"></div>`, 'pm-panel-cell-stretch pm-panel-cell-plain');
     if (e.type === 'button')    return wrap(`<div class="pm-panel-button" title="${e.text || ''}">${e.text || ''}</div>`);
 
     if (e.type === 'input' || e.type === 'output') {
