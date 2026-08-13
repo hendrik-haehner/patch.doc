@@ -1430,7 +1430,7 @@ const App = {
         <span class="pdef-handle" title="drag to reorder">⠿</span>
         <span class="pdef-type pdef-type-${d.type}">${d.type}</span>
         <span class="pdef-name">${d.name}</span>
-        <span class="pdef-detail">${d.type==='knob' ? d.min+'–'+d.max + (d.display==='clock' ? ' · Uhrzeit' : d.display==='freq' ? ' · Hz' : '') : d.type==='enum' ? (d.options||'').substring(0,20) : ''}</span>
+        <span class="pdef-detail">${d.type==='knob' ? d.min+'–'+d.max + (d.display==='clock' ? ' · clock' : d.display==='freq' ? ' · Hz' : '') : d.type==='enum' ? (d.options||'').substring(0,20) : ''}</span>
         <button class="pdef-edit" onclick="App.editParamDef(${i},event)" title="edit">✎</button>
         <button class="pdef-del" onclick="App.removeParamDef(${i},event)">×</button>
       </div>`).join('') || '<div class="pdef-empty">no parameters defined</div>';
@@ -1552,8 +1552,8 @@ const App = {
   },
 
   // The display dropdown leads the knob fields — min/max/default are only
-  // meaningful for "Zahlenwert"/"Frequenz" (a real range/unit); "Uhrzeit"
-  // is just a sweep position with no unit of its own, so those fields
+  // meaningful for "number"/"frequency" (a real range/unit); "clock" is
+  // just a sweep position with no unit of its own, so those fields
   // disappear entirely rather than asking for numbers that don't apply.
   onParamDefDisplayChange() {
     const display = document.getElementById('pdef-display').value;
