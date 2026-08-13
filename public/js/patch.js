@@ -444,13 +444,13 @@ const Patch = {
 
   // Assumes the stored value already IS Hz (def.min/max define the knob's
   // own Hz range) — this only reformats it with audio-gear-style notation
-  // (kHz above 1000, two decimals below 10) rather than remapping it.
+  // (kHz above 1000, one decimal below 10) rather than remapping it.
   _fmtFreq(v) {
     const n = parseFloat(v);
     if (isNaN(n)) return v;
     const abs = Math.abs(n);
-    if (abs >= 1000) return parseFloat((n / 1000).toFixed(abs >= 10000 ? 1 : 2)) + ' kHz';
-    if (abs < 10) return n.toFixed(2) + ' Hz';
+    if (abs >= 1000) return parseFloat((n / 1000).toFixed(1)) + ' kHz';
+    if (abs < 10) return n.toFixed(1) + ' Hz';
     return Math.round(n) + ' Hz';
   },
 
