@@ -606,6 +606,14 @@ html, body {
 }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent-border); }
 
+/* Sets off the module editor's "type something here" entry points (add
+   port, add parameter, its type/value-range) from the plain list/display
+   fields around them, so it reads at a glance as still-editable. */
+#input-add-field, #output-add-field, #pdef-name, #pdef-type, #pdef-min, #pdef-max {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
 /* ── panel-layout / manuals fields: set off from the fields above them,
    more visual weight than a plain field since each opens its own editor
    (panel layout) or holds file/link management (manuals) ── */
