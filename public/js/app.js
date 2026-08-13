@@ -1560,6 +1560,22 @@ const App = {
     document.getElementById('pdef-knob-range-fields').style.display = display === 'clock' ? 'none' : 'grid';
   },
 
+  // Bound to the display <select>'s own onchange — distinct from
+  // onParamDefDisplayChange (which editParamDef also calls, just to sync
+  // field visibility when loading an existing param) so that loading a
+  // frequency knob whose max happens to already be a custom value never
+  // gets silently overwritten by this default.
+  onParamDefDisplaySelect() {
+    this.onParamDefDisplayChange();
+    // Frequency parameters commonly span the audible range — nudge the
+    // max field to a sensible default when it's still at the generic
+    // knob default, without touching anything already customized.
+    if (document.getElementById('pdef-display').value === 'freq') {
+      const maxEl = document.getElementById('pdef-max');
+      if (maxEl.value === '100') maxEl.value = '20000';
+    }
+  },
+
   renderRackView() {
     const patch   = Store.getActivePatch();
     const modules = Store.state.modules;
