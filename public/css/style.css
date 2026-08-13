@@ -1127,7 +1127,13 @@ html, body {
   padding: 6px;
   border-top: 0.5px solid var(--border);
 }
-.pm-panel-cell { min-width: 0; }
+.pm-panel-cell {
+  min-width: 0;
+  background: rgba(0,0,0,0.1);
+  border-radius: 6px;
+  padding: 3px;
+}
+.pm-panel-cell-plain { background: none; border-radius: 0; padding: 0; }
 /* Jacks read like a real front panel: same footprint as a knob cell,
    jack centered on top, label centered underneath — not the compact
    side-by-side row list mode uses (overrides .port.output's row-reverse
