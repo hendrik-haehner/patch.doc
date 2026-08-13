@@ -1131,9 +1131,14 @@ html, body {
   min-width: 0;
   background: rgba(0,0,0,0.1);
   border-radius: 6px;
-  padding: 3px;
+  padding: 1px;
 }
-.pm-panel-cell-plain { background: none; border-radius: 0; padding: 0; }
+/* Same module-color tint the header uses (.has-custom-color .pm-header),
+   just a touch darker via the black overlay layered on top. */
+.has-custom-color .pm-panel-cell {
+  background: linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.08)), color-mix(in srgb, var(--mod-color) 12%, var(--bg2));
+}
+.pm-panel-cell-plain { background: none !important; border-radius: 0; padding: 0; }
 /* Jacks read like a real front panel: same footprint as a knob cell,
    jack centered on top, label centered underneath — not the compact
    side-by-side row list mode uses (overrides .port.output's row-reverse
