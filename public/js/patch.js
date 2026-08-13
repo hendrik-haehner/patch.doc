@@ -568,11 +568,15 @@ const Patch = {
           e.target.closest('.pm-knob-wrap') || e.target.closest('.pm-toggle-btn') ||
           e.target.closest('.pm-enum-wrap') || e.target.closest('.pm-text-wrap')) return;
       e.preventDefault();
-      const sx = e.clientX - pm.x, sy = e.clientY - pm.y;
+      // pm.x/pm.y are canvas-local (pre-scale) coordinates, but clientX/Y
+      // are screen pixels — dividing by _zoom converts the mouse position
+      // into the same space so drag distance tracks the cursor 1:1 at any
+      // zoom level instead of over/undershooting it.
+      const sx = e.clientX / _zoom - pm.x, sy = e.clientY / _zoom - pm.y;
       el.classList.add('dragging');
       const onMove = ev => {
-        pm.x = this._snap(Math.max(0, ev.clientX - sx));
-        pm.y = this._snap(Math.max(0, ev.clientY - sy));
+        pm.x = this._snap(Math.max(0, ev.clientX / _zoom - sx));
+        pm.y = this._snap(Math.max(0, ev.clientY / _zoom - sy));
         el.style.left = pm.x + 'px';
         el.style.top  = pm.y + 'px';
         this.renderCables();
@@ -857,7 +861,12 @@ const Patch = {
     const canvas = document.getElementById('patch-canvas');
     const cr = canvas.getBoundingClientRect();
     const jr = jack.getBoundingClientRect();
-    return { x: jr.left - cr.left + jr.width / 2, y: jr.top - cr.top + jr.height / 2 };
+    // getBoundingClientRect() is post-zoom (screen) pixels, but cable-svg
+    // lives inside #patch-canvas and inherits its CSS scale — so a screen-
+    // pixel delta used as-is gets scaled a second time by that ancestor
+    // transform. Dividing by _zoom converts back to the canvas's own
+    // (pre-scale) coordinate space, which is what the SVG path needs.
+    return { x: (jr.left - cr.left + jr.width / 2) / _zoom, y: (jr.top - cr.top + jr.height / 2) / _zoom };
   },
 
   // Builds the SVG path "d" string for a cable between two port centers.
