@@ -1446,10 +1446,11 @@ const App = {
     document.getElementById('pdef-type').value = d.type;
     this.onParamDefTypeChange();
     if (d.type === 'knob') {
+      document.getElementById('pdef-display').value = d.display || 'number';
       document.getElementById('pdef-min').value     = d.min ?? 0;
       document.getElementById('pdef-max').value     = d.max ?? 100;
       document.getElementById('pdef-default').value = d.default ?? 0;
-      document.getElementById('pdef-display').value = d.display || 'number';
+      this.onParamDefDisplayChange();
     }
     if (d.type === 'toggle') {
       document.getElementById('pdef-toggle-default').value = d.default ? 'on' : 'off';
@@ -1501,10 +1502,18 @@ const App = {
     if (!name) { document.getElementById('pdef-name').focus(); return; }
     const def = { name, type };
     if (type === 'knob') {
-      def.min     = parseFloat(document.getElementById('pdef-min').value) || 0;
-      def.max     = parseFloat(document.getElementById('pdef-max').value) || 100;
-      def.default = parseFloat(document.getElementById('pdef-default').value) || def.min;
       def.display = document.getElementById('pdef-display').value;
+      // A clock-position knob has no meaningful unit of its own — it's
+      // just a sweep position — so it always uses a fixed 0-100 range
+      // instead of asking for min/max/default (the fields are hidden for
+      // this mode, see onParamDefDisplayChange).
+      if (def.display === 'clock') {
+        def.min = 0; def.max = 100; def.default = 0;
+      } else {
+        def.min     = parseFloat(document.getElementById('pdef-min').value) || 0;
+        def.max     = parseFloat(document.getElementById('pdef-max').value) || 100;
+        def.default = parseFloat(document.getElementById('pdef-default').value) || def.min;
+      }
     }
     if (type === 'toggle') {
       def.default = document.getElementById('pdef-toggle-default').value === 'on';
@@ -1535,10 +1544,20 @@ const App = {
 
   onParamDefTypeChange() {
     const type = document.getElementById('pdef-type').value;
-    document.getElementById('pdef-knob-fields').style.display   = type === 'knob'   ? 'grid'  : 'none';
+    document.getElementById('pdef-knob-fields').style.display   = type === 'knob'   ? 'block' : 'none';
     document.getElementById('pdef-toggle-fields').style.display = type === 'toggle' ? 'flex'  : 'none';
     document.getElementById('pdef-enum-fields').style.display   = type === 'enum'   ? 'block' : 'none';
     // text type has no extra fields
+    if (type === 'knob') this.onParamDefDisplayChange();
+  },
+
+  // The display dropdown leads the knob fields — min/max/default are only
+  // meaningful for "Zahlenwert"/"Frequenz" (a real range/unit); "Uhrzeit"
+  // is just a sweep position with no unit of its own, so those fields
+  // disappear entirely rather than asking for numbers that don't apply.
+  onParamDefDisplayChange() {
+    const display = document.getElementById('pdef-display').value;
+    document.getElementById('pdef-knob-range-fields').style.display = display === 'clock' ? 'none' : 'grid';
   },
 
   renderRackView() {
