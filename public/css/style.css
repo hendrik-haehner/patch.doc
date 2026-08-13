@@ -1190,7 +1190,7 @@ html, body {
 }
 .pdef-del:hover { color: var(--danger); }
 .pdef-add-area { margin-top: 4px; }
-.pdef-add-row { display: grid; grid-template-columns: 1fr auto auto; gap: 5px; }
+.pdef-add-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 5px; }
 .pdef-add-row input { width: 100%; }
 .pdef-add-row select { font-size: 11px; padding: 4px 6px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg0); color: var(--text0); font-family: var(--font); width: 90px; }
 
@@ -1697,6 +1697,11 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
   display: flex; align-items: center; gap: 5px;
   padding: 7px 10px; border-top: 0.5px solid var(--border);
 }
+/* The manuals tab wraps this in a bordered .manual-module-row card, where
+   the line above reads as an internal section break. The module editor's
+   compact version has no such card, so the line just looked like a stray
+   divider between "upload PDF" and "add link" instead of one section. */
+#modal-manuals-content .manual-link-add-row { border-top: none; padding-left: 0; padding-right: 0; }
 .manual-link-add-row input {
   font-size: 11px; padding: 4px 7px; min-width: 0;
   border: 0.5px solid var(--border2); border-radius: var(--radius);
