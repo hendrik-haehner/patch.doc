@@ -17,7 +17,7 @@ const PanelEditor = {
       window._tempPanel = { cols: 4, rows: 6, elements: [] };
     }
     window._panelPool = window._panelPool || [];
-    window._panelSelectedIdx = null;
+    window._panelSelectedIndices = new Set();
     window._panelEditorSnapshot = JSON.stringify({
       panel: window._tempPanel,
       pool: window._panelPool,
@@ -54,7 +54,7 @@ const PanelEditor = {
 
   _close() {
     document.getElementById('panel-editor-modal-bg').classList.remove('open');
-    window._panelSelectedIdx = null;
+    window._panelSelectedIndices = new Set();
   },
 
   // ── grid size ────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ const PanelEditor = {
       else this._returnToPool(el);
     });
     panel.elements = kept;
-    window._panelSelectedIdx = null;
+    window._panelSelectedIndices = new Set();
     this._renderPool();
     this._renderGrid();
     this._renderInspector();
@@ -173,7 +173,7 @@ const PanelEditor = {
     const pos = `grid-column:${e.col + 1} / span ${e.w || 1};grid-row:${e.row + 1} / span ${e.h || 1}`;
     const label = (e.type === 'label' || e.type === 'button') ? (e.text || '')
       : (e.type === 'divider' || e.type === 'divider-h') ? '──' : e.type === 'divider-v' ? '│' : (e.ref || '');
-    const selected = window._panelSelectedIdx === i ? ' selected' : '';
+    const selected = (window._panelSelectedIndices && window._panelSelectedIndices.has(i)) ? ' selected' : '';
     return `<div class="panel-editor-placed panel-editor-chip-badge-${e.type}${selected}" style="${pos}" draggable="true"
       onclick="PanelEditor.selectElement(${i},event)"
       ondragstart="PanelEditor.gridDragStart(${i},event)"
@@ -185,19 +185,34 @@ const PanelEditor = {
 
   selectElement(i, e) {
     if (e) e.stopPropagation();
-    window._panelSelectedIdx = i;
+    window._panelSelectedIndices = window._panelSelectedIndices || new Set();
+    const sel = window._panelSelectedIndices;
+    if (e && (e.shiftKey || e.ctrlKey || e.metaKey)) {
+      if (sel.has(i)) sel.delete(i); else sel.add(i);
+    } else {
+      sel.clear();
+      sel.add(i);
+    }
     this._renderGrid();
     this._renderInspector();
   },
 
   deselectAll() {
-    window._panelSelectedIdx = null;
+    window._panelSelectedIndices = new Set();
     this._renderGrid();
     this._renderInspector();
   },
 
   gridDragStart(i, e) {
-    window._panelDragInfo = { source: 'grid', index: i };
+    const sel = window._panelSelectedIndices || new Set();
+    // Dragging a chip that's part of a multi-selection moves the whole
+    // group together; dragging any other chip is a plain single-item move
+    // (and doesn't disturb the current selection).
+    if (sel.has(i) && sel.size > 1) {
+      window._panelDragInfo = { source: 'grid-multi', indices: [...sel], anchorIndex: i };
+    } else {
+      window._panelDragInfo = { source: 'grid', index: i };
+    }
     e.dataTransfer.effectAllowed = 'move';
     // Anchor the drag ghost's top-left corner to the cursor, matching how
     // _cellFromEvent() reads the drop cell — otherwise the ghost trails
@@ -207,7 +222,10 @@ const PanelEditor = {
     // currentTarget is only valid for the duration of this handler — grab
     // it now, not inside the timeout (it'd be null by the next tick).
     const el = e.currentTarget;
-    setTimeout(() => el.classList.add('dragging'), 0);
+    setTimeout(() => {
+      el.classList.add('dragging');
+      document.querySelectorAll('.panel-editor-placed.selected').forEach(chip => chip.classList.add('dragging'));
+    }, 0);
   },
 
   poolDragStart(e) {
@@ -223,7 +241,7 @@ const PanelEditor = {
   },
 
   dragEnd(e) {
-    e.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.panel-editor-placed.dragging').forEach(chip => chip.classList.remove('dragging'));
     document.querySelectorAll('.panel-editor-empty-cell.drag-over,.panel-editor-empty-cell.drag-over-invalid')
       .forEach(c => c.classList.remove('drag-over', 'drag-over-invalid'));
   },
@@ -244,6 +262,23 @@ const PanelEditor = {
     document.querySelectorAll('.panel-editor-empty-cell.drag-over,.panel-editor-empty-cell.drag-over-invalid')
       .forEach(c => c.classList.remove('drag-over', 'drag-over-invalid'));
     if (col < 0 || row < 0 || col >= panel.cols || row >= panel.rows) return;
+
+    if (info && info.source === 'grid-multi') {
+      const targets = this._groupTargets(info, col, row);
+      if (!targets) return;
+      const valid = this._groupMoveValid(info, col, row);
+      targets.forEach(t => {
+        if (!t) return;
+        for (let rr = 0; rr < t.h; rr++) {
+          for (let cc = 0; cc < t.w; cc++) {
+            const cell = document.querySelector(`.panel-editor-empty-cell[data-col="${t.nc + cc}"][data-row="${t.nr + rr}"]`);
+            if (cell) cell.classList.add(valid ? 'drag-over' : 'drag-over-invalid');
+          }
+        }
+      });
+      return;
+    }
+
     const cell = document.querySelector(`.panel-editor-empty-cell[data-col="${col}"][data-row="${row}"]`);
     if (!cell) return;
     let w = 1, h = 1, excludeIdx = -1;
@@ -253,6 +288,32 @@ const PanelEditor = {
     }
     const free = this._cellsFree(panel.elements, col, row, w, h, excludeIdx);
     cell.classList.add(free ? 'drag-over' : 'drag-over-invalid');
+  },
+
+  // Position each grouped element would land at if the dragged (anchor)
+  // element's top-left corner were dropped on (col,row) — offsets are
+  // taken relative to the anchor so the group keeps its shape.
+  _groupTargets(info, col, row) {
+    const panel = window._tempPanel;
+    const anchorEl = panel.elements[info.anchorIndex];
+    if (!anchorEl) return null;
+    const dCol = col - anchorEl.col, dRow = row - anchorEl.row;
+    return info.indices.map(idx => {
+      const el = panel.elements[idx];
+      if (!el) return null;
+      return { idx, nc: el.col + dCol, nr: el.row + dRow, w: el.w || 1, h: el.h || 1 };
+    });
+  },
+
+  _groupMoveValid(info, col, row) {
+    const panel = window._tempPanel;
+    const targets = this._groupTargets(info, col, row);
+    if (!targets || targets.some(t => !t)) return false;
+    const excludeSet = new Set(info.indices);
+    return targets.every(t =>
+      t.nc >= 0 && t.nr >= 0 && t.nc + t.w <= panel.cols && t.nr + t.h <= panel.rows &&
+      this._cellsFree(panel.elements, t.nc, t.nr, t.w, t.h, excludeSet)
+    );
   },
 
   onGridDrop(e) {
@@ -281,6 +342,13 @@ const PanelEditor = {
       if (!el) { window._panelDragInfo = null; return; }
       if (!this._cellsFree(panel.elements, col, row, el.w || 1, el.h || 1, info.index)) { App.setStatus('panel: cell occupied'); window._panelDragInfo = null; return; }
       el.col = col; el.row = row;
+    } else if (info.source === 'grid-multi') {
+      if (!this._groupMoveValid(info, col, row)) { App.setStatus('panel: overlaps another element'); window._panelDragInfo = null; return; }
+      const targets = this._groupTargets(info, col, row);
+      targets.forEach(t => {
+        const el = panel.elements[t.idx];
+        el.col = t.nc; el.row = t.nr;
+      });
     }
     window._panelDragInfo = null;
     this._renderPool();
@@ -293,9 +361,11 @@ const PanelEditor = {
   onPoolDrop(e) {
     e.preventDefault();
     const info = window._panelDragInfo;
-    if (!info || info.source !== 'grid') return; // a pool chip dropped back on the pool is a no-op
+    if (!info) return;
     window._panelDragInfo = null;
-    this.unplace(info.index);
+    // a pool chip dropped back on the pool is a no-op
+    if (info.source === 'grid') this.unplace(info.index);
+    else if (info.source === 'grid-multi') this.unplaceMany(info.indices);
   },
 
   unplace(i) {
@@ -304,15 +374,35 @@ const PanelEditor = {
     if (!el) return;
     panel.elements.splice(i, 1);
     this._returnToPool(el);
-    window._panelSelectedIdx = null;
+    window._panelSelectedIndices = new Set();
     this._renderPool();
     this._renderGrid();
     this._renderInspector();
   },
 
+  unplaceMany(indices) {
+    const panel = window._tempPanel;
+    // Descending order so removing one element doesn't shift the indices
+    // of the others still queued for removal.
+    const sorted = [...new Set(indices)].sort((a, b) => b - a);
+    sorted.forEach(i => {
+      const el = panel.elements[i];
+      if (!el) return;
+      panel.elements.splice(i, 1);
+      this._returnToPool(el);
+    });
+    window._panelSelectedIndices = new Set();
+    this._renderPool();
+    this._renderGrid();
+    this._renderInspector();
+  },
+
+  // excludeIdx may be a single index or a Set of indices to ignore (e.g.
+  // the elements of a group that's being moved together).
   _cellsFree(elements, col, row, w, h, excludeIdx) {
+    const excludeSet = excludeIdx instanceof Set ? excludeIdx : null;
     for (let i = 0; i < elements.length; i++) {
-      if (i === excludeIdx) continue;
+      if (excludeSet ? excludeSet.has(i) : i === excludeIdx) continue;
       const e = elements[i];
       const ew = e.w || 1, eh = e.h || 1;
       const overlap = col < e.col + ew && col + w > e.col && row < e.row + eh && row + h > e.row;
@@ -326,27 +416,41 @@ const PanelEditor = {
   _renderInspector() {
     const bar = document.getElementById('panel-editor-inspector');
     if (!bar) return;
-    const i = window._panelSelectedIdx;
+    const sel = window._panelSelectedIndices || new Set();
     const panel = window._tempPanel;
-    const el = (i != null && panel) ? panel.elements[i] : null;
     const empty = document.getElementById('panel-editor-inspector-empty');
+    const count = document.getElementById('panel-editor-inspector-count');
     const badge = document.getElementById('panel-editor-inspector-badge');
     const name = document.getElementById('panel-editor-inspector-name');
     const wLabel = document.getElementById('panel-editor-inspector-w-label');
     const hLabel = document.getElementById('panel-editor-inspector-h-label');
     const removeBtn = document.getElementById('panel-editor-inspector-remove-btn');
     const textInput = document.getElementById('panel-editor-inspector-text');
-    if (!el) {
-      empty.style.display = 'inline';
+    const hideAll = () => {
+      empty.style.display = 'none';
+      count.style.display = 'none';
       badge.style.display = 'none';
       name.style.display = 'none';
       wLabel.style.display = 'none';
       hLabel.style.display = 'none';
       removeBtn.style.display = 'none';
       textInput.style.display = 'none';
+    };
+
+    if (sel.size === 0 || !panel) { hideAll(); empty.style.display = 'inline'; return; }
+
+    if (sel.size > 1) {
+      hideAll();
+      count.style.display = 'inline';
+      count.textContent = sel.size + ' selected';
+      removeBtn.style.display = 'inline-block';
       return;
     }
-    empty.style.display = 'none';
+
+    const i = sel.values().next().value;
+    const el = panel.elements[i];
+    if (!el) { hideAll(); empty.style.display = 'inline'; return; }
+    hideAll();
     badge.style.display = 'inline';
     name.style.display = 'inline';
     wLabel.style.display = 'inline';
@@ -358,23 +462,24 @@ const PanelEditor = {
     if (el.type === 'label' || el.type === 'button') {
       textInput.style.display = 'block';
       textInput.value = el.text || '';
-    } else {
-      textInput.style.display = 'none';
     }
     document.getElementById('panel-editor-inspector-w').value = el.w || 1;
     document.getElementById('panel-editor-inspector-h').value = el.h || 1;
   },
 
   setSelectedText(val) {
-    const i = window._panelSelectedIdx;
-    const el = window._tempPanel.elements[i];
+    const sel = window._panelSelectedIndices;
+    if (!sel || sel.size !== 1) return;
+    const el = window._tempPanel.elements[sel.values().next().value];
     if (!el) return;
     el.text = val;
     this._renderGrid();
   },
 
   setSelectedSize(dim, val) {
-    const i = window._panelSelectedIdx;
+    const sel = window._panelSelectedIndices;
+    if (!sel || sel.size !== 1) return;
+    const i = sel.values().next().value;
     const panel = window._tempPanel;
     const el = panel.elements[i];
     if (!el) return;
@@ -388,9 +493,10 @@ const PanelEditor = {
   },
 
   unplaceSelected() {
-    const i = window._panelSelectedIdx;
-    if (i == null) return;
-    this.unplace(i);
+    const sel = window._panelSelectedIndices;
+    if (!sel || sel.size === 0) return;
+    if (sel.size === 1) this.unplace(sel.values().next().value);
+    else this.unplaceMany([...sel]);
   },
 
   // ── save-time cleanup ────────────────────────────────────────────────────

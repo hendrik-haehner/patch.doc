@@ -468,11 +468,12 @@
     <div class="panel-editor-toolbar">
       <label>columns <input id="panel-editor-cols" type="number" min="1" max="24" onchange="PanelEditor.setCols(this.value)"></label>
       <label>rows <input id="panel-editor-rows" type="number" min="1" max="40" onchange="PanelEditor.setRows(this.value)"></label>
-      <span class="panel-editor-hint">drag chips onto the grid · click a placed element to resize or remove it</span>
+      <span class="panel-editor-hint">drag chips onto the grid · click a placed element to resize or remove it · shift-click to select multiple</span>
       <button class="panel-editor-remove-link" onclick="PanelEditor.removePanel()">remove panel layout</button>
     </div>
     <div id="panel-editor-inspector" class="panel-editor-inspector">
-      <span id="panel-editor-inspector-empty" class="panel-editor-hint">click a placed element to resize or remove it</span>
+      <span id="panel-editor-inspector-empty" class="panel-editor-hint">click a placed element to resize or remove it · shift-click to select multiple</span>
+      <span id="panel-editor-inspector-count" class="panel-editor-inspector-name" style="display:none"></span>
       <span id="panel-editor-inspector-badge" class="panel-editor-chip-badge" style="display:none"></span>
       <span id="panel-editor-inspector-name" class="panel-editor-inspector-name" style="display:none"></span>
       <input id="panel-editor-inspector-text" type="text" placeholder="text…" style="display:none" oninput="PanelEditor.setSelectedText(this.value)">
