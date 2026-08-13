@@ -287,8 +287,11 @@ const Patch = {
     const ar      = anchorEl.getBoundingClientRect();
     const menu    = document.createElement('div');
     menu.className = 'mark-menu';
-    menu.style.left = (ar.left - cr.left) + 'px';
-    menu.style.top  = (ar.bottom - cr.top + 4) + 'px';
+    // Same fix as _getPortCenter/_makeDraggable: the menu is a child of
+    // #patch-canvas and inherits its zoom scale, so a screen-pixel delta
+    // needs dividing by _zoom to land at the right canvas-local position.
+    menu.style.left = (ar.left - cr.left) / _zoom + 'px';
+    menu.style.top  = (ar.bottom - cr.top) / _zoom + 4 + 'px';
     const current = this._getMark(pmId, name);
     menu.innerHTML =
       MARK_COLORS.map(mc => `
