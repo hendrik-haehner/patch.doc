@@ -1430,7 +1430,7 @@ const App = {
         <span class="pdef-handle" title="drag to reorder">⠿</span>
         <span class="pdef-type pdef-type-${d.type}">${d.type}</span>
         <span class="pdef-name">${d.name}</span>
-        <span class="pdef-detail">${d.type==='knob' ? d.min+'–'+d.max : d.type==='enum' ? (d.options||'').substring(0,20) : ''}</span>
+        <span class="pdef-detail">${d.type==='knob' ? d.min+'–'+d.max + (d.display==='clock' ? ' · Uhrzeit' : d.display==='freq' ? ' · Hz' : '') : d.type==='enum' ? (d.options||'').substring(0,20) : ''}</span>
         <button class="pdef-edit" onclick="App.editParamDef(${i},event)" title="edit">✎</button>
         <button class="pdef-del" onclick="App.removeParamDef(${i},event)">×</button>
       </div>`).join('') || '<div class="pdef-empty">no parameters defined</div>';
@@ -1449,6 +1449,7 @@ const App = {
       document.getElementById('pdef-min').value     = d.min ?? 0;
       document.getElementById('pdef-max').value     = d.max ?? 100;
       document.getElementById('pdef-default').value = d.default ?? 0;
+      document.getElementById('pdef-display').value = d.display || 'number';
     }
     if (d.type === 'toggle') {
       document.getElementById('pdef-toggle-default').value = d.default ? 'on' : 'off';
@@ -1503,6 +1504,7 @@ const App = {
       def.min     = parseFloat(document.getElementById('pdef-min').value) || 0;
       def.max     = parseFloat(document.getElementById('pdef-max').value) || 100;
       def.default = parseFloat(document.getElementById('pdef-default').value) || def.min;
+      def.display = document.getElementById('pdef-display').value;
     }
     if (type === 'toggle') {
       def.default = document.getElementById('pdef-toggle-default').value === 'on';
