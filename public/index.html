@@ -471,13 +471,14 @@
       <span class="panel-editor-hint">drag chips onto the grid · click a placed element to resize or remove it</span>
       <button class="panel-editor-remove-link" onclick="PanelEditor.removePanel()">remove panel layout</button>
     </div>
-    <div id="panel-editor-inspector" class="panel-editor-inspector" style="display:none">
-      <span id="panel-editor-inspector-badge" class="panel-editor-chip-badge"></span>
-      <span id="panel-editor-inspector-name" class="panel-editor-inspector-name"></span>
+    <div id="panel-editor-inspector" class="panel-editor-inspector">
+      <span id="panel-editor-inspector-empty" class="panel-editor-hint">click a placed element to resize or remove it</span>
+      <span id="panel-editor-inspector-badge" class="panel-editor-chip-badge" style="display:none"></span>
+      <span id="panel-editor-inspector-name" class="panel-editor-inspector-name" style="display:none"></span>
       <input id="panel-editor-inspector-text" type="text" placeholder="text…" style="display:none" oninput="PanelEditor.setSelectedText(this.value)">
-      <label class="panel-editor-inspector-dim">w <input id="panel-editor-inspector-w" type="number" min="1" onchange="PanelEditor.setSelectedSize('w',this.value)"></label>
-      <label class="panel-editor-inspector-dim">h <input id="panel-editor-inspector-h" type="number" min="1" onchange="PanelEditor.setSelectedSize('h',this.value)"></label>
-      <button class="io-add-btn" onclick="PanelEditor.unplaceSelected()">remove from panel</button>
+      <label id="panel-editor-inspector-w-label" class="panel-editor-inspector-dim" style="display:none">w <input id="panel-editor-inspector-w" type="number" min="1" onchange="PanelEditor.setSelectedSize('w',this.value)"></label>
+      <label id="panel-editor-inspector-h-label" class="panel-editor-inspector-dim" style="display:none">h <input id="panel-editor-inspector-h" type="number" min="1" onchange="PanelEditor.setSelectedSize('h',this.value)"></label>
+      <button id="panel-editor-inspector-remove-btn" class="io-add-btn" style="display:none" onclick="PanelEditor.unplaceSelected()">remove from panel</button>
     </div>
     <div class="panel-editor-body">
       <div class="panel-editor-pool">

@@ -329,13 +329,32 @@ const PanelEditor = {
     const i = window._panelSelectedIdx;
     const panel = window._tempPanel;
     const el = (i != null && panel) ? panel.elements[i] : null;
-    if (!el) { bar.style.display = 'none'; return; }
-    bar.style.display = 'flex';
+    const empty = document.getElementById('panel-editor-inspector-empty');
     const badge = document.getElementById('panel-editor-inspector-badge');
+    const name = document.getElementById('panel-editor-inspector-name');
+    const wLabel = document.getElementById('panel-editor-inspector-w-label');
+    const hLabel = document.getElementById('panel-editor-inspector-h-label');
+    const removeBtn = document.getElementById('panel-editor-inspector-remove-btn');
+    const textInput = document.getElementById('panel-editor-inspector-text');
+    if (!el) {
+      empty.style.display = 'inline';
+      badge.style.display = 'none';
+      name.style.display = 'none';
+      wLabel.style.display = 'none';
+      hLabel.style.display = 'none';
+      removeBtn.style.display = 'none';
+      textInput.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    badge.style.display = 'inline';
+    name.style.display = 'inline';
+    wLabel.style.display = 'inline';
+    hLabel.style.display = 'inline';
+    removeBtn.style.display = 'inline-block';
     badge.textContent = el.type;
     badge.className = 'panel-editor-chip-badge panel-editor-chip-badge-' + el.type;
-    document.getElementById('panel-editor-inspector-name').textContent = el.ref || this._specialLabel(el.type);
-    const textInput = document.getElementById('panel-editor-inspector-text');
+    name.textContent = el.ref || this._specialLabel(el.type);
     if (el.type === 'label' || el.type === 'button') {
       textInput.style.display = 'block';
       textInput.value = el.text || '';
