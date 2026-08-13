@@ -225,8 +225,12 @@ const Patch = {
         </div>`);
     }
 
-    // knob / switch / enum — same paramDef-driven control as the list layout
-    const def = (m.paramDefs || []).find(d => d.name === e.ref);
+    // knob / switch / enum — same paramDef-driven control as the list layout.
+    // Matched by name AND type — two paramDefs can share a name (e.g. a
+    // knob and an enum both called "Freq"), and name alone would pick
+    // whichever happens to come first in paramDefs, not necessarily the
+    // one this panel element actually means.
+    const def = (m.paramDefs || []).find(d => d.name === e.ref && d.type === e.type);
     if (!def) return wrap('');
     return wrap(this._renderControl(pm.id, def, vals[def.name], col, e.w || 1, e.h || 1));
   },

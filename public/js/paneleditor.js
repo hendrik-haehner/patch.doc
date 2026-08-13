@@ -111,9 +111,12 @@ const PanelEditor = {
     const panel = window._tempPanel;
     const placedInput  = new Set(panel.elements.filter(e => e.type === 'input').map(e => e.ref));
     const placedOutput = new Set(panel.elements.filter(e => e.type === 'output').map(e => e.ref));
-    const placedParam  = new Set(panel.elements
+    // Keyed by type+ref, not just ref — a knob and an enum can share a
+    // name (e.g. both called "Freq"), and placing one must not hide the
+    // other's pool chip.
+    const placedParam = new Set(panel.elements
       .filter(e => !['input', 'output', 'label', 'divider', 'divider-h', 'divider-v', 'button'].includes(e.type))
-      .map(e => e.ref));
+      .map(e => e.type + ' ' + e.ref));
 
     const chips = [];
     (window._tempInputs || []).forEach(p => {
@@ -123,7 +126,7 @@ const PanelEditor = {
       if (!placedOutput.has(p.name)) chips.push(this._chip({ kind: 'port', type: 'output', ref: p.name, label: p.name, badge: 'output' }));
     });
     (window._tempParamDefs || []).filter(d => d.type !== 'divider').forEach(d => {
-      if (!placedParam.has(d.name)) chips.push(this._chip({ kind: 'param', type: d.type, ref: d.name, label: d.name, badge: d.type }));
+      if (!placedParam.has(d.type + ' ' + d.name)) chips.push(this._chip({ kind: 'param', type: d.type, ref: d.name, label: d.name, badge: d.type }));
     });
     (window._panelPool || []).forEach(p => {
       chips.push(this._chip({ kind: 'special', type: p.type, localId: p.localId, label: p.text || this._specialLabel(p.type), badge: p.type }));
@@ -379,14 +382,17 @@ const PanelEditor = {
   // never renders as a blank box in panel view.
   sanitize(panel, inputs, outputs, paramDefs) {
     if (!panel) return null;
-    const inputNames  = new Set((inputs || []).map(p => p.name));
+    const inputNames = new Set((inputs || []).map(p => p.name));
     const outputNames = new Set((outputs || []).map(p => p.name));
-    const paramNames  = new Set((paramDefs || []).filter(d => d.type !== 'divider').map(d => d.name));
+    // Keyed by type+name, not just name — a knob and an enum can share a
+    // name, so matching by name alone could keep an element referencing a
+    // paramDef of the wrong type that just happens to share its name.
+    const paramKeys = new Set((paramDefs || []).filter(d => d.type !== 'divider').map(d => d.type + ' ' + d.name));
     const elements = panel.elements.filter(e => {
       if (['label', 'divider', 'divider-h', 'divider-v', 'button'].includes(e.type)) return true;
       if (e.type === 'input')  return inputNames.has(e.ref);
       if (e.type === 'output') return outputNames.has(e.ref);
-      return paramNames.has(e.ref);
+      return paramKeys.has(e.type + ' ' + e.ref);
     });
     if (!elements.length) return null;
     return { cols: panel.cols, rows: panel.rows, elements };
