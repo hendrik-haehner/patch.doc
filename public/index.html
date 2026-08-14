@@ -209,7 +209,7 @@
             style="width:100%;font-size:11px;padding:3px 8px;border:0.5px solid var(--border2);border-radius:4px;background:transparent;color:var(--text0);font-family:var(--font);outline:none;box-sizing:border-box">
           <div id="tag-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg1);border:0.5px solid var(--border2);border-radius:4px;z-index:200;max-height:120px;overflow-y:auto;margin-top:2px"></div>
         </div>
-        <label class="btn-action" style="cursor:pointer;font-size:10px;padding:3px 8px">
+        <label class="btn-action" style="cursor:pointer;font-size:10px;padding:3px 8px" onclick="if(IO.isTauri()){event.preventDefault();App.onPhotoUploadTauri();}">
           <i class="ti ti-photo" aria-hidden="true"></i> photo
           <input type="file" accept="image/*" style="display:none" onchange="App.onPhotoUpload(this)">
         </label>
