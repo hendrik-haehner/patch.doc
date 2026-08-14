@@ -663,13 +663,13 @@ const App = {
     this.setStatus('new patch created');
   },
 
-  deletePatch(id) {
+  async deletePatch(id) {
     const p = Store.state.patches.find(x => x.id === id);
     if (!p) return;
     const msg = p.isTemplate
       ? `Delete template "${p.title}"? This cannot be undone.`
       : `Delete "${p.title}"?`;
-    if (!confirm(msg)) return;
+    if (!(await IO.confirmAsync(msg))) return;
     if (!Store.deletePatch(id)) { alert('Cannot delete last patch.'); return; }
     Undo.snapshot();
     this.fullRender();
@@ -720,7 +720,7 @@ const App = {
 
   async deleteSharedPatch(sharedId, e) {
     if (e) e.stopPropagation();
-    if (!confirm('Remove this shared patch?')) return;
+    if (!(await IO.confirmAsync('Remove this shared patch?'))) return;
     try {
       await fetch(`/api/shared/${sharedId}`, { method: 'DELETE' });
       this._renderSharedPatches();
@@ -1155,8 +1155,8 @@ const App = {
     this.setStatus('module added');
   },
 
-  connRemoveModule(pmId) {
-    if (!confirm('Remove this module and all its connections from the patch?')) return;
+  async connRemoveModule(pmId) {
+    if (!(await IO.confirmAsync('Remove this module and all its connections from the patch?'))) return;
     Patch.removeFromPatch(pmId);
     this.renderConnections();
     Patch.render();
@@ -1665,12 +1665,12 @@ const App = {
       ${!patch.patchModules.length ? '<p class="empty-hint">add modules to patch first</p>' : ''}`;
   },
 
-  deleteModule(id, e) {
+  async deleteModule(id, e) {
     if (e) e.stopPropagation();
     const m = Store.state.modules.find(x => x.id === id);
     const inPatches = Store.state.patches.filter(p => p.patchModules.find(pm => pm.moduleId === id)).length;
     const warning = inPatches > 0 ? `\n⚠ Used in ${inPatches} patch(es) — will be removed there too.` : '';
-    if (!confirm('Delete "' + (m ? m.name : 'module') + '" from library?' + warning)) return;
+    if (!(await IO.confirmAsync('Delete "' + (m ? m.name : 'module') + '" from library?' + warning))) return;
     Store.deleteModule(id);
     if (this.selectedModuleId === id) this.selectedModuleId = null;
     this.fullRender();

@@ -170,7 +170,7 @@ const Media = {
   },
 
   async deleteFile(patchId, fileId) {
-    if (!confirm('Delete this file?')) return;
+    if (!(await IO.confirmAsync('Delete this file?'))) return;
     await fetch(`/api/media/${patchId}/${fileId}`, { method: 'DELETE' });
     this.render();
   },

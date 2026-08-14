@@ -521,6 +521,29 @@ const IO = {
     return typeof window.__TAURI__ !== 'undefined';
   },
 
+  // Tauri's dialog plugin unconditionally overrides window.confirm with an
+  // async stub the moment the plugin is registered (see its init-iife.js)
+  // — and in the currently pinned plugin version that stub calls an IPC
+  // command ("confirm") the Rust side never actually registers, so it
+  // just rejects instead of showing anything. Routing through the
+  // plugin's own working `dialog.confirm()` API sidesteps that bug. Every
+  // confirm() call site in the app must go through this (not the global
+  // confirm()) and must be awaited — in Tauri, confirm() no longer
+  // returns a boolean synchronously, so `if (!confirm(...))` alone would
+  // silently skip the cancel branch and proceed with whatever
+  // destructive action it was guarding.
+  async confirmAsync(message) {
+    if (this.isTauri()) {
+      try {
+        return await window.__TAURI__.dialog.confirm(message);
+      } catch (err) {
+        console.error('PATCH.doc confirm dialog error (Tauri):', err);
+        return false; // fail closed — never treat an error as "confirmed"
+      }
+    }
+    return confirm(message);
+  },
+
   async loadFileTauri() {
     try {
       const path = await window.__TAURI__.dialog.open({
@@ -537,13 +560,13 @@ const IO = {
     }
   },
 
-  _parse(raw, filename) {
+  async _parse(raw, filename) {
     try {
       const data = JSON.parse(raw);
 
       // Full PATCH.doc backup
       if (data.version && data.patches && Array.isArray(data.patches)) {
-        if (!confirm('Import full backup? This replaces ALL current data.')) return;
+        if (!(await this.confirmAsync('Import full backup? This replaces ALL current data.'))) return;
         Store.importAll(raw);
         App.fullRender();
         this._feedback('import', 'ok', 'backup loaded · ' + data.patches.length + ' patch(es)');

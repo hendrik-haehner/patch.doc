@@ -219,7 +219,7 @@ const Manuals = {
   },
 
   async deleteFile(moduleId, fileId) {
-    if (!confirm('Delete this manual?')) return;
+    if (!(await IO.confirmAsync('Delete this manual?'))) return;
     await fetch(`/api/manuals/${moduleId}/${fileId}`, { method: 'DELETE' });
     this.render();
   },
@@ -305,7 +305,7 @@ const Manuals = {
   },
 
   async deleteFromModal(moduleId, fileId) {
-    if (!confirm('Delete this manual?')) return;
+    if (!(await IO.confirmAsync('Delete this manual?'))) return;
     await fetch(`/api/manuals/${moduleId}/${fileId}`, { method: 'DELETE' });
     this.renderInModal(moduleId);
   }

@@ -44,8 +44,8 @@ const PanelEditor = {
     App.updatePanelSummary();
   },
 
-  removePanel() {
-    if (!confirm('Remove panel layout for this module?')) return;
+  async removePanel() {
+    if (!(await IO.confirmAsync('Remove panel layout for this module?'))) return;
     window._tempPanel = null;
     window._panelPool = [];
     this._close();
