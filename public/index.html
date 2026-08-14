@@ -293,7 +293,7 @@
             <button class="btn-action primary" onclick="IO.importFromText()">
               <i class="ti ti-upload" aria-hidden="true"></i> load from text
             </button>
-            <label class="btn-action" style="cursor:pointer">
+            <label class="btn-action" style="cursor:pointer" onclick="if(IO.isTauri()){event.preventDefault();IO.loadFileTauri();}">
               <i class="ti ti-file" aria-hidden="true"></i> load file
               <input type="file" accept=".json" style="display:none" onchange="IO.loadFile(event)">
             </label>

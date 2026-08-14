@@ -2,13 +2,14 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "PATCH.doc",
   "version": "1.0.0",
-  "identifier": "com.patchdoc.app",
+  "identifier": "com.patchdoc.desktop",
   "build": {
     "beforeDevCommand": "node ../scripts/build-static.js",
     "beforeBuildCommand": "node ../scripts/build-static.js",
     "frontendDist": "../../_site"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "PATCH.doc",

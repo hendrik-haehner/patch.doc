@@ -511,6 +511,32 @@ const IO = {
     e.target.value = '';
   },
 
+  // The desktop build's WKWebView opens the native file picker fine, but
+  // the picked file's contents don't reliably come back through the
+  // browser File/FileReader APIs — `input.files` ends up empty. Tauri
+  // injects `window.__TAURI__` into every page it hosts, so we use that
+  // to route file loading through its own dialog+fs plugins instead,
+  // only when actually running inside the desktop app.
+  isTauri() {
+    return typeof window.__TAURI__ !== 'undefined';
+  },
+
+  async loadFileTauri() {
+    try {
+      const path = await window.__TAURI__.dialog.open({
+        multiple: false,
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (!path) return; // user canceled
+      const content = await window.__TAURI__.fs.readTextFile(path);
+      const filename = path.split(/[\\/]/).pop();
+      this._parse(content, filename);
+    } catch (err) {
+      console.error('PATCH.doc import error (Tauri file dialog):', err);
+      this._feedback('import', 'err', err.message || String(err));
+    }
+  },
+
   _parse(raw, filename) {
     try {
       const data = JSON.parse(raw);
