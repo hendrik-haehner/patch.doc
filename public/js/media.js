@@ -99,7 +99,7 @@ const Media = {
   },
 
   async _tauriDir(patchId) {
-    return await window.__TAURI__.core.invoke('media_dir_for_patch', { patchId });
+    return await window.__TAURI__.core.invoke('local_data_dir', { category: 'media', id: patchId });
   },
 
   _mimeFor(ext) {

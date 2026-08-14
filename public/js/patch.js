@@ -241,7 +241,7 @@ const Patch = {
   // by the cache) and reveal the manual icon on modules that have one —
   // a link glyph for a link-type manual, a PDF glyph otherwise.
   async _showManualIcons(patch) {
-    if (window.PATCHDOC_STATIC) return;
+    if (window.PATCHDOC_STATIC && !IO.isTauri()) return;
     const moduleIds = [...new Set(patch.patchModules.map(pm => pm.moduleId))];
     await Manuals.prefetchFor(moduleIds);
     patch.patchModules.forEach(pm => {
