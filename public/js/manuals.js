@@ -182,7 +182,10 @@ const Manuals = {
   },
 
   async _manualsDirFor(moduleId) {
-    return await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals', id: moduleId });
+    // Module ids are plain numbers (unlike patch ids, which are already
+    // strings) — the Rust side takes a String, and serde_json won't
+    // silently coerce a JSON number into one, so this has to stringify.
+    return await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals', id: String(moduleId) });
   },
 
   _uid() {

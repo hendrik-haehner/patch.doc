@@ -99,7 +99,9 @@ const Media = {
   },
 
   async _tauriDir(patchId) {
-    return await window.__TAURI__.core.invoke('local_data_dir', { category: 'media', id: patchId });
+    // Patch ids are already strings, but the Rust side takes a String and
+    // won't silently coerce a number — stringify defensively either way.
+    return await window.__TAURI__.core.invoke('local_data_dir', { category: 'media', id: String(patchId) });
   },
 
   _mimeFor(ext) {
