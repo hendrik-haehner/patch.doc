@@ -5,7 +5,11 @@ const Media = {
     const el    = document.getElementById('media-content');
     if (!el) return;
 
-    if (window.PATCHDOC_STATIC) {
+    // The server variant needs /api/media/*; the plain GitHub Pages build
+    // has no server at all. The Tauri desktop build is ALSO PATCHDOC_STATIC
+    // (no server), but has real filesystem access via window.__TAURI__, so
+    // it gets the real feature instead of this notice.
+    if (window.PATCHDOC_STATIC && !IO.isTauri()) {
       el.innerHTML = `<div style="padding:24px 0;text-align:center">
         <div style="font-size:32px;margin-bottom:12px;opacity:0.4">📷</div>
         <div style="font-size:13px;color:var(--text1);margin-bottom:8px">
@@ -27,8 +31,7 @@ const Media = {
 
     let files = [];
     try {
-      const res = await fetch(`/api/media/${patch.id}`);
-      files = await res.json();
+      files = IO.isTauri() ? await this._listTauri(patch) : await this._listServer(patch);
     } catch(e) {
       el.innerHTML = '<div style="font-size:11px;color:var(--danger)">could not load media</div>';
       return;
@@ -37,14 +40,17 @@ const Media = {
     const photos = files.filter(f => f.type.startsWith('image/'));
     const audio  = files.filter(f => f.type.startsWith('audio/'));
 
+    const tauriUploadAttr = kind => IO.isTauri()
+      ? ` onclick="event.preventDefault();Media.uploadTauri('${patch.id}','${kind}')"` : '';
+
     el.innerHTML = `
       <div class="media-upload-row">
-        <label class="btn-action primary" style="cursor:pointer">
+        <label class="btn-action primary" style="cursor:pointer"${tauriUploadAttr('image')}>
           <i class="ti ti-photo-plus" aria-hidden="true"></i> add photo
           <input type="file" accept="image/*" multiple style="display:none"
             onchange="Media.upload(event, '${patch.id}')">
         </label>
-        <label class="btn-action primary" style="cursor:pointer">
+        <label class="btn-action primary" style="cursor:pointer"${tauriUploadAttr('audio')}>
           <i class="ti ti-music-plus" aria-hidden="true"></i> add audio
           <input type="file" accept="audio/*" multiple style="display:none"
             onchange="Media.upload(event, '${patch.id}')">
@@ -70,6 +76,41 @@ const Media = {
 
       ${!files.length ? '<div class="media-empty">no media yet — upload photos or audio recordings of your patch</div>' : ''}
     `;
+  },
+
+  async _listServer(patch) {
+    const res = await fetch(`/api/media/${patch.id}`);
+    return await res.json();
+  },
+
+  // Metadata lives in the patch itself (patch.media, an id-keyed dict —
+  // synced/persisted exactly like everything else in Store), the actual
+  // bytes live on disk under this app's data directory. Listing never
+  // touches the filesystem: it's just reading that dict. Display (img/
+  // audio src) resolves straight to an asset:// URL Tauri can stream from
+  // disk directly — no need to read bytes into JS for that.
+  async _listTauri(patch) {
+    const meta = patch.media || {};
+    const dir = await this._tauriDir(patch.id);
+    return Object.entries(meta).map(([id, m]) => ({
+      id, name: m.name, type: m.type, size: m.size,
+      url: window.__TAURI__.core.convertFileSrc(`${dir}/${id}`),
+    }));
+  },
+
+  async _tauriDir(patchId) {
+    return await window.__TAURI__.core.invoke('media_dir_for_patch', { patchId });
+  },
+
+  _mimeFor(ext) {
+    return {
+      png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp',
+      mp3: 'audio/mpeg', wav: 'audio/wav', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', flac: 'audio/flac',
+    }[ext] || 'application/octet-stream';
+  },
+
+  _uid() {
+    return (window.crypto?.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
   },
 
   _photoCard(f, patchId) {
@@ -161,7 +202,55 @@ const Media = {
     uploadNext(0);
   },
 
+  // Tauri counterpart of upload() — same "add photo"/"add audio" buttons,
+  // but a plain <input type="file"> can't be used here (its FileList
+  // stays empty after picking in this WKWebView build, see io.js), so
+  // this reads each picked file through Tauri's dialog+fs plugins and
+  // writes it into this patch's media directory.
+  async uploadTauri(patchId, kind) {
+    const status = document.getElementById('media-upload-status');
+    try {
+      const filters = kind === 'image'
+        ? [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }]
+        : [{ name: 'Audio', extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac'] }];
+      const picked = await window.__TAURI__.dialog.open({ multiple: true, filters });
+      if (!picked) return; // user canceled
+      const paths = Array.isArray(picked) ? picked : [picked];
+      const dir = await this._tauriDir(patchId);
+      const patch = Store.state.patches.find(p => p.id === patchId);
+      const media = { ...(patch.media || {}) };
+
+      for (let i = 0; i < paths.length; i++) {
+        const srcPath = paths[i];
+        const name = srcPath.split(/[\\/]/).pop();
+        if (status) status.textContent = `uploading ${i + 1}/${paths.length}: ${name}…`;
+        const bytes = await window.__TAURI__.fs.readFile(srcPath);
+        const ext = (name.split('.').pop() || '').toLowerCase();
+        const id = this._uid() + '.' + ext;
+        await window.__TAURI__.fs.writeFile(`${dir}/${id}`, bytes);
+        media[id] = { name, type: this._mimeFor(ext), size: bytes.length };
+      }
+
+      Store.updatePatch(patchId, { media });
+      if (status) {
+        status.textContent = `✓ ${paths.length} file${paths.length !== 1 ? 's' : ''} uploaded`;
+        setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+      }
+      this.render();
+    } catch (err) {
+      console.error('PATCH.doc media upload error (Tauri):', err);
+      if (status) status.textContent = 'upload failed: ' + (err.message || err);
+    }
+  },
+
   async rename(patchId, fileId, name, type) {
+    if (IO.isTauri()) {
+      const patch = Store.state.patches.find(p => p.id === patchId);
+      if (!patch?.media?.[fileId]) return;
+      const media = { ...patch.media, [fileId]: { ...patch.media[fileId], name } };
+      Store.updatePatch(patchId, { media });
+      return;
+    }
     await fetch(`/api/media/${patchId}/${fileId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -171,6 +260,22 @@ const Media = {
 
   async deleteFile(patchId, fileId) {
     if (!(await IO.confirmAsync('Delete this file?'))) return;
+    if (IO.isTauri()) {
+      try {
+        const dir = await this._tauriDir(patchId);
+        await window.__TAURI__.fs.remove(`${dir}/${fileId}`);
+      } catch (err) {
+        console.error('PATCH.doc media delete error (Tauri):', err);
+      }
+      const patch = Store.state.patches.find(p => p.id === patchId);
+      if (patch?.media) {
+        const media = { ...patch.media };
+        delete media[fileId];
+        Store.updatePatch(patchId, { media });
+      }
+      this.render();
+      return;
+    }
     await fetch(`/api/media/${patchId}/${fileId}`, { method: 'DELETE' });
     this.render();
   },
