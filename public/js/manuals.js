@@ -137,11 +137,18 @@ const Manuals = {
     </div>`;
   },
 
+  // Tauri note: a plain <a href target="_blank"> silently does nothing in
+  // this webview (no new-window handling wired up, and nothing actually
+  // throws, so there's no console error either) — looks up the cached
+  // entry by id rather than embedding its url/path in the onclick
+  // attribute, since either can contain characters that would break the
+  // inline JS string.
   _fileRow(f, moduleId) {
+    const tauriOpenAttr = IO.isTauri() ? ` onclick="event.preventDefault();Manuals.openTauri(${moduleId},'${f.id}')"` : '';
     if (f.kind === 'link') {
       return `<div class="manual-file-row">
         <i class="ti ti-link" aria-hidden="true"></i>
-        <a href="${f.url}" target="_blank" rel="noopener" class="manual-file-name">${f.name}</a>
+        <a href="${f.url}" target="_blank" rel="noopener" class="manual-file-name"${tauriOpenAttr}>${f.name}</a>
         <span class="manual-file-size">link</span>
         <button class="conn-del" onclick="Manuals.deleteFile(${moduleId},'${f.id}')" aria-label="delete manual link">×</button>
       </div>`;
@@ -153,11 +160,23 @@ const Manuals = {
       <i class="ti ti-file-type-pdf" aria-hidden="true"></i>
       <a href="javascript:void(0)" class="manual-file-name" onclick="Manuals.toggleViewer(${moduleId},'${f.id}','${f.url}')">${f.name}</a>
       <span class="manual-file-size">${size}</span>
-      <a href="${f.url}" target="_blank" rel="noopener" class="manual-open-external" title="open in new tab" aria-label="open in new tab">
+      <a href="${f.url}" target="_blank" rel="noopener" class="manual-open-external" title="open in new tab" aria-label="open in new tab"${tauriOpenAttr}>
         <i class="ti ti-external-link" aria-hidden="true"></i>
       </a>
       <button class="conn-del" onclick="Manuals.deleteFile(${moduleId},'${f.id}')" aria-label="delete manual">×</button>
     </div>`;
+  },
+
+  async openTauri(moduleId, fileId) {
+    const entry = (this._cache[moduleId] || []).find(f => f.id === fileId);
+    if (!entry) return;
+    try {
+      if (entry.kind === 'link') await window.__TAURI__.opener.openUrl(entry.url);
+      else await window.__TAURI__.opener.openPath(entry.path);
+    } catch (err) {
+      console.error('PATCH.doc manual open error (Tauri):', err);
+      App.setStatus('could not open manual: ' + (err.message || err));
+    }
   },
 
   // ── Tauri desktop build: real files on disk, metadata in module.manuals ──
@@ -174,9 +193,11 @@ const Manuals = {
     return ids.map(id => {
       const e = manuals[id];
       if (e.kind === 'link') return { kind: 'link', id, name: e.name, url: e.url };
+      const path = `${dir}/${id}`;
       return {
         kind: 'file', id, name: e.name, type: e.type || 'application/pdf', size: e.size,
-        url: window.__TAURI__.core.convertFileSrc(`${dir}/${id}`),
+        url: window.__TAURI__.core.convertFileSrc(path),
+        path, // the real filesystem path — opener.openPath() needs this, not the asset:// url
       };
     });
   },
@@ -374,11 +395,12 @@ const Manuals = {
     }
     this._cache[moduleId] = entries;
     const tauriAttr = IO.isTauri() ? ` onclick="event.preventDefault();Manuals.uploadTauriFromModal(${moduleId})"` : '';
+    const tauriOpenAttr = IO.isTauri() ? (id => ` onclick="event.preventDefault();Manuals.openTauri(${moduleId},'${id}')"`) : (() => '');
     el.innerHTML = `
       ${entries.map(f => `
         <div class="manual-file-row" style="padding:4px 0">
           <i class="ti ${f.kind === 'link' ? 'ti-link' : 'ti-file-type-pdf'}" aria-hidden="true"></i>
-          <a href="${f.url}" target="_blank" rel="noopener" class="manual-file-name">${f.name}</a>
+          <a href="${f.url}" target="_blank" rel="noopener" class="manual-file-name"${tauriOpenAttr(f.id)}>${f.name}</a>
           <button class="conn-del" onclick="Manuals.deleteFromModal(${moduleId},'${f.id}')" aria-label="delete manual">×</button>
         </div>`).join('')}
       <label class="btn-action" style="cursor:pointer;margin-top:4px;display:inline-flex"${tauriAttr}>

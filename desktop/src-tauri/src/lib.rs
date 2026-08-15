@@ -43,6 +43,16 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        // opener: a plain <a href target="_blank"> silently does nothing in
+        // this webview — Tauri doesn't wire up new-window handling by
+        // default, and there's no console error since nothing actually
+        // fails, the request just isn't handled at all. Manual links (an
+        // "open in new tab" icon, and the manual-icon shown on a module's
+        // header in patch view) now go through this instead: openPath()
+        // for a local PDF (opens in the OS's default viewer), openUrl()
+        // for a link-type manual's http(s) URL (opens in the default
+        // browser).
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![local_data_dir])
         .run(tauri::generate_context!())
         .expect("error while running PATCH.doc");
