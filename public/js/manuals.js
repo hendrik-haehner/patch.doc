@@ -143,8 +143,12 @@ const Manuals = {
   // entry by id rather than embedding its url/path in the onclick
   // attribute, since either can contain characters that would break the
   // inline JS string.
+  _tauriOpenAttr(moduleId, fileId) {
+    return IO.isTauri() ? ` onclick="event.preventDefault();Manuals.openTauri(${moduleId},'${fileId}')"` : '';
+  },
+
   _fileRow(f, moduleId) {
-    const tauriOpenAttr = IO.isTauri() ? ` onclick="event.preventDefault();Manuals.openTauri(${moduleId},'${f.id}')"` : '';
+    const tauriOpenAttr = this._tauriOpenAttr(moduleId, f.id);
     if (f.kind === 'link') {
       return `<div class="manual-file-row">
         <i class="ti ti-link" aria-hidden="true"></i>
@@ -395,12 +399,11 @@ const Manuals = {
     }
     this._cache[moduleId] = entries;
     const tauriAttr = IO.isTauri() ? ` onclick="event.preventDefault();Manuals.uploadTauriFromModal(${moduleId})"` : '';
-    const tauriOpenAttr = IO.isTauri() ? (id => ` onclick="event.preventDefault();Manuals.openTauri(${moduleId},'${id}')"`) : (() => '');
     el.innerHTML = `
       ${entries.map(f => `
         <div class="manual-file-row" style="padding:4px 0">
           <i class="ti ${f.kind === 'link' ? 'ti-link' : 'ti-file-type-pdf'}" aria-hidden="true"></i>
-          <a href="${f.url}" target="_blank" rel="noopener" class="manual-file-name"${tauriOpenAttr(f.id)}>${f.name}</a>
+          <a href="${f.url}" target="_blank" rel="noopener" class="manual-file-name"${this._tauriOpenAttr(moduleId, f.id)}>${f.name}</a>
           <button class="conn-del" onclick="Manuals.deleteFromModal(${moduleId},'${f.id}')" aria-label="delete manual">×</button>
         </div>`).join('')}
       <label class="btn-action" style="cursor:pointer;margin-top:4px;display:inline-flex"${tauriAttr}>
