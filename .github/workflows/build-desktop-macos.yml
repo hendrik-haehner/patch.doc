@@ -10,15 +10,48 @@ on:
       - 'scripts/build-static.js'
       - '.github/workflows/build-desktop-macos.yml'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag and release (e.g. 1.0.1) — leave empty to just build, no release'
+        required: false
+        type: string
 
 jobs:
   build-macos:
     runs-on: macos-latest
-    # Needed to create/publish a GitHub Release on tag pushes below.
+    # Needed to create/push the release tag and to publish the GitHub
+    # Release itself, below.
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
+
+      # Figures out whether this run should end in a GitHub Release, and
+      # under which tag — either because it was triggered by a tag push, or
+      # because it was manually dispatched with a version number.
+      - name: Determine release tag
+        id: release
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          elif [[ -n "${{ inputs.version }}" ]]; then
+            raw="${{ inputs.version }}"
+            echo "tag=v${raw#v}" >> "$GITHUB_OUTPUT"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Only needed for the manual-dispatch-with-version case above — a
+      # real tag push already has its tag pushed by definition.
+      - name: Create and push release tag
+        if: steps.release.outputs.should_release == 'true' && github.ref_type != 'tag'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.release.outputs.tag }}"
+          git push origin "${{ steps.release.outputs.tag }}"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -56,12 +89,14 @@ jobs:
             desktop/src-tauri/target/release/bundle/macos/*.app
           if-no-files-found: error
 
-      # Pushing a tag like v1.0.0 (git tag v1.0.0 && git push origin v1.0.0)
-      # publishes the .dmg as a downloadable GitHub Release, in addition to
-      # the always-on build artifact above.
+      # Publishes the .dmg as a downloadable GitHub Release, in addition to
+      # the always-on build artifact above. Runs for a tag push (git tag
+      # v1.0.0 && git push origin v1.0.0) or for a manual dispatch run with
+      # a version number filled in (Actions → Run workflow).
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: steps.release.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release.outputs.tag }}
           files: desktop/src-tauri/target/release/bundle/dmg/*.dmg
           generate_release_notes: true
