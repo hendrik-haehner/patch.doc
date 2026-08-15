@@ -1294,6 +1294,9 @@ const App = {
     document.getElementById('m-cat').value   = m ? m.cat   : 'oscillator';
     document.getElementById('module-modal-title').textContent = m ? 'edit module' : 'add module';
     document.getElementById('module-modal-save-btn').textContent = m ? 'save changes' : 'add to library';
+    // Browsing the community repo makes sense while starting a brand-new
+    // module, not while editing one that's already in the library.
+    document.getElementById('browse-module-repo-btn').style.display = m ? 'none' : '';
     this._renderIOTags();
     this._renderParamDefs();
     document.getElementById('module-modal-bg').classList.add('open');

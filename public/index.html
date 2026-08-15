@@ -129,9 +129,8 @@
     <!-- module library -->
     <div id="sidebar-panel-modules" style="display:none;flex-direction:column;flex:1;overflow:hidden">
     <div id="module-section" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
-      <div class="sidebar-header" style="flex-shrink:0;border-bottom:0.5px solid var(--border);flex-wrap:wrap;row-gap:6px">
+      <div class="sidebar-header" style="flex-shrink:0;border-bottom:0.5px solid var(--border)">
         <button class="sidebar-new-btn" onclick="App.openModal()">+ New Module</button>
-        <button class="sidebar-new-btn" onclick="Community.open()" title="browse the community module repo">browse module repo</button>
         <div class="spacer"></div>
         <button class="sort-btn" id="module-sort-btn" onclick="App.cycleModuleSort()" title="Sort modules">A↓</button>
       </div>
@@ -320,7 +319,10 @@
 <!-- add module modal -->
 <div id="module-modal-bg" class="modal-bg" onmousedown="window._modalMousedownOnBg=(event.target===this)" onmouseup="if(window._modalMousedownOnBg&&event.target===this)App.closeModal()">
   <div class="modal" role="dialog" aria-label="Add module">
-    <h3 id="module-modal-title">add module</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px">
+      <h3 id="module-modal-title" style="margin-bottom:0">add module</h3>
+      <button id="browse-module-repo-btn" class="io-add-btn" onclick="Community.open()" title="browse the community module repo">browse module repo</button>
+    </div>
     <div class="field">
       <label>manufacturer</label>
       <input id="m-maker" type="text" placeholder="e.g. Mutable Instruments" autocomplete="off">
