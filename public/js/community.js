@@ -1,12 +1,13 @@
-// Read-only browse/import of the shared community module library (see
-// community-modules/README.md at the repo root). Fetched straight from
-// GitHub's raw content CDN, so it needs no server of its own and works
-// identically in the browser build, the Tauri desktop app, and
-// self-hosted instances — this is plain fetch(), not gated by IO.isTauri()
-// anywhere in this file.
+// Read-only browse/import of the shared community module library —
+// hosted in its own repo (github.com/hendrik-haehner/patchdoc-modules),
+// separate from this app's code so it can take contributions on its own
+// terms. Fetched straight from GitHub's raw content CDN, so it needs no
+// server of its own and works identically in the browser build, the
+// Tauri desktop app, and self-hosted instances — this is plain fetch(),
+// not gated by IO.isTauri() anywhere in this file.
 const Community = {
 
-  URL: 'https://raw.githubusercontent.com/hendrik-haehner/patch.doc/main/community-modules/index.json',
+  URL: 'https://raw.githubusercontent.com/hendrik-haehner/patchdoc-modules/main/index.json',
 
   _cache: null,   // full fetched list, null until the first successful fetch
   _visible: [],   // currently filtered/rendered list, index-aligned with the DOM
@@ -64,9 +65,9 @@ const Community = {
         ? '<div style="font-size:11px;color:var(--text2);padding:12px 2px">no matches</div>'
         : `<div style="font-size:11px;color:var(--text2);padding:12px 2px;line-height:1.6">
              no community modules yet — be the first to contribute!<br>
-             <a href="https://github.com/hendrik-haehner/patch.doc/tree/main/community-modules"
+             <a href="https://github.com/hendrik-haehner/patchdoc-modules"
                 target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">
-               see community-modules/README.md →
+               see patchdoc-modules/README.md →
              </a>
            </div>`;
       return;
