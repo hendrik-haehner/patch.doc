@@ -4,7 +4,7 @@
 
 PATCH.doc is a web app for documenting modular synthesizer patches. It runs as a Docker container on your own hardware (NAS, home server, VPS) and is accessible from any browser or mobile device.
 
-**→ [Try it instantly in your browser](https://hendrik-haehner.github.io/patch.doc/)** — no install, no account, runs entirely client-side. See [Two ways to run this](#two-ways-to-run-this) for what that version does and doesn't do compared to self-hosting.
+**→ [Try it instantly in your browser](https://hendrik-haehner.github.io/patch.doc/)** — no install, no account, runs entirely client-side. See [Three ways to run this](#three-ways-to-run-this) for what that version does and doesn't do compared to self-hosting or the desktop app.
 
 ![PATCH.doc Screenshot](docs/screenshot_patch.png)
 
@@ -52,13 +52,15 @@ Panel view is a display option, toggleable at any time from the patch toolbar (*
 
 ---
 
-## Two ways to run this
+## Three ways to run this
 
-**[Try it in your browser](https://hendrik-haehner.github.io/patch.doc/)** — no install, no login. Runs entirely client-side and saves to that browser's local storage only: one device, no sync, no accounts, and no photo/audio/manual uploads (those need a server to store files). Good for trying it out or for casual single-device use.
+**[Try it in your browser](https://hendrik-haehner.github.io/patch.doc/)** — no install, no login. Runs entirely client-side and saves to that browser's local storage only: one device, no sync, no accounts, and no photo/audio/manual uploads (those need a server or real filesystem access to store files). Good for trying it out or for casual single-device use.
 
-**Self-host with Docker** (below) — everything above plus multi-user accounts, file uploads, and a shared module/manual library, all on your own hardware. This is the full version.
+**Desktop app (macOS/Windows/Linux)** — see [`desktop/`](desktop/) — a native window around the same browser-version app, built with [Tauri](https://tauri.app). Still single-device/no-accounts like the browser version, but photo and manual/PDF uploads *do* work here, saved to real files on your disk instead of being disabled. A macOS build is produced automatically by CI on every push to `main` (**Actions → Build macOS desktop app**, download the `patchdoc-macos` artifact) — for Windows/Linux, or to build it yourself, see [`desktop/README.md`](desktop/README.md).
 
-Patches made in the browser version can be moved into a self-hosted instance later: **export → full backup** in the browser version, then **export → import** in your self-hosted one.
+**Self-host with Docker** (below) — everything above plus multi-user accounts, server-side file storage, and a shared module/manual library across users, all on your own hardware. This is the full version.
+
+Patches made in the browser or desktop version can be moved into a self-hosted instance later: **export → full backup**, then **export → import** in your self-hosted one. Note that only the patch/module/parameter data travels this way — media and manual files uploaded in the desktop app stay on that machine's disk and aren't included in the export.
 
 ---
 
@@ -221,6 +223,7 @@ Set the source to your domain and the destination to `localhost:3000`.
 - **Frontend** — Vanilla JS, no framework
 - **Storage** — local filesystem via Docker bind mount
 - **Auth** — session cookies, passwords stored in `users.json`
+- **Desktop app** — [Tauri](https://tauri.app) (Rust) wrapping the same frontend, see [`desktop/`](desktop/)
 
 ---
 
