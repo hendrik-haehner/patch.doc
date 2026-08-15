@@ -26,6 +26,7 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **Notes** — freetext notes per patch
 - **Media** — attach photos and audio recordings to patches
 - **Manuals** — upload PDF manuals per module (shared across all users)
+- **Community modules** — browse and import module definitions shared by other users, in every version (browser, desktop, self-hosted) — see [patchdoc-modules](https://github.com/hendrik-haehner/patchdoc-modules)
 - **PDF export** — print-ready patch documentation (canvas + parameters + connections)
 - **Global module search** — find which patches use a specific module (Cmd+F)
 - **Templates** — mark patches as templates and create new patches from them

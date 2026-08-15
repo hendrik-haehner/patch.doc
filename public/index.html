@@ -132,6 +132,7 @@
       <div class="sidebar-header" style="flex-shrink:0;border-bottom:0.5px solid var(--border)">
         <button class="sidebar-new-btn" onclick="App.openModal()">+ New Module</button>
         <div class="spacer"></div>
+        <button class="icon-btn" onclick="Community.open()" title="browse community modules" aria-label="browse community modules" style="width:20px;height:20px;border-radius:50%;font-size:11px"><i class="ti ti-download" aria-hidden="true"></i></button>
         <button class="sort-btn" id="module-sort-btn" onclick="App.cycleModuleSort()" title="Sort modules">A↓</button>
       </div>
       <div id="module-section-body" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
@@ -469,6 +470,22 @@
   </div>
 </div>
 
+<!-- community modules browse/import modal -->
+<div id="community-modal-bg" class="modal-bg" onmousedown="window._modalMousedownOnBg=(event.target===this)" onmouseup="if(window._modalMousedownOnBg&&event.target===this)Community.close()">
+  <div class="modal" role="dialog" aria-label="Browse community modules">
+    <h3>community modules</h3>
+    <input id="community-search" type="text" placeholder="search modules…"
+      oninput="Community.onSearchInput()"
+      style="width:100%;font-size:12px;padding:7px 10px;margin-bottom:10px;
+             border:0.5px solid var(--border2);border-radius:var(--radius);
+             background:var(--bg0);color:var(--text0);font-family:var(--font);outline:none">
+    <div id="community-list" style="max-height:50vh;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="Community.close()">close</button>
+    </div>
+  </div>
+</div>
+
 <!-- panel layout editor modal (opens on top of the module modal) -->
 <div id="panel-editor-modal-bg" class="modal-bg"
      onmousedown="window._panelEditorMousedownOnBg=(event.target===this)"
@@ -556,6 +573,7 @@
 <script src="js/store.js"></script>
 <script src="js/media.js"></script>
 <script src="js/manuals.js"></script>
+<script src="js/community.js"></script>
 <script src="js/paneleditor.js"></script>
 <script src="js/undo.js"></script>
 <script src="js/patch.js"></script>
