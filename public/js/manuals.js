@@ -79,7 +79,7 @@ const Manuals = {
     el.innerHTML = `
       ${IO.isTauri() ? `
       <button class="btn-action" style="margin-bottom:12px" onclick="Manuals.importFromNAS()">
-        <i class="ti ti-file-plus" aria-hidden="true"></i> import manuals from NAS folder…
+        <i class="ti ti-file-plus" aria-hidden="true"></i> import manuals from folder
       </button>` : ''}
       <input id="manuals-search" type="text" placeholder="search modules…"
         value="${q}"
