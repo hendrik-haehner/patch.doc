@@ -77,6 +77,10 @@ const Manuals = {
     );
 
     el.innerHTML = `
+      ${IO.isTauri() ? `
+      <button class="btn-action" style="margin-bottom:12px" onclick="Manuals.importFromNAS()">
+        <i class="ti ti-file-plus" aria-hidden="true"></i> import manuals from NAS folder…
+      </button>` : ''}
       <input id="manuals-search" type="text" placeholder="search modules…"
         value="${q}"
         oninput="Manuals._onSearchInput()"
@@ -282,6 +286,88 @@ const Manuals = {
       console.error('PATCH.doc manual upload error (Tauri):', err);
       App.setStatus('manual upload failed: ' + (err.message || err));
     }
+  },
+
+  // Bulk-imports manuals from a local copy of a PATCH.doc server's /data
+  // folder (e.g. a NAS this app doesn't otherwise talk to). Picks the
+  // folder via Tauri's dialog with {recursive:true} — that's what makes
+  // the plugin grant fs scope for everything nested under it, not just the
+  // top-level folder, so the later readTextFile/readFile calls into
+  // manuals/<id>/… don't need any static capability entry. Matches modules
+  // by name+maker (normalized, case-insensitive) rather than id, since the
+  // NAS server's module ids and this app's module ids are independent
+  // sequences that can easily have diverged.
+  async importFromNAS() {
+    let dir;
+    try {
+      dir = await window.__TAURI__.dialog.open({ directory: true, recursive: true });
+    } catch (err) {
+      console.error('PATCH.doc NAS import error (Tauri):', err);
+      App.setStatus('import failed: ' + (err.message || err));
+      return;
+    }
+    if (!dir) return; // user canceled
+
+    let modulesData;
+    try {
+      const raw = await window.__TAURI__.fs.readTextFile(`${dir}/modules.json`);
+      modulesData = JSON.parse(raw);
+    } catch (err) {
+      App.setStatus("import failed: no modules.json found — pick the NAS's /data folder");
+      return;
+    }
+    const nasModules = Array.isArray(modulesData?.modules) ? modulesData.modules : [];
+    if (!nasModules.length) { App.setStatus('import failed: modules.json has no modules'); return; }
+
+    const norm = s => (s || '').trim().toLowerCase();
+    let importedFiles = 0, importedLinks = 0, touchedModules = 0, skipped = 0;
+
+    for (let i = 0; i < nasModules.length; i++) {
+      const nasModule = nasModules[i];
+      App.setStatus(`importing manuals: checking module ${i + 1}/${nasModules.length}…`);
+      const localModule = Store.state.modules.find(m =>
+        norm(m.name) === norm(nasModule.name) && norm(m.maker) === norm(nasModule.maker)
+      );
+      if (!localModule) { skipped++; continue; }
+
+      const srcDir = `${dir}/manuals/${nasModule.id}`;
+      let meta = {}, links = {};
+      try { meta = JSON.parse(await window.__TAURI__.fs.readTextFile(`${srcDir}/.meta.json`)); } catch (e) {}
+      try { links = JSON.parse(await window.__TAURI__.fs.readTextFile(`${srcDir}/.links.json`)); } catch (e) {}
+      const fileEntries = Object.entries(meta);
+      const linkEntries = Object.entries(links);
+      if (!fileEntries.length && !linkEntries.length) continue;
+
+      const localDir = await this._manualsDirFor(localModule.id);
+      const manuals = { ...(localModule.manuals || {}) };
+
+      for (const [filename, info] of fileEntries) {
+        try {
+          const bytes = await window.__TAURI__.fs.readFile(`${srcDir}/${filename}`);
+          const ext = (filename.split('.').pop() || 'pdf').toLowerCase();
+          const id = this._uid() + '.' + ext;
+          await window.__TAURI__.fs.writeFile(`${localDir}/${id}`, bytes);
+          manuals[id] = { kind: 'file', name: info.name || filename, type: info.type || 'application/pdf', size: bytes.length };
+          importedFiles++;
+        } catch (err) {
+          console.error('PATCH.doc NAS import: failed to copy', filename, err);
+        }
+      }
+      for (const [, info] of linkEntries) {
+        const id = 'link_' + this._uid();
+        manuals[id] = { kind: 'link', name: info.name, url: info.url };
+        importedLinks++;
+      }
+
+      this._saveModuleManuals(localModule.id, manuals);
+      touchedModules++;
+    }
+
+    App.setStatus(
+      `imported ${importedFiles} PDF${importedFiles !== 1 ? 's' : ''} + ${importedLinks} link${importedLinks !== 1 ? 's' : ''} into ${touchedModules} module${touchedModules !== 1 ? 's' : ''}` +
+      (skipped ? ` — ${skipped} module${skipped !== 1 ? 's' : ''} skipped (no name+maker match)` : '')
+    );
+    this.render();
   },
 
   async addLink(moduleId) {
