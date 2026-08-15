@@ -1,13 +1,23 @@
 // Read-only browse/import of the shared community module library —
 // hosted in its own repo (github.com/hendrik-haehner/patchdoc-modules),
 // separate from this app's code so it can take contributions on its own
-// terms. Fetched straight from GitHub's raw content CDN, so it needs no
-// server of its own and works identically in the browser build, the
-// Tauri desktop app, and self-hosted instances — this is plain fetch(),
-// not gated by IO.isTauri() anywhere in this file.
+// terms. Fetched from a public CDN, so it needs no server of its own and
+// works identically in the browser build, the Tauri desktop app, and
+// self-hosted instances — this is plain fetch(), not gated by
+// IO.isTauri() anywhere in this file.
 const Community = {
 
-  URL: 'https://raw.githubusercontent.com/hendrik-haehner/patchdoc-modules/main/index.json',
+  // jsDelivr's GitHub mirror first — it's a real CDN (edge-cached,
+  // production-grade uptime) — falling back to GitHub's own raw content
+  // host if that's unreachable (e.g. jsDelivr blocked on some networks).
+  // Note: jsDelivr caches branch content at the edge, so a module added to
+  // the repo can take a little while to show up here even though it's
+  // already on GitHub — see patchdoc-modules/README.md for how to force
+  // a refresh (purge.jsdelivr.net) if you need it sooner.
+  URLS: [
+    'https://cdn.jsdelivr.net/gh/hendrik-haehner/patchdoc-modules@main/index.json',
+    'https://raw.githubusercontent.com/hendrik-haehner/patchdoc-modules/main/index.json',
+  ],
 
   _cache: null,   // full fetched list, null until the first successful fetch
   _visible: [],   // currently filtered/rendered list, index-aligned with the DOM
@@ -27,19 +37,24 @@ const Community = {
   async _fetch() {
     const list = document.getElementById('community-list');
     list.innerHTML = '<div style="font-size:11px;color:var(--text2);padding:12px 2px">loading…</div>';
-    try {
-      const res = await fetch(this.URL, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      this._cache = Array.isArray(data) ? data : [];
-      this._render();
-    } catch (err) {
-      console.error('PATCH.doc community fetch error:', err);
-      list.innerHTML = `<div style="font-size:11px;color:var(--danger);padding:12px 2px">
-        could not load community modules — check your internet connection.<br>
-        <button class="io-add-btn" style="margin-top:8px" onclick="Community._fetch()">retry</button>
-      </div>`;
+    let lastErr = null;
+    for (const url of this.URLS) {
+      try {
+        const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        this._cache = Array.isArray(data) ? data : [];
+        this._render();
+        return;
+      } catch (err) {
+        lastErr = err; // try the next URL, if any
+      }
     }
+    console.error('PATCH.doc community fetch error:', lastErr);
+    list.innerHTML = `<div style="font-size:11px;color:var(--danger);padding:12px 2px">
+      could not load community modules — check your internet connection.<br>
+      <button class="io-add-btn" style="margin-top:8px" onclick="Community._fetch()">retry</button>
+    </div>`;
   },
 
   // Debounced re-filter on search input — the list is already fetched, so
