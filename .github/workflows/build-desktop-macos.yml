@@ -76,10 +76,51 @@ jobs:
         working-directory: desktop
         run: npm run build
 
-      # Unsigned build — macOS Gatekeeper will show an "unverified
-      # developer" warning on first launch. Right-click the app > Open to
-      # bypass it. Real code signing/notarization needs a paid Apple
-      # Developer account and isn't set up here.
+      # Unsigned build — since there's no paid Apple Developer account to
+      # sign/notarize with, Gatekeeper often refuses to even open the app
+      # from /Applications ("is damaged and can't be opened"), not just
+      # show the milder "unidentified developer" warning. Tauri's own DMG
+      # config has no option to drop an extra file into the disk image
+      # itself (only into the .app bundle, which nobody reads before
+      # hitting that error) — so this converts the just-built read-only
+      # .dmg to a writable image, copies a README onto it, then converts
+      # it back to the same compressed read-only format Tauri produced.
+      - name: Add troubleshooting README to the .dmg
+        working-directory: desktop/src-tauri/target/release/bundle/dmg
+        run: |
+          set -euo pipefail
+          dmg="$(ls *.dmg)"
+          size_mb=$(( ($(stat -f%z "$dmg") / 1024 / 1024) + 10 ))
+
+          cat > readme.txt <<'EOF'
+          PATCH.doc — if macOS says the app is damaged
+          =============================================
+
+          This build isn't signed with a paid Apple Developer certificate.
+          macOS Gatekeeper blocks unsigned apps downloaded from the internet
+          and may say "PATCH.doc is damaged and can't be opened, you should
+          move it to the Trash" after you copy it to /Applications.
+
+          The app isn't actually damaged. To open it, run this once in
+          Terminal (Applications > Utilities > Terminal):
+
+              xattr -cr /Applications/PATCH.doc.app
+
+          Then open PATCH.doc normally.
+          EOF
+          sed -i '' 's/^[[:space:]]*//' readme.txt
+
+          hdiutil convert "$dmg" -format UDRW -o rw.dmg
+          rm -f "$dmg"
+          hdiutil resize -size "${size_mb}m" rw.dmg
+          mkdir -p mnt
+          hdiutil attach rw.dmg -mountpoint mnt -nobrowse -noautoopen
+          cp readme.txt "mnt/README - if the app won't open.txt"
+          hdiutil detach mnt
+          rmdir mnt
+          hdiutil convert rw.dmg -format UDZO -o "$dmg"
+          rm -f rw.dmg readme.txt
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
