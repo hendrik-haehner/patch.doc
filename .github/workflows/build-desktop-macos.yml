@@ -1,0 +1,53 @@
+name: Build macOS desktop app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'public/**'
+      - 'scripts/build-static.js'
+      - '.github/workflows/build-desktop-macos.yml'
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm install
+
+      - name: Build macOS app
+        working-directory: desktop
+        run: npm run build
+
+      # Unsigned build — macOS Gatekeeper will show an "unverified
+      # developer" warning on first launch. Right-click the app > Open to
+      # bypass it. Real code signing/notarization needs a paid Apple
+      # Developer account and isn't set up here.
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: patchdoc-macos
+          path: |
+            desktop/src-tauri/target/release/bundle/dmg/*.dmg
+            desktop/src-tauri/target/release/bundle/macos/*.app
+          if-no-files-found: error

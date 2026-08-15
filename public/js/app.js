@@ -599,6 +599,38 @@ const App = {
     reader.readAsDataURL(file);
   },
 
+  // Same WKWebView gap as IO.loadFileTauri() (see io.js): the plain
+  // <input type="file"> picker opens but input.files stays empty in the
+  // desktop build, so this reads the picked image through Tauri's own
+  // dialog+fs plugins and rebuilds the data: URL by hand instead of
+  // relying on FileReader.readAsDataURL.
+  async onPhotoUploadTauri() {
+    try {
+      const path = await window.__TAURI__.dialog.open({
+        multiple: false,
+        filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+      });
+      if (!path) return; // user canceled
+      const bytes = await window.__TAURI__.fs.readFile(path);
+      const ext = (path.split('.').pop() || '').toLowerCase();
+      const mime = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' }[ext] || 'application/octet-stream';
+      // btoa needs a plain string — chunked to avoid blowing the call
+      // stack on String.fromCharCode.apply() for large images.
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      const dataUrl = `data:${mime};base64,${btoa(binary)}`;
+      Store.updatePatch(Store.state.activePatchId, { photo: dataUrl });
+      Undo.snapshot();
+      this._renderPatchPhoto();
+    } catch (err) {
+      console.error('PATCH.doc photo upload error (Tauri file dialog):', err);
+      this.setStatus('photo upload failed: ' + (err.message || err));
+    }
+  },
+
   removePhoto() {
     Store.updatePatch(Store.state.activePatchId, { photo: null });
     Undo.snapshot();
@@ -631,13 +663,13 @@ const App = {
     this.setStatus('new patch created');
   },
 
-  deletePatch(id) {
+  async deletePatch(id) {
     const p = Store.state.patches.find(x => x.id === id);
     if (!p) return;
     const msg = p.isTemplate
       ? `Delete template "${p.title}"? This cannot be undone.`
       : `Delete "${p.title}"?`;
-    if (!confirm(msg)) return;
+    if (!(await IO.confirmAsync(msg))) return;
     if (!Store.deletePatch(id)) { alert('Cannot delete last patch.'); return; }
     Undo.snapshot();
     this.fullRender();
@@ -688,7 +720,7 @@ const App = {
 
   async deleteSharedPatch(sharedId, e) {
     if (e) e.stopPropagation();
-    if (!confirm('Remove this shared patch?')) return;
+    if (!(await IO.confirmAsync('Remove this shared patch?'))) return;
     try {
       await fetch(`/api/shared/${sharedId}`, { method: 'DELETE' });
       this._renderSharedPatches();
@@ -1123,8 +1155,8 @@ const App = {
     this.setStatus('module added');
   },
 
-  connRemoveModule(pmId) {
-    if (!confirm('Remove this module and all its connections from the patch?')) return;
+  async connRemoveModule(pmId) {
+    if (!(await IO.confirmAsync('Remove this module and all its connections from the patch?'))) return;
     Patch.removeFromPatch(pmId);
     this.renderConnections();
     Patch.render();
@@ -1633,12 +1665,12 @@ const App = {
       ${!patch.patchModules.length ? '<p class="empty-hint">add modules to patch first</p>' : ''}`;
   },
 
-  deleteModule(id, e) {
+  async deleteModule(id, e) {
     if (e) e.stopPropagation();
     const m = Store.state.modules.find(x => x.id === id);
     const inPatches = Store.state.patches.filter(p => p.patchModules.find(pm => pm.moduleId === id)).length;
     const warning = inPatches > 0 ? `\n⚠ Used in ${inPatches} patch(es) — will be removed there too.` : '';
-    if (!confirm('Delete "' + (m ? m.name : 'module') + '" from library?' + warning)) return;
+    if (!(await IO.confirmAsync('Delete "' + (m ? m.name : 'module') + '" from library?' + warning))) return;
     Store.deleteModule(id);
     if (this.selectedModuleId === id) this.selectedModuleId = null;
     this.fullRender();
