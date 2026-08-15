@@ -129,10 +129,10 @@
     <!-- module library -->
     <div id="sidebar-panel-modules" style="display:none;flex-direction:column;flex:1;overflow:hidden">
     <div id="module-section" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
-      <div class="sidebar-header" style="flex-shrink:0;border-bottom:0.5px solid var(--border)">
+      <div class="sidebar-header" style="flex-shrink:0;border-bottom:0.5px solid var(--border);flex-wrap:wrap;row-gap:6px">
         <button class="sidebar-new-btn" onclick="App.openModal()">+ New Module</button>
+        <button class="sidebar-new-btn" onclick="Community.open()" title="browse the community module repo">browse module repo</button>
         <div class="spacer"></div>
-        <button class="icon-btn" onclick="Community.open()" title="browse community modules" aria-label="browse community modules" style="width:20px;height:20px;border-radius:50%;font-size:11px"><i class="ti ti-download" aria-hidden="true"></i></button>
         <button class="sort-btn" id="module-sort-btn" onclick="App.cycleModuleSort()" title="Sort modules">A↓</button>
       </div>
       <div id="module-section-body" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
