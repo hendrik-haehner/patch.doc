@@ -48,6 +48,23 @@ Produces a platform-native installer/bundle (`.app`/`.dmg`, `.exe`/`.msi`,
 cross-compile installers by default, so macOS/Windows builds need to run
 on that OS, e.g. in CI) under `src-tauri/target/release/bundle/`.
 
+## Troubleshooting: macOS says the app is damaged
+
+CI builds (and local builds) aren't signed with a paid Apple Developer
+certificate. macOS Gatekeeper blocks unsigned apps downloaded from the
+internet, and after copying `PATCH.doc.app` to `/Applications` it may
+refuse to open it with *"PATCH.doc is damaged and can't be opened, you
+should move it to the Trash"*. The app isn't actually damaged — this is
+Gatekeeper's response to the missing signature. Fix it by clearing the
+quarantine flag once in Terminal:
+
+```bash
+xattr -cr /Applications/PATCH.doc.app
+```
+
+Then open the app normally. (CI-built `.dmg`s also include this as a
+README file alongside the app, for anyone who downloads one directly.)
+
 ## Icons
 
 Generated once from `public/icon-512.png` via `npx tauri icon
