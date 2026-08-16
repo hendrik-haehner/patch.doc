@@ -133,6 +133,104 @@ const IO = {
       .catch(() => this._feedback('export', 'err', 'clipboard unavailable — use download'));
   },
 
+  // ── Module export (for contributing to the community module repo) ────────
+  // Lets someone pick one or more modules from their own library and get
+  // them back as a JSON array matching the community-modules schema
+  // (github.com/hendrik-haehner/patchdoc-modules), ready to paste into
+  // index.json — the inverse of what community.js's import() does.
+
+  _moduleExportSelected: new Set(), // module ids currently checked
+
+  renderModuleExportList() {
+    const list = document.getElementById('module-export-list');
+    if (!list) return;
+    // Selection only makes sense for modules that still exist — drop any
+    // stale ids (e.g. the module was deleted since last time this tab was open).
+    const liveIds = new Set(Store.state.modules.map(m => m.id));
+    this._moduleExportSelected.forEach(id => { if (!liveIds.has(id)) this._moduleExportSelected.delete(id); });
+
+    const q = (document.getElementById('module-export-search')?.value || '').toLowerCase();
+    const modules = [...Store.state.modules]
+      .filter(m => !q || m.name.toLowerCase().includes(q) || m.maker.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (!modules.length) {
+      list.innerHTML = '<p class="empty-hint" style="padding:8px">no modules found</p>';
+      return;
+    }
+    list.innerHTML = modules.map(m => {
+      const checked = this._moduleExportSelected.has(m.id);
+      return `<div class="module-item" onclick="IO.toggleModuleExportSelect(${m.id})">
+        <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation();IO.toggleModuleExportSelect(${m.id})" style="flex-shrink:0">
+        <span class="module-dot" style="background:${CAT_COLORS[m.cat] || '#888'}"></span>
+        <span class="module-name">${m.name}</span>
+        <span class="module-hp">${m.maker}</span>
+      </div>`;
+    }).join('');
+  },
+
+  _exportFilterDebounce: null,
+  filterModuleExport() {
+    clearTimeout(this._exportFilterDebounce);
+    this._exportFilterDebounce = setTimeout(() => this.renderModuleExportList(), 150);
+  },
+
+  toggleModuleExportSelect(id) {
+    if (this._moduleExportSelected.has(id)) this._moduleExportSelected.delete(id);
+    else this._moduleExportSelected.add(id);
+    this.renderModuleExportList();
+  },
+
+  selectAllModulesForExport() {
+    Store.state.modules.forEach(m => this._moduleExportSelected.add(m.id));
+    this.renderModuleExportList();
+  },
+
+  selectNoneModulesForExport() {
+    this._moduleExportSelected.clear();
+    this.renderModuleExportList();
+  },
+
+  // Strips this module down to just the fields the community schema uses —
+  // no internal id (a fresh one is assigned on import), no manuals (often
+  // copyrighted PDFs, and meaningless outside this library's own storage).
+  _moduleToExportJSON(m) {
+    const mod = {
+      name: m.name,
+      maker: m.maker,
+      hp: m.hp,
+      cat: m.cat,
+    };
+    if (m.color) mod.color = m.color;
+    if (m.paramCols && m.paramCols !== 3) mod.paramCols = m.paramCols;
+    if (m.power12p) mod.power12p = m.power12p;
+    if (m.power12n) mod.power12n = m.power12n;
+    if (m.power5) mod.power5 = m.power5;
+    mod.inputs = (m.inputs || []).map(p => ({ name: Patch._portName(p) }));
+    mod.outputs = (m.outputs || []).map(p => ({ name: Patch._portName(p) }));
+    if (m.paramDefs && m.paramDefs.length) mod.paramDefs = JSON.parse(JSON.stringify(m.paramDefs));
+    if (m.panel) mod.panel = JSON.parse(JSON.stringify(m.panel));
+    return mod;
+  },
+
+  _selectedModulesJSON() {
+    const modules = Store.state.modules.filter(m => this._moduleExportSelected.has(m.id));
+    return JSON.stringify(modules.map(m => this._moduleToExportJSON(m)), null, 2);
+  },
+
+  copyModulesForExport() {
+    if (!this._moduleExportSelected.size) { this._feedback('module-export', 'err', 'select at least one module'); return; }
+    navigator.clipboard.writeText(this._selectedModulesJSON())
+      .then(() => this._feedback('module-export', 'ok', this._moduleExportSelected.size + ' module(s) copied to clipboard'))
+      .catch(() => this._feedback('module-export', 'err', 'clipboard unavailable — use download'));
+  },
+
+  downloadModulesForExport() {
+    if (!this._moduleExportSelected.size) { this._feedback('module-export', 'err', 'select at least one module'); return; }
+    this._download(this._selectedModulesJSON(), 'patchdoc_modules_export.json');
+    this._feedback('module-export', 'ok', this._moduleExportSelected.size + ' module(s) downloaded');
+  },
+
   // ── PDF Export ─────────────────────────────────────────────────────────
 
   exportPDF() {

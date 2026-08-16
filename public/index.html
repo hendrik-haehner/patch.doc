@@ -286,6 +286,34 @@
         </div>
 
         <div class="io-section">
+          <h4>MODULE EXPORT</h4>
+          <p>Export one or more modules from your library as JSON, ready to paste into
+            <a href="https://github.com/hendrik-haehner/patchdoc-modules" target="_blank" rel="noopener">patchdoc-modules</a>'
+            <code style="font-family:var(--font);font-size:10px;background:var(--bg2);padding:1px 5px;border-radius:3px">index.json</code>
+            for others to import. Manuals and per-user data aren't included.</p>
+          <input id="module-export-search" type="text" placeholder="search modules…"
+            oninput="IO.filterModuleExport()"
+            style="width:100%;font-size:12px;padding:7px 10px;margin:6px 0;
+                   border:0.5px solid var(--border2);border-radius:var(--radius);
+                   background:var(--bg0);color:var(--text0);font-family:var(--font);outline:none">
+          <div class="btn-row" style="margin-bottom:6px">
+            <button class="btn-action" onclick="IO.selectAllModulesForExport()">select all</button>
+            <button class="btn-action" onclick="IO.selectNoneModulesForExport()">select none</button>
+          </div>
+          <div id="module-export-list" style="max-height:220px;overflow-y:auto;
+               border:0.5px solid var(--border2);border-radius:var(--radius);padding:4px 2px"></div>
+          <div class="btn-row" style="margin-top:8px">
+            <button class="btn-action primary" onclick="IO.copyModulesForExport()">
+              <i class="ti ti-copy" aria-hidden="true"></i> copy to clipboard
+            </button>
+            <button class="btn-action" onclick="IO.downloadModulesForExport()">
+              <i class="ti ti-download" aria-hidden="true"></i> download JSON
+            </button>
+          </div>
+          <div id="module-export-feedback" class="feedback"></div>
+        </div>
+
+        <div class="io-section">
           <h4>IMPORT</h4>
           <p>Paste patch JSON below, or load a file. A single patch is merged into your library; a full backup replaces all data.</p>
           <textarea id="import-textarea" placeholder='{"version":2,"patch":{...}} or full backup JSON...'></textarea>
