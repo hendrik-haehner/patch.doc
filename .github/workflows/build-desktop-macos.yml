@@ -53,6 +53,24 @@ jobs:
           git tag "${{ steps.release.outputs.tag }}"
           git push origin "${{ steps.release.outputs.tag }}"
 
+      # Keeps the built app's own version metadata (macOS "About" panel,
+      # Cargo.toml, package.json) in sync with the release tag, without
+      # needing anyone to hand-edit three files before cutting a release.
+      # Deliberately NOT committed back to the repo — this only patches the
+      # checked-out working copy for this build, so the committed source
+      # keeps whatever version was last set by hand (bumped manually
+      # alongside meaningful changes) while every actual release still
+      # gets stamped with its real version number.
+      - name: Sync app version to release tag
+        if: steps.release.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          version="${{ steps.release.outputs.tag }}"
+          version="${version#v}"
+          sed -i '' 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/src-tauri/tauri.conf.json
+          sed -i '' 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/package.json
+          sed -i '' 's/^version = "[^"]*"/version = "'"$version"'"/' desktop/src-tauri/Cargo.toml
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
