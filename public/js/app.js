@@ -855,7 +855,7 @@ const App = {
     this.closeTouchMenu();
     if (tab === 'params') this.renderParams();
     if (tab === 'connections') this.renderConnections();
-    if (tab === 'io') IO.updatePreview();
+    if (tab === 'io') { IO.updatePreview(); IO.renderModuleExportList(); }
     if (tab === 'rack') this.renderRackView();
     if (tab === 'media') Media.render();
     if (tab === 'manuals') Manuals.render();
