@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to tag and release (e.g. 1.0.1) — leave empty to just build, no release'
+        description: 'Version to tag and release — leave empty to auto-bump the last release''s patch version'
         required: false
         type: string
 
@@ -25,44 +25,54 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history/tags — needed to find the latest release tag to bump
 
       # Figures out whether this run should end in a GitHub Release, and
-      # under which tag — either because it was triggered by a tag push, or
-      # because it was manually dispatched with a version number.
+      # under which tag. Three cases: a tag push (release under that tag),
+      # a manual dispatch with an explicit version (release under that),
+      # or a manual dispatch with no version — auto-bumps the patch number
+      # of the latest vX.Y.Z release tag (falling back to whatever's
+      # currently in desktop/package.json if there's no release yet). A
+      # plain push to main (CI's own "does it still build" check, not a
+      # manual run) never releases, only builds the artifact below.
       - name: Determine release tag
         id: release
         run: |
+          set -euo pipefail
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
             echo "should_release=true" >> "$GITHUB_OUTPUT"
-          elif [[ -n "${{ inputs.version }}" ]]; then
-            raw="${{ inputs.version }}"
-            echo "tag=v${raw#v}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ -n "${{ inputs.version }}" ]]; then
+              raw="${{ inputs.version }}"
+              echo "tag=v${raw#v}" >> "$GITHUB_OUTPUT"
+            else
+              git fetch --tags --quiet
+              latest="$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)"
+              if [[ -n "$latest" ]]; then
+                base="${latest#v}"
+                IFS='.' read -r major minor patch <<< "$base"
+                echo "tag=v${major}.${minor}.$((patch + 1))" >> "$GITHUB_OUTPUT"
+              else
+                current="$(grep -m1 '"version"' desktop/package.json | sed -E 's/.*"version": *"([^"]+)".*/\1/')"
+                echo "tag=v${current}" >> "$GITHUB_OUTPUT"
+              fi
+            fi
             echo "should_release=true" >> "$GITHUB_OUTPUT"
           else
             echo "should_release=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # Only needed for the manual-dispatch-with-version case above — a
-      # real tag push already has its tag pushed by definition.
-      - name: Create and push release tag
+      # Rewrites the app's own version metadata (macOS "About" panel,
+      # Cargo.toml, package.json) to match the release tag and commits
+      # that back to main, so the checked-in version never drifts behind
+      # what's actually been released and nobody ever has to hand-edit
+      # three files to cut one. Skipped for a tag push — that path is for
+      # tagging manually, and whoever did that is responsible for the
+      # version themselves.
+      - name: Sync and commit app version
         if: steps.release.outputs.should_release == 'true' && github.ref_type != 'tag'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.release.outputs.tag }}"
-          git push origin "${{ steps.release.outputs.tag }}"
-
-      # Keeps the built app's own version metadata (macOS "About" panel,
-      # Cargo.toml, package.json) in sync with the release tag, without
-      # needing anyone to hand-edit three files before cutting a release.
-      # Deliberately NOT committed back to the repo — this only patches the
-      # checked-out working copy for this build, so the committed source
-      # keeps whatever version was last set by hand (bumped manually
-      # alongside meaningful changes) while every actual release still
-      # gets stamped with its real version number.
-      - name: Sync app version to release tag
-        if: steps.release.outputs.should_release == 'true'
         run: |
           set -euo pipefail
           version="${{ steps.release.outputs.tag }}"
@@ -70,6 +80,25 @@ jobs:
           sed -i '' 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/src-tauri/tauri.conf.json
           sed -i '' 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/package.json
           sed -i '' 's/^version = "[^"]*"/version = "'"$version"'"/' desktop/src-tauri/Cargo.toml
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add desktop/src-tauri/tauri.conf.json desktop/package.json desktop/src-tauri/Cargo.toml
+            git commit -m "chore: bump desktop app version to $version [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      # For a tag push this is a no-op condition (the tag already exists by
+      # definition) — for a manual dispatch, tags the version-bump commit
+      # above (or HEAD, if nothing needed bumping) so the release points at
+      # a commit whose own files already agree with the tag name.
+      - name: Create and push release tag
+        if: steps.release.outputs.should_release == 'true' && github.ref_type != 'tag'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.release.outputs.tag }}"
+          git push origin "${{ steps.release.outputs.tag }}"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -149,9 +178,11 @@ jobs:
           if-no-files-found: error
 
       # Publishes the .dmg as a downloadable GitHub Release, in addition to
-      # the always-on build artifact above. Runs for a tag push (git tag
-      # v1.0.0 && git push origin v1.0.0) or for a manual dispatch run with
-      # a version number filled in (Actions → Run workflow).
+      # the always-on build artifact above — no login required to download
+      # a Release, unlike a plain CI artifact. Runs for a tag push, or for
+      # any manual dispatch run (Actions → Run workflow); the version is
+      # either what was typed in, or auto-bumped, per "Determine release
+      # tag" above. A plain push to main never releases.
       - name: Create GitHub Release
         if: steps.release.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
