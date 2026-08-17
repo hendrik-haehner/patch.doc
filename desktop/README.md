@@ -48,6 +48,12 @@ Produces a platform-native installer/bundle (`.app`/`.dmg`, `.exe`/`.msi`,
 cross-compile installers by default, so macOS/Windows builds need to run
 on that OS, e.g. in CI) under `src-tauri/target/release/bundle/`.
 
+CI (`.github/workflows/build-desktop-macos.yml`) builds macOS on every
+push to `main`, and adds a Windows build (`.msi` + `.exe`) whenever that
+run also cuts a [Release](../../../releases) — a tag push, or a manual
+**Actions → Build desktop app → Run workflow**. Linux isn't built by CI;
+build it yourself with the steps above on a Linux machine.
+
 ## Troubleshooting: macOS says the app is damaged
 
 CI builds (and local builds) aren't signed with a paid Apple Developer
@@ -64,6 +70,13 @@ xattr -cr /Applications/PATCH.doc.app
 
 Then open the app normally. (CI-built `.dmg`s also include this as a
 README file alongside the app, for anyone who downloads one directly.)
+
+## Troubleshooting: Windows SmartScreen blocks the installer
+
+Same root cause as above — no paid code-signing certificate, so Windows
+SmartScreen shows *"Windows protected your PC"* the first time you run
+the `.msi`/`.exe`. It isn't actually unsafe, just unsigned. Click **More
+info → Run anyway** to proceed.
 
 ## Icons
 
