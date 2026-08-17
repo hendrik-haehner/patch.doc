@@ -1,4 +1,4 @@
-name: Build macOS desktop app
+name: Build desktop app
 
 on:
   push:
@@ -16,13 +16,22 @@ on:
         required: false
         type: string
 
+# Needed by the version-bump commit/tag push in determine-release, and by
+# the release-asset uploads in the two build jobs.
+permissions:
+  contents: write
+
 jobs:
-  build-macos:
-    runs-on: macos-latest
-    # Needed to create/push the release tag and to publish the GitHub
-    # Release itself, below.
-    permissions:
-      contents: write
+  # Figures out the release version once, up front, and (if this run should
+  # release at all) bumps + commits the app's own version metadata and
+  # creates the tag — so build-macos and build-windows can just check that
+  # tag out and build from an already-correctly-versioned commit, instead
+  # of each doing their own (potentially conflicting) version bookkeeping.
+  determine-release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      should_release: ${{ steps.release.outputs.should_release }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,7 +44,7 @@ jobs:
       # of the latest vX.Y.Z release tag (falling back to whatever's
       # currently in desktop/package.json if there's no release yet). A
       # plain push to main (CI's own "does it still build" check, not a
-      # manual run) never releases, only builds the artifact below.
+      # manual run) never releases, only builds the macOS artifact below.
       - name: Determine release tag
         id: release
         run: |
@@ -65,21 +74,21 @@ jobs:
           fi
 
       # Rewrites the app's own version metadata (macOS "About" panel,
-      # Cargo.toml, package.json) to match the release tag and commits
-      # that back to main, so the checked-in version never drifts behind
-      # what's actually been released and nobody ever has to hand-edit
-      # three files to cut one. Skipped for a tag push — that path is for
-      # tagging manually, and whoever did that is responsible for the
-      # version themselves.
+      # Windows installer version, Cargo.toml, package.json) to match the
+      # release tag and commits that back to main, so the checked-in
+      # version never drifts behind what's actually been released and
+      # nobody ever has to hand-edit three files to cut one. Skipped for a
+      # tag push — that path is for tagging manually, and whoever did that
+      # is responsible for the version themselves.
       - name: Sync and commit app version
         if: steps.release.outputs.should_release == 'true' && github.ref_type != 'tag'
         run: |
           set -euo pipefail
           version="${{ steps.release.outputs.tag }}"
           version="${version#v}"
-          sed -i '' 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/src-tauri/tauri.conf.json
-          sed -i '' 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/package.json
-          sed -i '' 's/^version = "[^"]*"/version = "'"$version"'"/' desktop/src-tauri/Cargo.toml
+          sed -i 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/src-tauri/tauri.conf.json
+          sed -i 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/package.json
+          sed -i 's/^version = "[^"]*"/version = "'"$version"'"/' desktop/src-tauri/Cargo.toml
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -99,6 +108,33 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "${{ steps.release.outputs.tag }}"
           git push origin "${{ steps.release.outputs.tag }}"
+
+      # Creates the (asset-less, for now) Release with its notes/body here,
+      # once, before the macOS and Windows builds start — they run in
+      # parallel and only attach their own files afterwards, never touching
+      # the body, so there's no race over which platform's text wins.
+      - name: Create GitHub Release
+        if: steps.release.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          generate_release_notes: true
+          body: |
+            **Windows**: this build isn't signed, so Windows SmartScreen may show "Windows protected your PC" when you first run the installer. Click **More info → Run anyway** — it isn't actually unsafe, just unsigned (no paid code-signing certificate).
+
+            **macOS**: same idea if you see "PATCH.doc is damaged and can't be opened" — the `.dmg` includes a README with the one-line fix.
+          append_body: true
+
+  build-macos:
+    needs: determine-release
+    runs-on: macos-latest
+    steps:
+      # Builds from the tag determine-release just created (already at the
+      # correct version) when this run releases, otherwise from whatever
+      # ref triggered the workflow (a plain push-to-main sanity build).
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.determine-release.outputs.should_release == 'true' && needs.determine-release.outputs.tag || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -177,16 +213,78 @@ jobs:
             desktop/src-tauri/target/release/bundle/macos/*.app
           if-no-files-found: error
 
-      # Publishes the .dmg as a downloadable GitHub Release, in addition to
-      # the always-on build artifact above — no login required to download
-      # a Release, unlike a plain CI artifact. Runs for a tag push, or for
-      # any manual dispatch run (Actions → Run workflow); the version is
-      # either what was typed in, or auto-bumped, per "Determine release
-      # tag" above. A plain push to main never releases.
-      - name: Create GitHub Release
-        if: steps.release.outputs.should_release == 'true'
+      # Attaches the .dmg to the Release determine-release already created
+      # (with its notes/body) — no login required to download a Release,
+      # unlike a plain CI artifact. Doesn't touch generate_release_notes/
+      # body here, so it can't race with build-windows over the text.
+      - name: Attach .dmg to GitHub Release
+        if: needs.determine-release.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release.outputs.tag }}
+          tag_name: ${{ needs.determine-release.outputs.tag }}
           files: desktop/src-tauri/target/release/bundle/dmg/*.dmg
-          generate_release_notes: true
+
+  # Only runs for an actual release, not on every push-to-main sanity
+  # build — Windows CI minutes aren't worth spending on every commit when
+  # the Rust/JS code underneath is the same as the macOS build already
+  # checks. Uses the same tag as build-macos, so both platforms land as
+  # assets on one combined release rather than two separate ones.
+  build-windows:
+    needs: determine-release
+    if: needs.determine-release.outputs.should_release == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.determine-release.outputs.tag }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm install
+
+      - name: Build Windows app
+        working-directory: desktop
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: patchdoc-windows
+          path: |
+            desktop/src-tauri/target/release/bundle/msi/*.msi
+            desktop/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
+      # Same unsigned-build situation as macOS, but Windows SmartScreen's
+      # bypass is simpler (no terminal command needed) — mentioned in the
+      # release notes instead of embedded in the installer, since unlike a
+      # .dmg there's no folder to drop a loose file into.
+      - name: Add SmartScreen note to the release
+        run: |
+          echo "### Windows SmartScreen" >> "$env:GITHUB_STEP_SUMMARY"
+          echo "This build isn't signed, so Windows may show ""Windows protected your PC"". Click **More info > Run anyway** — the installer isn't actually unsafe, just unsigned." >> "$env:GITHUB_STEP_SUMMARY"
+
+      # Same reasoning as the macOS attach step — determine-release already
+      # created the Release with its notes/body, this only adds files.
+      - name: Attach installers to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.determine-release.outputs.tag }}
+          files: |
+            desktop/src-tauri/target/release/bundle/msi/*.msi
+            desktop/src-tauri/target/release/bundle/nsis/*.exe
