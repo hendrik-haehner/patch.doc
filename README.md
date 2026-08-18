@@ -21,13 +21,13 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **Patch canvas** — visual layout of modules with cables and connections
 - **Panel layout** — optional front-panel-style view per module, with a visual editor to place ports, knobs, switches, labels and dividers on a grid (see [below](#panel-layout))
 - **Connections tab** — dropdown-based cable editor, works on mobile without drag gestures
-- **Modulation details** — document amount, phase and polarity per cable (e.g. an LFO into a CV input); such a cable renders dashed on the canvas, click or hover it to view/edit
+- **Modulation details** — document amount, phase and polarity per cable (e.g. an LFO into a CV input); such a cable renders dashed on the canvas, click or hover it to view/edit (see [below](#modulation-details))
 - **Parameters** — document knob positions, switches and settings per module
 - **Performance marks** — color-mark parameters (green / yellow / red) for live performance reference
 - **Notes** — freetext notes per patch
 - **Media** — attach photos and audio recordings to patches
 - **Manuals** — upload PDF manuals per module (shared across all users)
-- **Community modules** — browse and import module definitions shared by other users, in every version (browser, desktop, self-hosted) — see [patchdoc-modules](https://github.com/hendrik-haehner/patchdoc-modules); export your own modules as JSON from the export tab to contribute one back
+- **Community modules** — browse and import module definitions shared by other users, in every version (browser, desktop, self-hosted); export your own as JSON from the export tab to contribute one back (see [below](#community-modules))
 - **PDF export** — print-ready patch documentation (canvas + parameters + connections)
 - **Global module search** — find which patches use a specific module (Cmd+F)
 - **Templates** — mark patches as templates and create new patches from them
@@ -51,6 +51,26 @@ Turn it on per-module from the module editor's **edit panel layout** button: dra
 ![Panel layout editor](docs/screenshot_panel-editor.png)
 
 Panel view is a display option, toggleable at any time from the patch toolbar (**panel view** / **list view**) — modules without a panel layout always render as a list either way.
+
+---
+
+## Modulation details
+
+Cables can carry more than just "connected" — click any cable to document its amount, phase and polarity (e.g. how deep an LFO modulates a filter's cutoff, and in which direction). A cable with these set renders dashed on the canvas so it stands out at a glance; hover it for a quick read-only preview, click to edit.
+
+![Modulation details popup](docs/screenshot_cable-modulation.png)
+
+Deleting a cable no longer happens by clicking it — select it this way, then use **delete cable** in the patch toolbar.
+
+---
+
+## Community modules
+
+Browse and import module definitions shared by other PATCH.doc users, from the module editor's **browse module repo** button — works the same in the browser, desktop, and self-hosted versions, no account needed. Modules already in your library are marked instead of offering an import button, so you can't double up.
+
+![Community modules browser](docs/screenshot_community-modules.png)
+
+The shared library lives in its own repo, [patchdoc-modules](https://github.com/hendrik-haehner/patchdoc-modules) — export any of your own modules as JSON from the **export** tab to contribute one back.
 
 ---
 
