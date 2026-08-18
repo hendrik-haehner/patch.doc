@@ -21,12 +21,13 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **Patch canvas** — visual layout of modules with cables and connections
 - **Panel layout** — optional front-panel-style view per module, with a visual editor to place ports, knobs, switches, labels and dividers on a grid (see [below](#panel-layout))
 - **Connections tab** — dropdown-based cable editor, works on mobile without drag gestures
+- **Modulation details** — document amount, phase and polarity per cable (e.g. an LFO into a CV input); such a cable renders dashed on the canvas, click or hover it to view/edit
 - **Parameters** — document knob positions, switches and settings per module
 - **Performance marks** — color-mark parameters (green / yellow / red) for live performance reference
 - **Notes** — freetext notes per patch
 - **Media** — attach photos and audio recordings to patches
 - **Manuals** — upload PDF manuals per module (shared across all users)
-- **Community modules** — browse and import module definitions shared by other users, in every version (browser, desktop, self-hosted) — see [patchdoc-modules](https://github.com/hendrik-haehner/patchdoc-modules)
+- **Community modules** — browse and import module definitions shared by other users, in every version (browser, desktop, self-hosted) — see [patchdoc-modules](https://github.com/hendrik-haehner/patchdoc-modules); export your own modules as JSON from the export tab to contribute one back
 - **PDF export** — print-ready patch documentation (canvas + parameters + connections)
 - **Global module search** — find which patches use a specific module (Cmd+F)
 - **Templates** — mark patches as templates and create new patches from them
