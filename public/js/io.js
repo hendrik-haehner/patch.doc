@@ -642,6 +642,47 @@ const IO = {
     return confirm(message);
   },
 
+  // Unlike confirm/alert, Tauri's dialog plugin never patches
+  // window.prompt() at all (its init-iife.js only touches alert and
+  // confirm — checked the plugin's own source directly) — and WKWebView's
+  // own built-in prompt() isn't implemented without extra native host
+  // code Tauri doesn't provide, so it just returns null instantly with no
+  // dialog ever appearing. There's also no dialog-plugin API to fall back
+  // to here (unlike confirm()) since Tauri's dialog plugin only offers
+  // file/message/ask dialogs, nothing with a text field. So every
+  // prompt() call site in the app must go through this custom in-app
+  // modal instead when running in Tauri.
+  promptAsync(message, defaultValue) {
+    if (!this.isTauri()) return Promise.resolve(prompt(message, defaultValue));
+    return new Promise(resolve => {
+      const bg    = document.getElementById('prompt-modal-bg');
+      const msgEl = document.getElementById('prompt-modal-message');
+      const input = document.getElementById('prompt-modal-input');
+      const okBtn = document.getElementById('prompt-modal-ok');
+      const cancelBtn = document.getElementById('prompt-modal-cancel');
+
+      msgEl.textContent = message;
+      input.value = defaultValue ?? '';
+      bg.classList.add('open');
+      setTimeout(() => { input.focus(); input.select(); }, 0);
+
+      const cleanup = (result) => {
+        bg.classList.remove('open');
+        input.removeEventListener('keydown', onKeydown);
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+        resolve(result);
+      };
+      const onKeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); cleanup(input.value); }
+        else if (e.key === 'Escape') { e.preventDefault(); cleanup(null); }
+      };
+      input.addEventListener('keydown', onKeydown);
+      okBtn.onclick = () => cleanup(input.value);
+      cancelBtn.onclick = () => cleanup(null);
+    });
+  },
+
   async loadFileTauri() {
     try {
       const path = await window.__TAURI__.dialog.open({

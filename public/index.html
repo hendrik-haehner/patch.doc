@@ -519,6 +519,26 @@
   </div>
 </div>
 
+<!-- generic text-input prompt — Tauri's WKWebView doesn't implement
+     window.prompt() at all (unlike alert/confirm, which the dialog
+     plugin patches, this one silently no-ops), so IO.promptAsync() uses
+     this modal there instead; the browser/self-hosted builds still use
+     the native prompt() and never open this. -->
+<div id="prompt-modal-bg" class="modal-bg" onmousedown="window._modalMousedownOnBg=(event.target===this)" onmouseup="if(window._modalMousedownOnBg&&event.target===this)document.getElementById('prompt-modal-cancel').click()">
+  <div class="modal" role="dialog" aria-label="Input" style="width:280px">
+    <h3 id="prompt-modal-message">Input:</h3>
+    <input id="prompt-modal-input" type="text"
+      style="width:100%;font-size:13px;padding:6px 8px;margin-bottom:14px;
+             border:0.5px solid var(--border2);border-radius:var(--radius);
+             background:var(--bg0);color:var(--text0);font-family:var(--font);
+             outline:none;box-sizing:border-box">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="prompt-modal-cancel">cancel</button>
+      <button class="btn-primary" id="prompt-modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- panel layout editor modal (opens on top of the module modal) -->
 <div id="panel-editor-modal-bg" class="modal-bg"
      onmousedown="window._panelEditorMousedownOnBg=(event.target===this)"

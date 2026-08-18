@@ -654,8 +654,8 @@ const App = {
     document.getElementById('sidebar')?.classList.remove('touch-sidebar-open');
   },
 
-  newPatch() {
-    const title = prompt('Patch name:', 'New Patch');
+  async newPatch() {
+    const title = await IO.promptAsync('Patch name:', 'New Patch');
     if (title === null) return;
     Store.newPatch(title.trim() || undefined);
     Undo.snapshot();
@@ -739,11 +739,11 @@ const App = {
     this.setStatus(p.isTemplate ? 'template mark removed' : '⭐ marked as template');
   },
 
-  newFromTemplate(id, e) {
+  async newFromTemplate(id, e) {
     if (e) e.stopPropagation();
     const src = Store.state.patches.find(x => x.id === id);
     if (!src) return;
-    const title = prompt('Name for new patch:', src.title + ' (copy)');
+    const title = await IO.promptAsync('Name for new patch:', src.title + ' (copy)');
     if (title === null) return;
     const copy = JSON.parse(JSON.stringify(src));
     copy.id = 'patch_' + Date.now();
