@@ -522,9 +522,9 @@ const Patch = {
       this._saveParam(pmId, def.name, val);
     });
 
-    wrap.addEventListener('dblclick', e => {
+    wrap.addEventListener('dblclick', async e => {
       e.stopPropagation();
-      const newVal = prompt(`${def.name} (${min}–${max}):`, Math.round(val));
+      const newVal = await IO.promptAsync(`${def.name} (${min}–${max}):`, Math.round(val));
       if (newVal === null) return;
       const n = parseFloat(newVal);
       if (!isNaN(n)) {
