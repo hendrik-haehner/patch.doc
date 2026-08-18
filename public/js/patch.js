@@ -41,6 +41,8 @@ let pendingPort = null;
 let _markMenuOpen = null;
 let snapEnabled = false;
 let cablesVisible = true;
+let _selectedCableId = null;
+let _cablePopupPinnedFor = null; // cable id the popup is pinned open for (via click), or null
 const GRID = 24;
 
 let _zoom = 1.0;
@@ -1013,14 +1015,23 @@ const Patch = {
       hit.setAttribute('stroke-width', '12'); hit.setAttribute('fill', 'none');
       hit.style.cursor = 'pointer';
       hit.style.pointerEvents = 'stroke'; // SVG container is click-through; only this path intercepts clicks
-      hit.addEventListener('click', () => this.removeCable(c.id));
-      hit.addEventListener('mouseenter', () => { vis.setAttribute('opacity', hoverOpacity); vis.setAttribute('stroke-width', hoverWidth); });
-      hit.addEventListener('mouseleave', () => { vis.setAttribute('opacity', baseOpacity); vis.setAttribute('stroke-width', baseWidth); });
+      hit.addEventListener('click', (e) => this.onCableClick(c.id, e));
+      hit.addEventListener('mouseenter', (e) => {
+        vis.setAttribute('opacity', hoverOpacity); vis.setAttribute('stroke-width', hoverWidth);
+        this.showCablePopup(c.id, e, false);
+      });
+      hit.addEventListener('mouseleave', () => {
+        vis.setAttribute('opacity', c.id === _selectedCableId ? hoverOpacity : baseOpacity);
+        vis.setAttribute('stroke-width', baseWidth);
+        this.maybeHideCablePopup(c.id);
+      });
       // visible path
       const vis = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       vis.setAttribute('d', d); vis.setAttribute('stroke', c.color);
       vis.setAttribute('stroke-width', baseWidth); vis.setAttribute('fill', 'none');
-      vis.setAttribute('stroke-linecap', 'round'); vis.setAttribute('opacity', baseOpacity);
+      vis.setAttribute('stroke-linecap', 'round');
+      vis.setAttribute('opacity', c.id === _selectedCableId ? hoverOpacity : baseOpacity);
+      if (c.mod) vis.setAttribute('stroke-dasharray', '7,5');
       vis.setAttribute('data-cable-id', c.id);
       vis.style.pointerEvents = 'none';
       vis.title = c.fromPort + ' → ' + c.toPort;
@@ -1034,8 +1045,164 @@ const Patch = {
     patch.cables = patch.cables.filter(c => c.id !== id);
     Store.updatePatch(patch.id, { cables: patch.cables });
     Undo.snapshot();
+    if (_selectedCableId === id) this.deselectCable();
     this.renderCables(); this.updateJacks();
     App.setStatus('cable removed');
+  },
+
+  // ── Cable modulation (amount / phase / polarity) ───────────────────────
+  // Optional, per-cable metadata for documenting a modulation connection
+  // (e.g. an LFO into a CV input) precisely enough to reproduce it later —
+  // not just *that* it's connected, but how strong, in what phase, and
+  // which direction. A cable with this set renders dashed on the canvas.
+
+  deleteSelectedCable() {
+    if (_selectedCableId == null) return;
+    this.removeCable(_selectedCableId);
+  },
+
+  selectCable(id) {
+    _selectedCableId = id;
+    const btn = document.getElementById('delete-cable-btn');
+    if (btn) btn.style.display = '';
+    this.renderCables(); this.updateJacks();
+  },
+
+  deselectCable() {
+    _selectedCableId = null;
+    const btn = document.getElementById('delete-cable-btn');
+    if (btn) btn.style.display = 'none';
+    this.hideCablePopup();
+    this.renderCables(); this.updateJacks();
+  },
+
+  onCableClick(id, e) {
+    e.stopPropagation();
+    this.selectCable(id);
+    this.showCablePopup(id, e, true);
+  },
+
+  _cableById(id) {
+    return Store.getActivePatch().cables.find(c => c.id === id);
+  },
+
+  setCableMod(id, field, value) {
+    const patch = Store.getActivePatch();
+    const cable = patch.cables.find(c => c.id === id);
+    if (!cable) return;
+    const wasSet = !!cable.mod;
+    cable.mod = { amount: 50, phase: 0, polarity: 'bipolar', ...(cable.mod || {}), [field]: value };
+    Store.updatePatch(patch.id, { cables: patch.cables });
+    Undo.snapshot();
+    if (!wasSet) this.renderCables(); // dash style only needs a redraw the first time
+  },
+
+  clearCableMod(id) {
+    const patch = Store.getActivePatch();
+    const cable = patch.cables.find(c => c.id === id);
+    if (!cable || !cable.mod) return;
+    delete cable.mod;
+    Store.updatePatch(patch.id, { cables: patch.cables });
+    Undo.snapshot();
+    this.hideCablePopup();
+    this.renderCables();
+  },
+
+  // Shows the floating amount/phase/polarity popup near the cursor.
+  // pinned=false (hover): a quick read-only-looking preview, only for
+  // cables that already have mod data, auto-closes on mouseleave.
+  // pinned=true (click): always shown, fields are live-editable, stays
+  // open until something else is clicked.
+  showCablePopup(id, e, pinned) {
+    const cable = this._cableById(id);
+    if (!cable) return;
+    if (!pinned && !cable.mod) return; // nothing to preview yet
+    if (!pinned && _cablePopupPinnedFor != null) return; // a pinned popup takes priority
+
+    let popup = document.getElementById('cable-mod-popup');
+    if (!popup) {
+      popup = document.createElement('div');
+      popup.id = 'cable-mod-popup';
+      popup.addEventListener('mouseenter', () => { popup.dataset.hovering = '1'; });
+      popup.addEventListener('mouseleave', () => {
+        delete popup.dataset.hovering;
+        if (_cablePopupPinnedFor == null) this.hideCablePopup();
+      });
+      document.body.appendChild(popup);
+    }
+    _cablePopupPinnedFor = pinned ? id : _cablePopupPinnedFor;
+
+    const mod = cable.mod || { amount: 50, phase: 0, polarity: 'bipolar' };
+    popup.dataset.cableId = id;
+    popup.innerHTML = `
+      <div class="cable-mod-popup-header">
+        <span>${cable.fromPort} → ${cable.toPort}</span>
+        ${pinned ? '<button class="conn-del" onclick="Patch.clearCableMod(' + id + ')" title="remove modulation data" aria-label="remove modulation data">×</button>' : ''}
+      </div>
+      <div class="cable-mod-popup-row">
+        <label>amount</label>
+        <input type="number" min="0" max="100" value="${mod.amount}" ${pinned ? '' : 'readonly'}
+          onchange="Patch.setCableMod(${id},'amount',parseFloat(this.value)||0)">
+        <span class="cable-mod-popup-unit">%</span>
+      </div>
+      <div class="cable-mod-popup-row">
+        <label>phase</label>
+        <input type="number" min="0" max="360" value="${mod.phase}" ${pinned ? '' : 'readonly'}
+          onchange="Patch.setCableMod(${id},'phase',parseFloat(this.value)||0)">
+        <span class="cable-mod-popup-unit">°</span>
+      </div>
+      <div class="cable-mod-popup-row">
+        <label>polarity</label>
+        <select ${pinned ? '' : 'disabled'} onchange="Patch.setCableMod(${id},'polarity',this.value)">
+          <option value="bipolar" ${mod.polarity === 'bipolar' ? 'selected' : ''}>bipolar (±)</option>
+          <option value="unipolar" ${mod.polarity === 'unipolar' ? 'selected' : ''}>unipolar (+)</option>
+        </select>
+      </div>`;
+
+    // Position near the cursor, clamped so it can't run off the right/
+    // bottom edge — popup width/height are fixed in CSS, so fixed
+    // estimates are fine here without waiting on a layout pass.
+    const x = Math.min(e.clientX + 14, window.innerWidth - 200);
+    const y = Math.min(e.clientY + 14, window.innerHeight - 160);
+    popup.style.left = x + 'px';
+    popup.style.top  = y + 'px';
+    popup.classList.add('open');
+    popup.classList.toggle('pinned', pinned);
+
+    if (pinned) {
+      // Close when clicking anywhere outside the popup or the cable itself.
+      setTimeout(() => document.addEventListener('click', this._cablePopupOutsideHandler, { once: true }), 0);
+      popup.querySelector('input')?.focus();
+    }
+  },
+
+  _cablePopupOutsideHandler(e) {
+    const popup = document.getElementById('cable-mod-popup');
+    if (popup && popup.contains(e.target)) {
+      document.addEventListener('click', Patch._cablePopupOutsideHandler, { once: true });
+      return;
+    }
+    Patch.deselectCable();
+  },
+
+  maybeHideCablePopup(id) {
+    if (_cablePopupPinnedFor != null) return; // pinned popups only close via outside-click or delete
+    // Delayed check — the popup's own mouseenter (which sets `hovering`)
+    // hasn't necessarily fired yet the instant the cursor leaves the cable
+    // on its way toward the popup, so hiding synchronously here could beat
+    // the user to it.
+    setTimeout(() => {
+      if (_cablePopupPinnedFor != null) return;
+      const popup = document.getElementById('cable-mod-popup');
+      if (popup && popup.dataset.hovering) return;
+      this.hideCablePopup();
+    }, 120);
+  },
+
+  hideCablePopup() {
+    _cablePopupPinnedFor = null;
+    document.removeEventListener('click', this._cablePopupOutsideHandler);
+    document.getElementById('cable-mod-popup')?.classList.remove('open', 'pinned');
   },
 
   updateJacks() {
