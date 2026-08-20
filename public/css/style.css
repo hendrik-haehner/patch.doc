@@ -344,6 +344,17 @@ html, body {
 .tool-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
 /* patch-status moved to #patch-statusbar */
 
+.compact-gap-control {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 11px; color: var(--text2);
+}
+.compact-gap-control input {
+  width: 40px; font-size: 12px; padding: 2px 4px;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: transparent; color: var(--text1); font-family: var(--font);
+}
+.compact-gap-unit { color: var(--text2); }
+
 #patch-canvas-wrap {
   flex: 1; overflow: auto; position: relative;
   background:

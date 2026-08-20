@@ -740,12 +740,35 @@ const Patch = {
 
   // Pack all modules tightly into rows (like a hardware rack), wrapping to
   // a new row once the visible canvas width is exceeded. Order is preserved
-  // top-to-bottom, left-to-right based on current position.
+  // top-to-bottom, left-to-right based on current position. The gap between
+  // modules (and rows) is user-configurable in HP, see setCompactGap() —
+  // widths still come from each module's actual rendered size, so gaps and
+  // offsets between differently-sized panels are expected, not a bug.
+  _HP_PX: 12, // approximate on-screen px per HP, for the rack-gap control only
+  _compactGapHp: 2,
+
+  setCompactGap(hp) {
+    const v = Math.max(0, Math.min(20, Number(hp) || 0));
+    this._compactGapHp = v;
+    try { localStorage.setItem('patchdoc_compact_gap_hp', String(v)); } catch(e) {}
+    const input = document.getElementById('compact-gap-input');
+    if (input && Number(input.value) !== v) input.value = v;
+  },
+
+  initCompactGap() {
+    try {
+      const saved = localStorage.getItem('patchdoc_compact_gap_hp');
+      if (saved !== null) this._compactGapHp = Number(saved) || 0;
+    } catch(e) {}
+    const input = document.getElementById('compact-gap-input');
+    if (input) input.value = this._compactGapHp;
+  },
+
   compactLayout() {
     const patch = Store.getActivePatch();
     if (!patch.patchModules.length) { App.setStatus('no modules to compact'); return; }
 
-    const GAP = 16; // minimum spacing between modules, in px
+    const GAP = Math.round(this._compactGapHp * this._HP_PX); // rack gap, in px
     const wrapEl = document.getElementById('patch-canvas-wrap');
     const rowWidth = Math.max(600, (wrapEl ? wrapEl.clientWidth : 1200) - 40);
 
