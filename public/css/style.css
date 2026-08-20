@@ -362,7 +362,7 @@ html, body {
   display: none;
   position: fixed;
   z-index: 500;
-  width: 210px;
+  width: 230px;
   padding: 8px 10px;
   background: var(--bg1);
   border: 0.5px solid var(--border2);
@@ -394,6 +394,7 @@ html, body {
   opacity: 0.75; cursor: default;
 }
 .cable-mod-popup-unit { color: var(--text2); flex-shrink: 0; width: 12px; }
+.cable-mod-popup-unit-select { flex: 0 0 56px; }
 
 #patch-statusbar {
   flex-shrink: 0;

@@ -58,6 +58,8 @@ Panel view is a display option, toggleable at any time from the patch toolbar (*
 
 Cables can carry more than just "connected" — click any cable to document its amount, phase and polarity (e.g. how deep an LFO modulates a filter's cutoff, and in which direction). A cable with these set renders dashed on the canvas so it stands out at a glance; hover it for a quick read-only preview, click to edit.
 
+Amount has its own unit, picked per cable — a bare percentage doesn't mean much without knowing what 100% is, and that's different for an exponential (1V/oct) pitch input than for a linear FM input. Choose from `%`, semitones, quartertones, octaves, Hz or V; the app guesses a sensible starting unit from the destination port's name (e.g. "1V/Oct" suggests semitones, "FM" suggests Hz), always overridable.
+
 ![Modulation details popup](docs/screenshot_cable-modulation.png)
 
 Deleting a cable no longer happens by clicking it — select it this way, then use **delete cable** in the patch toolbar.

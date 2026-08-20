@@ -1086,12 +1086,36 @@ const Patch = {
     return Store.getActivePatch().cables.find(c => c.id === id);
   },
 
+  // "65%" only means something if you know what 100% is — an oscillator's
+  // exponential (1V/oct) pitch input and its linear FM input respond to
+  // the same voltage completely differently, so the sensible unit for
+  // "amount" depends on which input a cable actually lands on. Rather than
+  // have the app try to know that, the unit is just another field the
+  // person documenting the patch picks — this only supplies a reasonable
+  // starting guess from the destination port's name, always overridable.
+  _AMOUNT_UNITS: {
+    '%':            { label: '%',      min: 0, max: 100,  step: 1   },
+    semitones:      { label: 'semi',   min: 0, max: 60,   step: 1   },
+    quartertones:   { label: '¼tone',  min: 0, max: 120,  step: 1   },
+    octaves:        { label: 'oct',    min: 0, max: 5,    step: 0.1 },
+    Hz:             { label: 'Hz',     min: 0, max: 2000, step: 1   },
+    V:              { label: 'V',      min: 0, max: 10,   step: 0.1 },
+  },
+
+  _suggestAmountUnit(portName) {
+    const p = (portName || '').toLowerCase();
+    if (p.includes('fm')) return 'Hz';
+    if (p.includes('oct') || p.includes('pitch')) return 'semitones';
+    return '%';
+  },
+
   setCableMod(id, field, value) {
     const patch = Store.getActivePatch();
     const cable = patch.cables.find(c => c.id === id);
     if (!cable) return;
     const wasSet = !!cable.mod;
-    cable.mod = { amount: 50, phase: 0, polarity: 'bipolar', ...(cable.mod || {}), [field]: value };
+    const defaults = { amount: 50, amountUnit: this._suggestAmountUnit(cable.toPort), phase: 0, polarity: 'bipolar' };
+    cable.mod = { ...defaults, ...(cable.mod || {}), [field]: value };
     Store.updatePatch(patch.id, { cables: patch.cables });
     Undo.snapshot();
     if (!wasSet) this.renderCables(); // dash style only needs a redraw the first time
@@ -1106,6 +1130,55 @@ const Patch = {
     Undo.snapshot();
     this.hideCablePopup();
     this.renderCables();
+  },
+
+  // Rebuilds the popup's fields for a given cable without touching its
+  // position — used both by showCablePopup (first open) and by
+  // onAmountUnitChange (switching units needs a fresh min/max/step on the
+  // amount input, which is simplest as a full re-render of just the
+  // content).
+  _renderCablePopupContent(popup, cable, pinned) {
+    const id = cable.id;
+    const suggested = this._suggestAmountUnit(cable.toPort);
+    const mod = cable.mod || { amount: 50, amountUnit: suggested, phase: 0, polarity: 'bipolar' };
+    const unit = this._AMOUNT_UNITS[mod.amountUnit] ? mod.amountUnit : suggested;
+    const range = this._AMOUNT_UNITS[unit];
+
+    popup.innerHTML = `
+      <div class="cable-mod-popup-header">
+        <span>${cable.fromPort} → ${cable.toPort}</span>
+        ${pinned ? '<button class="conn-del" onclick="Patch.clearCableMod(' + id + ')" title="remove modulation data" aria-label="remove modulation data">×</button>' : ''}
+      </div>
+      <div class="cable-mod-popup-row">
+        <label>amount</label>
+        <input type="number" min="${range.min}" max="${range.max}" step="${range.step}" value="${mod.amount}" ${pinned ? '' : 'readonly'}
+          onchange="Patch.setCableMod(${id},'amount',parseFloat(this.value)||0)">
+        <select class="cable-mod-popup-unit-select" ${pinned ? '' : 'disabled'} onchange="Patch.onAmountUnitChange(${id},this.value)" title="unit — pick whatever's meaningful for this input (semitones/quartertones for pitch CV, Hz for linear FM, % otherwise)">
+          ${Object.entries(this._AMOUNT_UNITS).map(([key, u]) =>
+            `<option value="${key}" ${key === unit ? 'selected' : ''}>${u.label}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="cable-mod-popup-row">
+        <label>phase</label>
+        <input type="number" min="0" max="360" value="${mod.phase}" ${pinned ? '' : 'readonly'}
+          onchange="Patch.setCableMod(${id},'phase',parseFloat(this.value)||0)">
+        <span class="cable-mod-popup-unit">°</span>
+      </div>
+      <div class="cable-mod-popup-row">
+        <label>polarity</label>
+        <select ${pinned ? '' : 'disabled'} onchange="Patch.setCableMod(${id},'polarity',this.value)">
+          <option value="bipolar" ${mod.polarity === 'bipolar' ? 'selected' : ''}>bipolar (±)</option>
+          <option value="unipolar" ${mod.polarity === 'unipolar' ? 'selected' : ''}>unipolar (+)</option>
+        </select>
+      </div>`;
+  },
+
+  onAmountUnitChange(id, unit) {
+    this.setCableMod(id, 'amountUnit', unit);
+    const popup = document.getElementById('cable-mod-popup');
+    const cable = this._cableById(id);
+    if (popup && cable) this._renderCablePopupContent(popup, cable, true);
   },
 
   // Shows the floating amount/phase/polarity popup near the cursor.
@@ -1132,37 +1205,13 @@ const Patch = {
     }
     _cablePopupPinnedFor = pinned ? id : _cablePopupPinnedFor;
 
-    const mod = cable.mod || { amount: 50, phase: 0, polarity: 'bipolar' };
     popup.dataset.cableId = id;
-    popup.innerHTML = `
-      <div class="cable-mod-popup-header">
-        <span>${cable.fromPort} → ${cable.toPort}</span>
-        ${pinned ? '<button class="conn-del" onclick="Patch.clearCableMod(' + id + ')" title="remove modulation data" aria-label="remove modulation data">×</button>' : ''}
-      </div>
-      <div class="cable-mod-popup-row">
-        <label>amount</label>
-        <input type="number" min="0" max="100" value="${mod.amount}" ${pinned ? '' : 'readonly'}
-          onchange="Patch.setCableMod(${id},'amount',parseFloat(this.value)||0)">
-        <span class="cable-mod-popup-unit">%</span>
-      </div>
-      <div class="cable-mod-popup-row">
-        <label>phase</label>
-        <input type="number" min="0" max="360" value="${mod.phase}" ${pinned ? '' : 'readonly'}
-          onchange="Patch.setCableMod(${id},'phase',parseFloat(this.value)||0)">
-        <span class="cable-mod-popup-unit">°</span>
-      </div>
-      <div class="cable-mod-popup-row">
-        <label>polarity</label>
-        <select ${pinned ? '' : 'disabled'} onchange="Patch.setCableMod(${id},'polarity',this.value)">
-          <option value="bipolar" ${mod.polarity === 'bipolar' ? 'selected' : ''}>bipolar (±)</option>
-          <option value="unipolar" ${mod.polarity === 'unipolar' ? 'selected' : ''}>unipolar (+)</option>
-        </select>
-      </div>`;
+    this._renderCablePopupContent(popup, cable, pinned);
 
     // Position near the cursor, clamped so it can't run off the right/
     // bottom edge — popup width/height are fixed in CSS, so fixed
     // estimates are fine here without waiting on a layout pass.
-    const x = Math.min(e.clientX + 14, window.innerWidth - 200);
+    const x = Math.min(e.clientX + 14, window.innerWidth - 230);
     const y = Math.min(e.clientY + 14, window.innerHeight - 160);
     popup.style.left = x + 'px';
     popup.style.top  = y + 'px';
