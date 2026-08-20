@@ -51,6 +51,33 @@
   --danger: #a8402f;
 }
 
+/* Custom — user-edited via the theme editor (see themeeditor.js). Static
+   dark-theme fallback for the brief instant before JS applies the actual
+   saved custom values (or before the user has customized anything at all);
+   ThemeEditor.applyCustomVars() overrides every one of these via inline
+   styles, which win over this attribute selector. */
+[data-theme="custom"] {
+  --bg0: #1e1e1e;
+  --bg1: #262626;
+  --bg2: #2e2e2e;
+  --bg3: #383838;
+  --chrome-bg: #161616;
+  --canvas-bg: #252523;
+  --module-bg: #1a1a1a;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.14);
+  --module-border: rgba(255,255,255,0.26);
+  --text0: #e8e8e8;
+  --text1: #9a9a9a;
+  --text2: #6a6a6a;
+  --accent: #4772b3;
+  --accent-bg: rgba(71,114,179,0.14);
+  --accent-border: rgba(71,114,179,0.45);
+  --dot-color: #383838;
+  --success: #6fa85c;
+  --danger: #c4584a;
+}
+
 /* adaptive: follow OS color scheme unless manually overridden */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
@@ -1759,6 +1786,58 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
 .conn-add-row .tool-btn { flex-shrink: 0; }
 .conn-empty-hint {
   font-size: 11px; color: var(--text2); padding: 6px 10px 10px;
+}
+
+/* ── theme editor modal ── */
+.theme-editor-modal {
+  width: 460px; max-width: 96vw;
+  height: 82vh; max-height: 92vh;
+  display: flex; flex-direction: column;
+  overflow: hidden; /* .modal's own overflow-y:auto would scroll the whole dialog instead */
+}
+.theme-editor-modal h3,
+.theme-editor-modal .theme-editor-toolbar,
+.theme-editor-modal .theme-editor-json-area,
+.theme-editor-modal .modal-actions { flex-shrink: 0; }
+.theme-editor-toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.theme-editor-hint { font-size: 10px; color: var(--text2); flex: 1 1 100%; }
+#theme-editor-body {
+  flex: 1; min-height: 0; overflow-y: auto;
+  border: 0.5px solid var(--border); border-radius: var(--radius);
+  padding: 8px 10px; margin-bottom: 10px;
+}
+.theme-editor-group-label {
+  font-size: 10px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase;
+  margin: 12px 0 5px;
+}
+.theme-editor-group:first-child .theme-editor-group-label { margin-top: 0; }
+.theme-editor-row {
+  display: flex; align-items: center; gap: 8px; padding: 3px 0;
+}
+.theme-editor-row-label { flex: 1; font-size: 11px; color: var(--text1); }
+.theme-editor-row input[type="color"] {
+  width: 28px; height: 22px; padding: 0; border: 0.5px solid var(--border2);
+  border-radius: 4px; background: transparent; cursor: pointer; flex-shrink: 0;
+}
+.theme-editor-alpha {
+  width: 48px; font-size: 11px; padding: 3px 5px;
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg0); color: var(--text0); font-family: var(--font); flex-shrink: 0;
+}
+.theme-editor-alpha-unit { font-size: 10px; color: var(--text2); flex-shrink: 0; }
+.theme-editor-json-area {
+  margin-top: 4px;
+}
+.theme-editor-json-area label {
+  font-size: 10px; color: var(--text2); display: block; margin-bottom: 4px; letter-spacing: 0.1em;
+}
+#theme-editor-json {
+  width: 100%; box-sizing: border-box; height: 64px; resize: vertical;
+  font-size: 10px; padding: 6px 8px; font-family: var(--font);
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  background: var(--bg0); color: var(--text1);
 }
 
 /* ── manuals tab ── */

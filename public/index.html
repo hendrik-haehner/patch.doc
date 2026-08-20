@@ -17,6 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
   <script src="js/theme.js"></script>
+  <script src="js/themeeditor.js"></script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -83,6 +84,9 @@
       <button class="icon-btn desktop-only-btn" onclick="GlobalSearch.open()" title="Globale Modulsuche (Cmd+F)" aria-label="Globale Modulsuche" id="global-search-btn"><i class="ti ti-search" aria-hidden="true"></i></button>
       <button class="icon-btn desktop-only-btn" onclick="document.getElementById('shortcuts-modal').classList.toggle('open')" title="Tastaturkürzel" aria-label="Tastaturkürzel">
         <i class="ti ti-keyboard" aria-hidden="true"></i>
+      </button>
+      <button class="icon-btn desktop-only-btn" onclick="ThemeEditor.open()" title="Theme-Editor" aria-label="Theme-Editor">
+        <i class="ti ti-palette" aria-hidden="true"></i>
       </button>
       <span id="topbar-username-desktop" style="font-size:10px;color:var(--text2);letter-spacing:0.08em;flex-shrink:0"></span>
       <span id="topbar-version" style="font-size:10px;color:var(--text2);letter-spacing:0.08em;flex-shrink:0" title="App-Version"></span>
@@ -625,6 +629,27 @@
     </div>
     <div class="modal-actions" style="margin-top:14px">
       <button class="btn-primary" onclick="document.getElementById('shortcuts-modal').classList.remove('open')">close</button>
+    </div>
+  </div>
+</div>
+
+<!-- theme editor modal -->
+<div id="theme-editor-modal" class="modal-bg" onclick="if(event.target===this)ThemeEditor.close()">
+  <div class="modal theme-editor-modal">
+    <h3>theme editor</h3>
+    <div class="theme-editor-toolbar">
+      <button class="tool-btn" onclick="ThemeEditor.resetFrom('studio')">von Dunkel übernehmen</button>
+      <button class="tool-btn" onclick="ThemeEditor.resetFrom('studio-light')">von Hell übernehmen</button>
+      <span class="theme-editor-hint">Änderungen werden sofort live angewendet und lokal gespeichert.</span>
+    </div>
+    <div id="theme-editor-body"></div>
+    <div class="theme-editor-json-area">
+      <label>JSON (kopieren zum Teilen, oder einfügen zum Importieren)</label>
+      <textarea id="theme-editor-json" spellcheck="false"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="tool-btn" onclick="ThemeEditor.importJson(document.getElementById('theme-editor-json').value)">JSON übernehmen</button>
+      <button class="btn-primary" onclick="ThemeEditor.close()">close</button>
     </div>
   </div>
 </div>

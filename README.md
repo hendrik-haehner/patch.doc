@@ -33,7 +33,7 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **Templates** — mark patches as templates and create new patches from them
 - **Rack layout** — pack modules tightly into rows with a defined HP gap, like a real case (see [below](#panel-layout))
 - **Shared patches** — share patches between users via a common pool
-- **Dark / Light theme** — follows OS preference, manually toggleable
+- **Dark / Light theme** — follows OS preference, manually toggleable; or design your own in the theme editor (see [below](#theme-editor))
 - **Mobile-optimized** — responsive touch UI with hamburger menu and patch dropdown
 - **PWA** — installable as a home screen app on iOS and Android
 - **Multi-user** — each user has their own patches and media; modules and manuals are shared
@@ -78,6 +78,16 @@ Browse and import module definitions shared by other PATCH.doc users, from the m
 ![Community modules browser](docs/screenshot_community-modules.png)
 
 The shared library lives in its own repo, [patchdoc-modules](https://github.com/hendrik-haehner/patchdoc-modules) — export any of your own modules as JSON from the **export** tab to contribute one back.
+
+---
+
+## Theme editor
+
+Beyond the built-in dark/light themes, the theme editor (palette icon in the topbar) lets you tweak the app's ~19 color tokens directly — backgrounds, text, borders, accent and status colors — each with a color picker and its own opacity. Changes apply live as you edit and save to that browser automatically.
+
+![Theme editor](docs/screenshot_theme-editor.png)
+
+Start from either built-in theme with **von Dunkel/Hell übernehmen**, then adjust from there. The JSON box at the bottom doubles as export (copy it out) and import (paste a theme and click **JSON übernehmen**) — a simple way to share a custom theme with someone else.
 
 ---
 
