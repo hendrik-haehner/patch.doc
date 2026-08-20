@@ -89,10 +89,11 @@ jobs:
           sed -i 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/src-tauri/tauri.conf.json
           sed -i 's/"version": "[^"]*"/"version": "'"$version"'"/' desktop/package.json
           sed -i 's/^version = "[^"]*"/version = "'"$version"'"/' desktop/src-tauri/Cargo.toml
+          sed -i "s/^const APP_VERSION = '[^']*';/const APP_VERSION = '$version';/" public/js/version.js
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add desktop/src-tauri/tauri.conf.json desktop/package.json desktop/src-tauri/Cargo.toml
+            git add desktop/src-tauri/tauri.conf.json desktop/package.json desktop/src-tauri/Cargo.toml public/js/version.js
             git commit -m "chore: bump desktop app version to $version [skip ci]"
             git push origin HEAD:main
           fi
