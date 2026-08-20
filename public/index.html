@@ -176,7 +176,12 @@
         <button class="tool-btn" id="redo-btn" onclick="Undo.redo()" title="Redo (⌘Y)" style="opacity:0.35">↪ redo</button>
         <button class="tool-btn" id="snap-btn" onclick="Patch.toggleSnap()" title="Grid-Einrasten">snap off</button>
         <button class="tool-btn" onclick="Patch.alignToGrid()" title="Align all modules to grid">⊞ align</button>
-        <button class="tool-btn" onclick="Patch.compactLayout()" title="Pack modules into rows with minimum spacing">⊟ compact</button>
+        <button class="tool-btn" onclick="Patch.compactLayout()" title="Pack modules into rows like a hardware rack, using the gap below">⊟ compact</button>
+        <span class="compact-gap-control" title="Gap between modules when packing (HP)">
+          <input type="number" id="compact-gap-input" min="0" max="20" step="0.5" value="2"
+                 onchange="Patch.setCompactGap(this.value)" aria-label="Rack gap in HP">
+          <span class="compact-gap-unit">HP</span>
+        </span>
         <button class="tool-btn" id="collapse-all-btn" onclick="Patch.toggleAllCollapse()" title="Toggle all parameters">▴ params</button>
         <button class="tool-btn" id="hide-cables-btn" onclick="Patch.toggleCablesVisible()" title="Show/hide all cables">⌁ cables</button>
         <button class="tool-btn" id="panel-mode-btn" onclick="Patch.togglePanelMode()" title="Toggle front-panel-style layout for modules that have one">panel view</button>

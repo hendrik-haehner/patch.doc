@@ -76,6 +76,7 @@ const App = {
     this._updateTouchPatchDropdown();
     this._bindGlobal();
     Patch.initSnap();
+    Patch.initCompactGap();
     this.initModuleSection();
     Mobile.init();
     Undo.init();

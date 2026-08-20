@@ -31,6 +31,7 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **PDF export** — print-ready patch documentation (canvas + parameters + connections)
 - **Global module search** — find which patches use a specific module (Cmd+F)
 - **Templates** — mark patches as templates and create new patches from them
+- **Rack layout** — pack modules tightly into rows with a defined HP gap, like a real case (see [below](#panel-layout))
 - **Shared patches** — share patches between users via a common pool
 - **Dark / Light theme** — follows OS preference, manually toggleable
 - **Mobile-optimized** — responsive touch UI with hamburger menu and patch dropdown
@@ -51,6 +52,10 @@ Turn it on per-module from the module editor's **edit panel layout** button: dra
 ![Panel layout editor](docs/screenshot_panel-editor.png)
 
 Panel view is a display option, toggleable at any time from the patch toolbar (**panel view** / **list view**) — modules without a panel layout always render as a list either way.
+
+Combined with **compact** in the patch toolbar, panel view turns into a rack layout: it packs every module tightly into rows, in real front-panel widths, spaced by the gap you set (in HP) next to the button. Because module heights differ, rows won't line up perfectly on the bottom edge — that's expected, same as a real case with mixed-height modules. Build a rack this way, mark it as a template, and **new patch from template** gives you the same physical layout to wire up differently each time.
+
+![Rack layout](docs/screenshot_rack-layout.png)
 
 ---
 
