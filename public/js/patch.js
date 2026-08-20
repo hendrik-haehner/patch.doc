@@ -1109,13 +1109,44 @@ const Patch = {
     return '%';
   },
 
+  // Fills in defaults and clamps `amount` to whatever unit is active, in
+  // one place both setCableMod and the popup's renderer share — needed for
+  // two cases: a fresh cable defaults amount to 50 regardless of which
+  // unit ends up picked (switching straight to e.g. "V", max 10, would
+  // otherwise leave an invalid 50V stored/displayed), and a cable saved
+  // before units existed has no amountUnit field at all, which must
+  // default to '%' specifically — the only unit that existed back then —
+  // rather than run the port-name suggestion against an old value that
+  // was never meant to be semitones/Hz/etc. Suggestion only ever applies
+  // to a cable that's never had mod data before.
+  _normalizeMod(rawMod, toPort) {
+    const wasSet = !!rawMod;
+    const defaults = {
+      amount: 50,
+      amountUnit: wasSet ? '%' : this._suggestAmountUnit(toPort),
+      phase: 0,
+      polarity: 'bipolar',
+    };
+    const mod = { ...defaults, ...(rawMod || {}) };
+    mod.amountUnit = this._AMOUNT_UNITS[mod.amountUnit] ? mod.amountUnit : '%';
+    const range = this._AMOUNT_UNITS[mod.amountUnit];
+    mod.amount = Math.min(range.max, Math.max(range.min, Number(mod.amount) || 0));
+    return mod;
+  },
+
   setCableMod(id, field, value) {
     const patch = Store.getActivePatch();
     const cable = patch.cables.find(c => c.id === id);
     if (!cable) return;
     const wasSet = !!cable.mod;
-    const defaults = { amount: 50, amountUnit: this._suggestAmountUnit(cable.toPort), phase: 0, polarity: 'bipolar' };
-    cable.mod = { ...defaults, ...(cable.mod || {}), [field]: value };
+    const next = this._normalizeMod(cable.mod, cable.toPort);
+    next[field] = value;
+    // Re-clamp after applying the edit — matters when `field` was
+    // 'amountUnit' itself, since the previous amount may not fit the
+    // newly-picked unit's range.
+    const range = this._AMOUNT_UNITS[next.amountUnit] || this._AMOUNT_UNITS['%'];
+    next.amount = Math.min(range.max, Math.max(range.min, Number(next.amount) || 0));
+    cable.mod = next;
     Store.updatePatch(patch.id, { cables: patch.cables });
     Undo.snapshot();
     if (!wasSet) this.renderCables(); // dash style only needs a redraw the first time
@@ -1139,9 +1170,8 @@ const Patch = {
   // content).
   _renderCablePopupContent(popup, cable, pinned) {
     const id = cable.id;
-    const suggested = this._suggestAmountUnit(cable.toPort);
-    const mod = cable.mod || { amount: 50, amountUnit: suggested, phase: 0, polarity: 'bipolar' };
-    const unit = this._AMOUNT_UNITS[mod.amountUnit] ? mod.amountUnit : suggested;
+    const mod = this._normalizeMod(cable.mod, cable.toPort);
+    const unit = mod.amountUnit;
     const range = this._AMOUNT_UNITS[unit];
 
     popup.innerHTML = `
