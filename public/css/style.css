@@ -1981,8 +1981,10 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
 [data-touch-mode="1"] .desktop-only-btn { display: none !important; }
 [data-touch-mode="1"] #save-indicator-desktop { display: none !important; }
 [data-touch-mode="1"] #topbar-username-desktop { display: none !important; }
+[data-touch-mode="1"] #topbar-version { display: none !important; }
 #save-indicator-desktop { flex-shrink: 0; }
 #topbar-username-desktop { flex-shrink: 0; }
+#topbar-version { flex-shrink: 0; }
 
 /* Portrait touch: hide tab-row, show touch buttons */
 @media (orientation: portrait) {
@@ -2003,6 +2005,7 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
   [data-touch-mode="1"] .desktop-only-btn { display: flex !important; }
   [data-touch-mode="1"] #save-indicator-desktop { display: inline !important; }
   [data-touch-mode="1"] #topbar-username-desktop { display: inline !important; }
+  [data-touch-mode="1"] #topbar-version { display: inline !important; }
 }
 
 /* Touch dropdown menu panel */

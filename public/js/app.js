@@ -64,6 +64,9 @@ const App = {
     if (unEl && Store.username) unEl.textContent = Store.username;
     const unElD = document.getElementById('topbar-username-desktop');
     if (unElD && Store.username) unElD.textContent = Store.username;
+    // Show app version in topbar (synced by the release workflow, see version.js)
+    const versionEl = document.getElementById('topbar-version');
+    if (versionEl && typeof APP_VERSION !== 'undefined' && APP_VERSION) versionEl.textContent = 'v' + APP_VERSION;
     // Show admin link for admins
     if (Store.isAdmin) {
       document.querySelectorAll('.admin-link').forEach(el => el.style.display = 'flex');
