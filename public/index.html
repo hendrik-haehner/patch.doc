@@ -30,7 +30,12 @@
       <button class="icon-btn" id="sidebar-desktop-toggle" onclick="App.toggleDesktopSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
         <i class="ti ti-layout-sidebar" aria-hidden="true"></i>
       </button>
-      <span class="brand"><span class="brand-icon-char">◉</span> PATCH<span>.</span>doc</span>
+      <span class="brand">
+        <svg class="brand-icon-svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="6"/>
+          <circle cx="50" cy="50" r="18.5" fill="currentColor"/>
+        </svg>
+        PATCH<span>.</span>doc</span>
     </div>
     <!-- Touch patch select — takes remaining space between brand and right buttons -->
     <div id="touch-patch-select-wrap">
