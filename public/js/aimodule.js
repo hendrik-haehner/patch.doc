@@ -22,7 +22,7 @@ const AIModule = (() => {
     const maker = document.getElementById('m-maker').value.trim();
     const name  = document.getElementById('m-name').value.trim();
     if (!maker || !name) {
-      App.setStatus('Hersteller und Modulname zuerst eingeben, dann KI-Vorschlag anfragen');
+      App.setStatus('enter manufacturer and module name first, then request an AI suggestion');
       document.getElementById(maker ? 'm-name' : 'm-maker').focus();
       return;
     }
@@ -76,14 +76,14 @@ JSON shape (all fields required, arrays may be empty):
     const key   = document.getElementById('ai-key').value.trim();
     const model = document.getElementById('ai-model').value.trim() || DEFAULT_MODEL;
     const hint  = document.getElementById('ai-hint').value.trim();
-    if (!key) { _setStatus('Bitte API-Key eingeben.', 'err'); return; }
+    if (!key) { _setStatus('please enter an API key.', 'err'); return; }
 
     try { localStorage.setItem(KEY_STORAGE, key); } catch(e) {}
     try { localStorage.setItem(MODEL_STORAGE, model); } catch(e) {}
 
     const genBtn = document.getElementById('ai-module-generate-btn');
     genBtn.disabled = true;
-    _setStatus('recherchiere ' + maker + ' ' + name + ' …', '');
+    _setStatus('researching ' + maker + ' ' + name + ' …', '');
 
     let userMsg = 'Module: ' + maker + ' ' + name;
     if (hint) userMsg += '\nHint: ' + hint;
@@ -121,16 +121,16 @@ JSON shape (all fields required, arrays may be empty):
         .map(b => b.text)
         .join('\n')
         .trim();
-      if (!text) throw new Error('leere Antwort vom Modell');
+      if (!text) throw new Error('empty response from the model');
 
       const parsed = _extractJson(text);
       _applyDraft(parsed, maker, name);
 
       close();
       document.getElementById('ai-module-banner').style.display = 'block';
-      App.setStatus('KI-Vorschlag eingefügt — bitte prüfen vor dem Speichern');
+      App.setStatus('AI suggestion filled in — please review before saving');
     } catch(err) {
-      _setStatus('Fehler: ' + err.message, 'err');
+      _setStatus('error: ' + err.message, 'err');
     } finally {
       genBtn.disabled = false;
     }
@@ -139,7 +139,7 @@ JSON shape (all fields required, arrays may be empty):
   function _extractJson(text) {
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
-    if (start === -1 || end === -1 || end < start) throw new Error('keine JSON-Antwort erkannt');
+    if (start === -1 || end === -1 || end < start) throw new Error('no JSON response detected');
     return JSON.parse(text.slice(start, end + 1));
   }
 

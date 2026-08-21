@@ -84,7 +84,7 @@ The shared library lives in its own repo, [patchdoc-modules](https://github.com/
 
 ## AI module draft
 
-Don't want to type out every jack and knob by hand? Fill in manufacturer + name in the add-module form, then hit **✨ AI-Vorschlag** next to **browse module repo**. With your own [Anthropic API key](https://console.anthropic.com/settings/keys) (entered once, stored only in that browser — never sent anywhere but `api.anthropic.com`, never synced), a Claude model searches the web for the module's real manual and pre-fills inputs, outputs and parameters from it.
+Don't want to type out every jack and knob by hand? Fill in manufacturer + name in the add-module form, then hit **AI suggestion** next to **browse module repo**. With your own [Anthropic API key](https://console.anthropic.com/settings/keys) (entered once, stored only in that browser — never sent anywhere but `api.anthropic.com`, never synced), a Claude model searches the web for the module's real manual and pre-fills inputs, outputs and parameters from it.
 
 ![AI module draft](docs/screenshot_ai-module.png)
 
