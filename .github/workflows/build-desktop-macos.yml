@@ -110,6 +110,29 @@ jobs:
           git tag "${{ steps.release.outputs.tag }}"
           git push origin "${{ steps.release.outputs.tag }}"
 
+      # Turns merge-commit subjects since the previous release tag into a
+      # "what's new" list for the release body. Relies on this repo's own
+      # convention of "Merge: <description>" commit messages (see the merge
+      # instructions Claude works from) — generate_release_notes below stays
+      # on as a fallback since it's free, but it only has real PR data to
+      # summarize in repos that merge via GitHub PRs, which this one doesn't.
+      - name: Build "what's new" list from merge commits since last release
+        id: changelog
+        if: steps.release.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          current="${{ steps.release.outputs.tag }}"
+          git fetch --tags --quiet
+          prev="$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "$current" | sort -V | tail -1 || true)"
+          range="HEAD"
+          if [[ -n "$prev" ]]; then range="$prev..HEAD"; fi
+          notes="$(git log $range --merges --pretty=format:'%s' | sed -n 's/^Merge: /- /p')"
+          {
+            echo "notes<<CHANGELOG_EOF"
+            if [[ -n "$notes" ]]; then echo "$notes"; else echo "- maintenance / internal changes"; fi
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       # Creates the (asset-less, for now) Release with its notes/body here,
       # once, before the macOS and Windows builds start — they run in
       # parallel and only attach their own files afterwards, never touching
@@ -121,6 +144,9 @@ jobs:
           tag_name: ${{ steps.release.outputs.tag }}
           generate_release_notes: true
           body: |
+            ### What's new
+            ${{ steps.changelog.outputs.notes }}
+
             **Windows**: this build isn't signed, so Windows SmartScreen may show "Windows protected your PC" when you first run the installer. Click **More info → Run anyway** — it isn't actually unsafe, just unsigned (no paid code-signing certificate).
 
             **macOS**: same idea if you see "PATCH.doc is damaged and can't be opened" — the `.dmg` includes a README with the one-line fix.
