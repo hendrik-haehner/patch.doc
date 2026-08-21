@@ -78,18 +78,18 @@
         <i class="ti ti-dots-vertical" aria-hidden="true"></i>
       </button>
       <span id="save-indicator-desktop" style="font-size:10px;letter-spacing:0.06em;flex-shrink:0"></span>
+      <span id="topbar-version" style="font-size:10px;color:var(--text2);letter-spacing:0.08em;flex-shrink:0" title="App-Version"></span>
       <button class="icon-btn desktop-only-btn" id="theme-toggle-btn" onclick="Theme.toggle()" title="Theme wechseln" aria-label="Theme wechseln">
         <i class="ti ti-moon" aria-hidden="true" id="theme-icon"></i>
+      </button>
+      <button class="icon-btn desktop-only-btn" onclick="ThemeEditor.open()" title="Theme-Editor" aria-label="Theme-Editor">
+        <i class="ti ti-palette" aria-hidden="true"></i>
       </button>
       <button class="icon-btn desktop-only-btn" onclick="GlobalSearch.open()" title="Globale Modulsuche (Cmd+F)" aria-label="Globale Modulsuche" id="global-search-btn"><i class="ti ti-search" aria-hidden="true"></i></button>
       <button class="icon-btn desktop-only-btn" onclick="document.getElementById('shortcuts-modal').classList.toggle('open')" title="Tastaturkürzel" aria-label="Tastaturkürzel">
         <i class="ti ti-keyboard" aria-hidden="true"></i>
       </button>
-      <button class="icon-btn desktop-only-btn" onclick="ThemeEditor.open()" title="Theme-Editor" aria-label="Theme-Editor">
-        <i class="ti ti-palette" aria-hidden="true"></i>
-      </button>
       <span id="topbar-username-desktop" style="font-size:10px;color:var(--text2);letter-spacing:0.08em;flex-shrink:0"></span>
-      <span id="topbar-version" style="font-size:10px;color:var(--text2);letter-spacing:0.08em;flex-shrink:0" title="App-Version"></span>
       <a href="/settings" class="icon-btn desktop-only-btn server-only" title="Settings" aria-label="Settings" style="text-decoration:none">
         <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
       </a>
