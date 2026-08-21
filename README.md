@@ -28,6 +28,7 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **Media** — attach photos and audio recordings to patches
 - **Manuals** — upload PDF manuals per module (shared across all users)
 - **Community modules** — browse and import module definitions shared by other users, in every version (browser, desktop, self-hosted); export your own as JSON from the export tab to contribute one back (see [below](#community-modules))
+- **AI module draft** — bring your own Anthropic API key and have a Claude model research a real module's ports and parameters, pre-filling the add-module form (see [below](#ai-module-draft))
 - **PDF export** — print-ready patch documentation (canvas + parameters + connections)
 - **Global module search** — find which patches use a specific module (Cmd+F)
 - **Templates** — mark patches as templates and create new patches from them
@@ -78,6 +79,16 @@ Browse and import module definitions shared by other PATCH.doc users, from the m
 ![Community modules browser](docs/screenshot_community-modules.png)
 
 The shared library lives in its own repo, [patchdoc-modules](https://github.com/hendrik-haehner/patchdoc-modules) — export any of your own modules as JSON from the **export** tab to contribute one back.
+
+---
+
+## AI module draft
+
+Don't want to type out every jack and knob by hand? Fill in manufacturer + name in the add-module form, then hit **✨ AI-Vorschlag** next to **browse module repo**. With your own [Anthropic API key](https://console.anthropic.com/settings/keys) (entered once, stored only in that browser — never sent anywhere but `api.anthropic.com`, never synced), a Claude model searches the web for the module's real manual and pre-fills inputs, outputs and parameters from it.
+
+![AI module draft](docs/screenshot_ai-module.png)
+
+It's a draft, not an oracle — always check the result against the manual before saving, and treat it the same way you would a first pass someone else handed you. It deliberately doesn't touch the front-panel layout: control positions aren't something text research can reliably determine, so that stays a manual step in the panel editor, same as for any other module. Runs the exact same way in the browser, desktop and self-hosted versions — no server involved, so it costs your own API usage, not the project's.
 
 ---
 

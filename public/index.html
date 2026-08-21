@@ -367,7 +367,13 @@
   <div class="modal" role="dialog" aria-label="Add module">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px">
       <h3 id="module-modal-title" style="margin-bottom:0">add module</h3>
-      <button id="browse-module-repo-btn" class="io-add-btn" onclick="Community.open()" title="browse the community module repo">browse module repo</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        <button id="browse-module-repo-btn" class="io-add-btn" style="white-space:nowrap" onclick="Community.open()" title="browse the community module repo">browse module repo</button>
+        <button id="ai-module-btn" class="io-add-btn" style="white-space:nowrap" onclick="AIModule.open()" title="let an AI model research this module's ports and parameters">✨ AI-Vorschlag</button>
+      </div>
+    </div>
+    <div id="ai-module-banner" class="ai-module-banner" style="display:none">
+      ✨ KI-Vorschlag — bitte Ports und Werte gegen das Manual prüfen, bevor du speicherst.
     </div>
     <div class="field">
       <label>manufacturer</label>
@@ -518,6 +524,35 @@
   </div>
 </div>
 
+<!-- AI module draft modal — asks for the Anthropic API key (bring-your-own,
+     stored locally only, never sent anywhere but api.anthropic.com) and an
+     optional research hint, then fills the add-module form behind it. -->
+<div id="ai-module-modal-bg" class="modal-bg" onmousedown="window._modalMousedownOnBg=(event.target===this)" onmouseup="if(window._modalMousedownOnBg&&event.target===this)AIModule.close()">
+  <div class="modal" role="dialog" aria-label="AI module draft" style="width:360px">
+    <h3>KI-Vorschlag</h3>
+    <p style="font-size:11px;color:var(--text2);margin:-6px 0 12px">
+      Recherchiert Ports und Parameter für <strong id="ai-module-target" style="color:var(--text0)"></strong> im Web und füllt das Formular aus — bitte danach prüfen.
+    </p>
+    <div class="field">
+      <label>Anthropic API-Key</label>
+      <input id="ai-key" type="password" placeholder="sk-ant-..." autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Modell</label>
+      <input id="ai-model" type="text" placeholder="claude-sonnet-4-5-20250929">
+    </div>
+    <div class="field">
+      <label>Hinweis (optional)</label>
+      <input id="ai-hint" type="text" placeholder="z.B. Link zum Manual, Revision, ..." autocomplete="off">
+    </div>
+    <div id="ai-module-status" style="font-size:11px;min-height:14px;margin-top:2px"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="AIModule.close()">cancel</button>
+      <button id="ai-module-generate-btn" class="btn-primary" onclick="AIModule.generate()">Vorschlag generieren</button>
+    </div>
+  </div>
+</div>
+
 <!-- community modules browse/import modal -->
 <div id="community-modal-bg" class="modal-bg" onmousedown="window._modalMousedownOnBg=(event.target===this)" onmouseup="if(window._modalMousedownOnBg&&event.target===this)Community.close()">
   <div class="modal" role="dialog" aria-label="Browse community modules">
@@ -664,6 +699,7 @@
 <script src="js/media.js"></script>
 <script src="js/manuals.js"></script>
 <script src="js/community.js"></script>
+<script src="js/aimodule.js"></script>
 <script src="js/paneleditor.js"></script>
 <script src="js/undo.js"></script>
 <script src="js/patch.js"></script>
