@@ -715,6 +715,11 @@ html, body {
   font-size: 13px; font-weight: 600; color: var(--text0); margin-bottom: 8px;
   display: flex; align-items: baseline; gap: 6px;
 }
+.ai-module-banner {
+  font-size: 11px; color: var(--accent);
+  border: 0.5px solid var(--accent-border); border-radius: var(--radius);
+  background: var(--accent-bg); padding: 8px 10px; margin-bottom: 12px;
+}
 .panel-layout-optional {
   font-size: 10px; font-weight: 400; color: var(--text2); letter-spacing: 0.08em;
 }
