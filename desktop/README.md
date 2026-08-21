@@ -49,10 +49,10 @@ cross-compile installers by default, so macOS/Windows builds need to run
 on that OS, e.g. in CI) under `src-tauri/target/release/bundle/`.
 
 CI (`.github/workflows/build-desktop-macos.yml`) builds macOS on every
-push to `main`, and adds a Windows build (`.msi` + `.exe`) whenever that
-run also cuts a [Release](../../../releases) — a tag push, or a manual
-**Actions → Build desktop app → Run workflow**. Linux isn't built by CI;
-build it yourself with the steps above on a Linux machine.
+push to `main`, and adds Windows (`.msi` + `.exe`) and Linux (`.deb` +
+`.AppImage`) builds whenever that run also cuts a
+[Release](../../../releases) — a tag push, or a manual
+**Actions → Build desktop app → Run workflow**.
 
 ## Troubleshooting: macOS says the app is damaged
 
@@ -77,6 +77,20 @@ Same root cause as above — no paid code-signing certificate, so Windows
 SmartScreen shows *"Windows protected your PC"* the first time you run
 the `.msi`/`.exe`. It isn't actually unsafe, just unsigned. Click **More
 info → Run anyway** to proceed.
+
+## Troubleshooting: AppImage won't launch
+
+Downloaded `.AppImage` files aren't executable by default. Make it
+executable once, then run it directly:
+
+```bash
+chmod +x PATCH.doc_*.AppImage
+./PATCH.doc_*.AppImage
+```
+
+The `.deb` doesn't need this — install it normally (`sudo apt install
+./patchdoc_*.deb` or your distro's package manager) and launch from your
+app menu.
 
 ## Icons
 
