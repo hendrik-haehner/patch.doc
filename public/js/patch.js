@@ -350,7 +350,7 @@ const Patch = {
       const svgSize   = cellSpan * 50 + (cellSpan - 1) * 4 - 12;
       const valFont   = Math.round(10 * (svgSize / 38));
       return `<div class="pm-knob-wrap${markCol ? ' marked' : ''}" data-pmid="${pmId}" data-def="${encodeURIComponent(JSON.stringify(def))}" data-val="${v}"
-        title="${def.name}: ${this._fmtVal(v, def)} (${min}\u2013${max})"
+        title="${def.name}: ${this._fmtVal(v, def)} (${min} to ${max})"
         oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
         ${this._knobSVG(id, pct, col, markRing, svgSize)}
         <div class="pm-ctrl-val" id="val-${id}" style="font-size:${valFont}px">${this._fmtDisplay(v, pct, def)}</div>
@@ -524,7 +524,7 @@ const Patch = {
 
     wrap.addEventListener('dblclick', async e => {
       e.stopPropagation();
-      const newVal = await IO.promptAsync(`${def.name} (${min}–${max}):`, Math.round(val));
+      const newVal = await IO.promptAsync(`${def.name} (${min} to ${max}):`, Math.round(val));
       if (newVal === null) return;
       const n = parseFloat(newVal);
       if (!isNaN(n)) {

@@ -1472,7 +1472,7 @@ const App = {
         <span class="pdef-handle" title="drag to reorder">⠿</span>
         <span class="pdef-type pdef-type-${d.type}">${d.type}</span>
         <span class="pdef-name">${d.name}</span>
-        <span class="pdef-detail">${d.type==='knob' ? d.min+'–'+d.max + (d.display==='clock' ? ' · clock' : d.display==='freq' ? ' · Hz' : '') : d.type==='enum' ? (d.options||'').substring(0,20) : ''}</span>
+        <span class="pdef-detail">${d.type==='knob' ? d.min+' to '+d.max + (d.display==='clock' ? ' · clock' : d.display==='freq' ? ' · Hz' : '') : d.type==='enum' ? (d.options||'').substring(0,20) : ''}</span>
         <button class="pdef-edit" onclick="App.editParamDef(${i},event)" title="edit">✎</button>
         <button class="pdef-del" onclick="App.removeParamDef(${i},event)">×</button>
       </div>`).join('') || '<div class="pdef-empty">no parameters defined</div>';
@@ -1552,9 +1552,17 @@ const App = {
       if (def.display === 'clock') {
         def.min = 0; def.max = 100; def.default = 0;
       } else {
-        def.min     = parseFloat(document.getElementById('pdef-min').value) || 0;
-        def.max     = parseFloat(document.getElementById('pdef-max').value) || 100;
-        def.default = parseFloat(document.getElementById('pdef-default').value) || def.min;
+        // `|| fallback` would be wrong here — a bipolar knob's min/max/default
+        // can legitimately be 0 (e.g. min=-50/max=50/default=0), and 0 is
+        // falsy, so that pattern silently replaced an intentional 0 with the
+        // fallback. Number.isFinite() only rejects an actually-empty/invalid
+        // field, not a valid zero.
+        const minVal = parseFloat(document.getElementById('pdef-min').value);
+        const maxVal = parseFloat(document.getElementById('pdef-max').value);
+        const defaultVal = parseFloat(document.getElementById('pdef-default').value);
+        def.min     = Number.isFinite(minVal) ? minVal : 0;
+        def.max     = Number.isFinite(maxVal) ? maxVal : 100;
+        def.default = Number.isFinite(defaultVal) ? defaultVal : def.min;
       }
     }
     if (type === 'toggle') {
