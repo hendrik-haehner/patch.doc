@@ -899,7 +899,7 @@ const App = {
         const val = vals[d.name] !== undefined ? vals[d.name] : (d.default ?? '');
         const markCol = Patch._markColor(key, d.name);
         const markStyle = markCol ? `border-left:3px solid ${markCol};padding-left:7px` : '';
-        if (d.type === 'knob') {
+        if (d.type === 'knob' || d.type === 'fader') {
           const step = ((d.max||100)-(d.min||0)) >= 10 ? 1 : 0.1;
           const displayVal = step === 1 ? Math.round(val) : (Math.round(val * 10) / 10);
           return `<div class="param-row" style="${markStyle}">
@@ -907,7 +907,7 @@ const App = {
             <input class="param-input" type="number" value="${displayVal}"
               min="${d.min ?? 0}" max="${d.max ?? 100}" step="${step}"
               oninput="App.setParam(${key},'${d.name}',parseFloat(this.value)||0)" />
-            <span class="param-type" style="font-size:9px;color:var(--text2)">${d.min ?? 0}–${d.max ?? 100}</span>
+            <span class="param-type" style="font-size:9px;color:var(--text2)">${d.min ?? 0} to ${d.max ?? 100}</span>
           </div>`;
         }
         if (d.type === 'toggle') {
@@ -1472,7 +1472,7 @@ const App = {
         <span class="pdef-handle" title="drag to reorder">⠿</span>
         <span class="pdef-type pdef-type-${d.type}">${d.type}</span>
         <span class="pdef-name">${d.name}</span>
-        <span class="pdef-detail">${d.type==='knob' ? d.min+' to '+d.max + (d.display==='clock' ? ' · clock' : d.display==='freq' ? ' · Hz' : '') : d.type==='enum' ? (d.options||'').substring(0,20) : ''}</span>
+        <span class="pdef-detail">${(d.type==='knob' || d.type==='fader') ? d.min+' to '+d.max + (d.display==='clock' ? ' · clock' : d.display==='freq' ? ' · Hz' : '') : d.type==='enum' ? (d.options||'').substring(0,20) : ''}</span>
         <button class="pdef-edit" onclick="App.editParamDef(${i},event)" title="edit">✎</button>
         <button class="pdef-del" onclick="App.removeParamDef(${i},event)">×</button>
       </div>`).join('') || '<div class="pdef-empty">no parameters defined</div>';
@@ -1487,7 +1487,7 @@ const App = {
     document.getElementById('pdef-name').value = d.name;
     document.getElementById('pdef-type').value = d.type;
     this.onParamDefTypeChange();
-    if (d.type === 'knob') {
+    if (d.type === 'knob' || d.type === 'fader') {
       document.getElementById('pdef-display').value = d.display || 'number';
       document.getElementById('pdef-min').value     = d.min ?? 0;
       document.getElementById('pdef-max').value     = d.max ?? 100;
@@ -1543,7 +1543,7 @@ const App = {
     const type = document.getElementById('pdef-type').value;
     if (!name) { document.getElementById('pdef-name').focus(); return; }
     const def = { name, type };
-    if (type === 'knob') {
+    if (type === 'knob' || type === 'fader') {
       def.display = document.getElementById('pdef-display').value;
       // A clock-position knob has no meaningful unit of its own — it's
       // just a sweep position — so it always uses a fixed 0-100 range
@@ -1594,15 +1594,26 @@ const App = {
 
   onParamDefTypeChange() {
     const type = document.getElementById('pdef-type').value;
-    document.getElementById('pdef-knob-fields').style.display   = type === 'knob'   ? 'block' : 'none';
+    // A fader reuses the exact same display/min/max/default fields as a
+    // knob — same underlying numeric range, just a different physical
+    // control and interaction (see _renderControl / _bindFader).
+    document.getElementById('pdef-knob-fields').style.display   = (type === 'knob' || type === 'fader') ? 'block' : 'none';
     document.getElementById('pdef-toggle-fields').style.display = type === 'toggle' ? 'flex'  : 'none';
     document.getElementById('pdef-enum-fields').style.display   = type === 'enum'   ? 'block' : 'none';
     // text type has no extra fields
-    if (type === 'knob') this.onParamDefDisplayChange();
+    // "clock" (a sweep-position readout with no unit) only makes sense for
+    // a rotary control — hide it for a fader and fall back to "number" if
+    // it was already selected.
+    const clockOpt = document.getElementById('pdef-display-clock-opt');
+    clockOpt.style.display = type === 'fader' ? 'none' : '';
+    if (type === 'fader' && document.getElementById('pdef-display').value === 'clock') {
+      document.getElementById('pdef-display').value = 'number';
+    }
+    if (type === 'knob' || type === 'fader') this.onParamDefDisplayChange();
   },
 
-  // The display dropdown leads the knob fields — min/max/default are only
-  // meaningful for "number"/"frequency" (a real range/unit); "clock" is
+  // The display dropdown leads the knob/fader fields — min/max/default are
+  // only meaningful for "number"/"frequency" (a real range/unit); "clock" is
   // just a sweep position with no unit of its own, so those fields
   // disappear entirely rather than asking for numbers that don't apply.
   onParamDefDisplayChange() {

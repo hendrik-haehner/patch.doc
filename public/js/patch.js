@@ -128,7 +128,7 @@ const Patch = {
         // Group defs into separate rows
         const toggleDefs = defs.filter(d => d.type === 'toggle');
         const enumDefs   = defs.filter(d => d.type === 'enum' || d.type === 'text');
-        const knobDefs   = defs.filter(d => d.type === 'knob');
+        const knobDefs   = defs.filter(d => d.type === 'knob' || d.type === 'fader');
 
         // Build sortedDefs with sentinel dividers
         const sortedDefs = [
@@ -357,6 +357,29 @@ const Patch = {
         <div class="pm-ctrl-label">${def.name}</div>
       </div>`;
     }
+    if (def.type === 'fader') {
+      const min = def.min ?? 0, max = def.max ?? 100;
+      const v   = val !== undefined ? parseFloat(val) : (def.default ?? min);
+      const pct = Math.max(0, Math.min(1, (v - min) / (max - min)));
+      const markCol = this._markColor(pmId, def.name);
+      // Only spanH drives the track's height — a fader is meant to stay
+      // narrow even in a wide cell (real slide-pots are), so spanW just
+      // centers it via .pm-fader-wrap's own layout instead of stretching
+      // the track. Floor of 70px keeps a plain list-view fader (1x1, no
+      // panel layout) usably tall rather than a squashed nub.
+      const rowSpan = Math.max(1, spanH);
+      const trackH  = Math.max(70, rowSpan * 50 + (rowSpan - 1) * 4 - 24);
+      return `<div class="pm-fader-wrap${markCol ? ' marked' : ''}" data-pmid="${pmId}" data-def="${encodeURIComponent(JSON.stringify(def))}" data-val="${v}"
+        title="${def.name}: ${this._fmtVal(v, def)} (${min} to ${max})"
+        oncontextmenu="Patch.openMarkMenu('${pmId}','${def.name}',this,event)">
+        <div class="pm-fader-track" id="track-${id}" style="height:${trackH}px${markCol ? ';box-shadow:0 0 0 2px ' + markCol : ''}">
+          <div class="pm-fader-fill" id="fill-${id}" style="height:${(pct * 100).toFixed(2)}%;background:${col}"></div>
+          <div class="pm-fader-thumb" id="thumb-${id}" style="bottom:${(pct * 100).toFixed(2)}%;border-color:${col}"></div>
+        </div>
+        <div class="pm-ctrl-val" id="val-${id}">${this._fmtDisplay(v, pct, def)}</div>
+        <div class="pm-ctrl-label">${def.name}</div>
+      </div>`;
+    }
     if (def.type === 'toggle') {
       const on = val !== undefined ? (val === true || val === 'true' || val === 1) : (def.default === true || def.default === 'true');
       const markColT = this._markColor(pmId, def.name);
@@ -476,6 +499,7 @@ const Patch = {
   },
 
   _bindControl(el, pmId, def, initVal) {
+    if (def.type === 'fader') { this._bindFader(el, pmId, def, initVal); return; }
     if (def.type !== 'knob') return;
     const id   = this._safeId(pmId, def.name);
     const wrap = el.querySelector(`[data-def="${encodeURIComponent(JSON.stringify(def))}"]`);
@@ -523,6 +547,70 @@ const Patch = {
     });
 
     wrap.addEventListener('dblclick', async e => {
+      e.stopPropagation();
+      const newVal = await IO.promptAsync(`${def.name} (${min} to ${max}):`, Math.round(val));
+      if (newVal === null) return;
+      const n = parseFloat(newVal);
+      if (!isNaN(n)) {
+        val = this._roundVal(Math.max(min, Math.min(max, n)), def);
+        update(val);
+        this._saveParam(pmId, def.name, val);
+      }
+    });
+  },
+
+  // Fader interaction is absolute (click/drag jumps straight to that
+  // position on the track), unlike a knob's relative drag-anywhere — that's
+  // the expected behavior for a slider (real hardware faders and every
+  // software mixer work this way), whereas a knob's rotation has no fixed
+  // point on screen to click "at" in the first place.
+  _bindFader(el, pmId, def, initVal) {
+    const id    = this._safeId(pmId, def.name);
+    const wrap  = el.querySelector(`[data-def="${encodeURIComponent(JSON.stringify(def))}"]`);
+    const track = document.getElementById(`track-${id}`);
+    if (!wrap || !track) return;
+    const min = def.min ?? 0, max = def.max ?? 100;
+    let val   = initVal !== undefined ? parseFloat(initVal) : (def.default ?? min);
+
+    const valueFromClientY = (clientY) => {
+      const rect = track.getBoundingClientRect();
+      const pct  = Math.max(0, Math.min(1, 1 - (clientY - rect.top) / rect.height));
+      return min + pct * (max - min);
+    };
+
+    const update = (v) => {
+      val = Math.max(min, Math.min(max, v));
+      const pct   = (val - min) / (max - min);
+      const fill  = document.getElementById(`fill-${id}`);
+      const thumb = document.getElementById(`thumb-${id}`);
+      const valEl = document.getElementById(`val-${id}`);
+      if (fill)  fill.style.height  = (pct * 100).toFixed(2) + '%';
+      if (thumb) thumb.style.bottom = (pct * 100).toFixed(2) + '%';
+      if (valEl) valEl.textContent = this._fmtDisplay(val, pct, def);
+    };
+
+    track.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      e.preventDefault();
+      track.setPointerCapture(e.pointerId);
+      update(valueFromClientY(e.clientY));
+    });
+
+    track.addEventListener('pointermove', e => {
+      if (!track.hasPointerCapture(e.pointerId)) return;
+      update(valueFromClientY(e.clientY));
+    });
+
+    track.addEventListener('pointerup', e => {
+      if (!track.hasPointerCapture(e.pointerId)) return;
+      track.releasePointerCapture(e.pointerId);
+      val = this._roundVal(val, def);
+      update(val);
+      this._saveParam(pmId, def.name, val);
+    });
+
+    track.addEventListener('dblclick', async e => {
       e.stopPropagation();
       const newVal = await IO.promptAsync(`${def.name} (${min} to ${max}):`, Math.round(val));
       if (newVal === null) return;
@@ -618,7 +706,8 @@ const Patch = {
       if (e.target.closest('.port') || e.target.closest('.pm-remove') ||
           e.target.closest('.pm-collapse-btn') || e.target.closest('.pm-manual-link') ||
           e.target.closest('.pm-knob-wrap') || e.target.closest('.pm-toggle-btn') ||
-          e.target.closest('.pm-enum-wrap') || e.target.closest('.pm-text-wrap')) return;
+          e.target.closest('.pm-enum-wrap') || e.target.closest('.pm-text-wrap') ||
+          e.target.closest('.pm-fader-wrap')) return;
       e.preventDefault();
       // pm.x/pm.y are canvas-local (pre-scale) coordinates, but clientX/Y
       // are screen pixels — dividing by _zoom converts the mouse position

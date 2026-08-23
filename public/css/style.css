@@ -1152,6 +1152,28 @@ html, body {
 .pm-ctrl-label { font-size: clamp(9px, calc(var(--pm-cell-w, 80px) * 0.14), 9px); color: var(--text1); text-align: center; letter-spacing: 0.04em;
                  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
 
+/* ── fader — absolute-position slider, see Patch._bindFader ── */
+.pm-fader-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; padding: 1px; width: 100%;
+}
+.pm-fader-track {
+  position: relative; width: 12px; border-radius: 6px;
+  background: var(--bg0); border: 0.5px solid var(--border2);
+  cursor: pointer; touch-action: none; flex-shrink: 0;
+}
+.pm-fader-wrap:hover .pm-fader-track { border-color: var(--border2); filter: brightness(1.1); }
+.pm-fader-fill {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  border-radius: 6px; opacity: 0.35; pointer-events: none;
+}
+.pm-fader-thumb {
+  position: absolute; left: 50%; width: 20px; height: 8px;
+  background: var(--bg2); border: 1.5px solid var(--border2);
+  border-radius: 3px; transform: translate(-50%, 50%);
+  pointer-events: none;
+}
+
 /* Toggles section — same grid as knobs/enums */
 .pm-toggles {
   display: grid;
@@ -1302,6 +1324,7 @@ html, body {
   font-weight: 600; flex-shrink: 0;
 }
 .pdef-type-knob   { background: var(--accent-bg); color: var(--accent); border: 0.5px solid var(--accent-border); }
+.pdef-type-fader  { background: rgba(74,159,212,0.1); color: #4a9fd4; border: 0.5px solid rgba(74,159,212,0.3); }
 .pdef-type-toggle { background: rgba(42,170,122,0.1); color: var(--success); border: 0.5px solid rgba(42,170,122,0.3); }
 .pdef-type-enum   { background: rgba(212,150,58,0.1); color: #d4963a; border: 0.5px solid rgba(212,150,58,0.3); }
 .pdef-name   { flex: 1; color: var(--text0); }
@@ -1409,6 +1432,8 @@ html, body {
 .panel-editor-placed.panel-editor-chip-badge-output { color: #c8612a; border-color: rgba(200,97,42,0.35); background: rgba(200,97,42,0.12); }
 .panel-editor-chip-badge-knob,
 .panel-editor-placed.panel-editor-chip-badge-knob   { color: #8f86e8; border-color: rgba(143,134,232,0.35); background: rgba(143,134,232,0.12); }
+.panel-editor-chip-badge-fader,
+.panel-editor-placed.panel-editor-chip-badge-fader  { color: #4a9fd4; border-color: rgba(74,159,212,0.35); background: rgba(74,159,212,0.12); }
 .panel-editor-chip-badge-toggle,
 .panel-editor-placed.panel-editor-chip-badge-toggle { color: #2aaa7a; border-color: rgba(42,170,122,0.35); background: rgba(42,170,122,0.12); }
 .panel-editor-chip-badge-enum,
@@ -1474,6 +1499,7 @@ html, body {
 
 /* ── marked control highlight ── */
 .pm-knob-wrap.marked .pm-ctrl-label,
+.pm-fader-wrap.marked .pm-ctrl-label,
 .pm-toggle-wrap.marked .pm-ctrl-label,
 .pm-enum-wrap.marked .pm-ctrl-label {
   font-weight: 600;
