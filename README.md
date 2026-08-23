@@ -22,7 +22,7 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **Panel layout** — optional front-panel-style view per module, with a visual editor to place ports, knobs, switches, labels and dividers on a grid (see [below](#panel-layout))
 - **Connections tab** — dropdown-based cable editor, works on mobile without drag gestures
 - **Modulation details** — document amount, phase and polarity per cable (e.g. an LFO into a CV input); such a cable renders dashed on the canvas, click or hover it to view/edit (see [below](#modulation-details))
-- **Parameters** — document knob positions, switches and settings per module
+- **Parameters** — document knob/fader positions, switches and settings per module; a knob's (or fader's) range can be bipolar (e.g. min -50/max 50, default 0 at center) for attenuverters and similar controls
 - **Performance marks** — color-mark parameters (green / yellow / red) for live performance reference
 - **Notes** — freetext notes per patch
 - **Media** — attach photos and audio recordings to patches

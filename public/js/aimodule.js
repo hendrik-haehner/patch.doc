@@ -60,15 +60,16 @@ JSON shape (all fields required, arrays may be empty):
   "cat": one of ${JSON.stringify(VALID_CATS)},
   "inputs": [string, ...],       // real input jack labels, as printed on the panel
   "outputs": [string, ...],      // real output jack labels
-  "paramDefs": [                 // front-panel controls that are NOT jacks — knobs, switches, menus
+  "paramDefs": [                 // front-panel controls that are NOT jacks — knobs, faders, switches, menus
     { "name": string, "type": "knob", "display": "number"|"clock"|"freq", "min": number, "max": number, "default": number },
+    { "name": string, "type": "fader", "display": "number"|"freq", "min": number, "max": number, "default": number },
     { "name": string, "type": "toggle", "default": boolean },
     { "name": string, "type": "enum", "options": "comma, separated, options", "default": string },
     { "name": string, "type": "text", "default": "" }
   ]
 }
 
-"display":"clock" is for a knob with no real unit (just a sweep position, e.g. a blend/mix knob) — use "freq" for an audio-frequency control (min/max in Hz), "number" otherwise. Keep paramDefs to genuine adjustable controls, not every silkscreen label.`;
+"display":"clock" is for a knob with no real unit (just a sweep position, e.g. a blend/mix knob) — use "freq" for an audio-frequency control (min/max in Hz), "number" otherwise; "clock" doesn't apply to a fader (linear travel, not a rotary sweep). Use "fader" only for an actual linear slide control (e.g. a mixer channel fader) — a rotary knob is "knob" even if it looks like a fader in a photo. Keep paramDefs to genuine adjustable controls, not every silkscreen label.`;
 
   async function generate() {
     const maker = document.getElementById('m-maker').value.trim();
@@ -157,13 +158,17 @@ JSON shape (all fields required, arrays may be empty):
       if (!d || typeof d !== 'object' || !d.name || !d.type) return null;
       const name = String(d.name).trim().slice(0, 60);
       if (!name) return null;
-      if (d.type === 'knob') {
-        const display = ['number', 'clock', 'freq'].includes(d.display) ? d.display : 'number';
-        if (display === 'clock') return { name, type: 'knob', display, min: 0, max: 100, default: 0 };
+      if (d.type === 'knob' || d.type === 'fader') {
+        // "clock" (rotary sweep-position readout) doesn't apply to a fader
+        // — the system prompt already tells the model that, this is just
+        // the defensive fallback in case it ignores it anyway.
+        const allowedDisplays = d.type === 'fader' ? ['number', 'freq'] : ['number', 'clock', 'freq'];
+        const display = allowedDisplays.includes(d.display) ? d.display : 'number';
+        if (display === 'clock') return { name, type: d.type, display, min: 0, max: 100, default: 0 };
         const min = Number(d.min), max = Number(d.max), def = Number(d.default);
         const safeMin = Number.isFinite(min) ? min : 0;
         const safeMax = Number.isFinite(max) && max > safeMin ? max : safeMin + 100;
-        return { name, type: 'knob', display,
+        return { name, type: d.type, display,
           min: safeMin, max: safeMax,
           default: Number.isFinite(def) ? Math.min(safeMax, Math.max(safeMin, def)) : safeMin };
       }

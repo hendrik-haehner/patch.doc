@@ -462,6 +462,7 @@
             onkeydown="if(event.key==='Enter')App.addParamDef(event)">
           <select id="pdef-type" onchange="App.onParamDefTypeChange()">
             <option value="knob">knob</option>
+            <option value="fader">fader</option>
             <option value="toggle">toggle</option>
             <option value="enum">enum</option>
             <option value="text">text</option>
@@ -474,7 +475,7 @@
             <label>display</label>
             <select id="pdef-display" onchange="App.onParamDefDisplaySelect()" style="padding:3px 6px;font-size:11px">
               <option value="number">number</option>
-              <option value="clock">clock</option>
+              <option id="pdef-display-clock-opt" value="clock">clock</option>
               <option value="freq">frequency</option>
             </select>
           </div>

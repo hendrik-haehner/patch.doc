@@ -570,8 +570,8 @@ const IO = {
         const def = defs.find(d => d.name === k);
         let val = vals[k] !== undefined ? vals[k] : (def?.default ?? '—');
         const typ = def ? def.type : 'text';
-        // Round knob values for display — handles any legacy unrounded data too
-        if (typ === 'knob' && typeof val === 'number') {
+        // Round knob/fader values for display — handles any legacy unrounded data too
+        if ((typ === 'knob' || typ === 'fader') && typeof val === 'number') {
           const range = (def?.max ?? 100) - (def?.min ?? 0);
           val = range >= 10 ? Math.round(val) : Math.round(val * 10) / 10;
         }

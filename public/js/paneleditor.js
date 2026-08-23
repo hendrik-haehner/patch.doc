@@ -128,7 +128,7 @@ const PanelEditor = {
     (window._tempParamDefs || []).filter(d => d.type !== 'divider').forEach(d => {
       if (!placedParam.has(d.type + ' ' + d.name)) {
         const note = d.type === 'knob' && d.display === 'clock' ? 'clock'
-                   : d.type === 'knob' && d.display === 'freq'  ? 'Hz'
+                   : (d.type === 'knob' || d.type === 'fader') && d.display === 'freq' ? 'Hz'
                    : '';
         chips.push(this._chip({ kind: 'param', type: d.type, ref: d.name, label: d.name, badge: d.type, note }));
       }
@@ -333,8 +333,15 @@ const PanelEditor = {
     if (col < 0 || row < 0 || col >= panel.cols || row >= panel.rows) { window._panelDragInfo = null; return; }
 
     if (info.source === 'pool') {
-      if (!this._cellsFree(panel.elements, col, row, 1, 1, -1)) { App.setStatus('panel: cell occupied'); window._panelDragInfo = null; return; }
-      const newEl = { type: info.type, ref: info.ref, col, row, w: 1, h: 1 };
+      // A fader defaults taller than wide (1x3) instead of the usual 1x1 —
+      // real slide-pots have far more travel than a knob's diameter, and a
+      // 1x1 fader would render as a barely-usable nub (see _renderControl's
+      // 70px floor). Still just a normal element afterward — the existing
+      // inspector resize/move UI works on it unmodified.
+      const defaultH = info.type === 'fader' ? 3 : 1;
+      if (row + defaultH > panel.rows) { App.setStatus('panel: not enough rows here for a fader (needs ' + defaultH + ')'); window._panelDragInfo = null; return; }
+      if (!this._cellsFree(panel.elements, col, row, 1, defaultH, -1)) { App.setStatus('panel: cell occupied'); window._panelDragInfo = null; return; }
+      const newEl = { type: info.type, ref: info.ref, col, row, w: 1, h: defaultH };
       if (info.type === 'label' || info.type === 'button') {
         const src = (window._panelPool || []).find(p => p.localId === info.localId);
         newEl.text = src ? src.text : (info.type === 'label' ? 'label' : 'button');
