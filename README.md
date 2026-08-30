@@ -34,6 +34,7 @@ This app was created with the help of Claude (Anthropic). I myself have only fun
 - **Templates** — mark patches as templates and create new patches from them
 - **Rack layout** — pack modules tightly into rows with a defined HP gap, like a real case (see [below](#panel-layout))
 - **Shared patches** — share patches between users via a common pool
+- **NAS sync** — desktop app only: point it at a self-hosted server's `/data` folder (mounted as a network share) so patches, modules, manuals and media sync there directly, no server changes needed (see [below](desktop/README.md#nas-sync))
 - **Dark / Light theme** — follows OS preference, manually toggleable; or design your own in the theme editor (see [below](#theme-editor))
 - **Mobile-optimized** — responsive touch UI with hamburger menu and patch dropdown
 - **PWA** — installable as a home screen app on iOS and Android
