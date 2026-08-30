@@ -76,13 +76,8 @@ const App = {
     // real files with at all.
     if (IO.isTauri()) {
       const nasBtn = document.getElementById('nas-sync-btn');
-      if (nasBtn) {
-        nasBtn.style.display = '';
-        if (NasSync.isEnabled()) {
-          nasBtn.style.borderColor = 'var(--accent-border)';
-          nasBtn.style.color = 'var(--accent)';
-        }
-      }
+      if (nasBtn) nasBtn.style.display = '';
+      NasSync.updateTopbarButton();
     }
     // Must run before fullRender() — unlike snap (drag-only behavior),
     // panel mode changes what render() actually outputs.
@@ -865,8 +860,13 @@ const App = {
   switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const btn = document.querySelector('[data-tab="' + tab + '"]');
-    if (btn) btn.classList.add('active');
+    // Two buttons share each data-tab (the touch-menu dropdown's tab list
+    // and the desktop tab-row) — querySelector alone only ever marked the
+    // first one active, which for most tabs is the touch-menu copy (hidden
+    // on desktop), leaving the visible desktop button uncolored. "rack" and
+    // "io" have no touch-menu counterpart, which is why only those two
+    // ever looked right.
+    document.querySelectorAll('[data-tab="' + tab + '"]').forEach(b => b.classList.add('active'));
     const view = document.getElementById(tab + '-view');
     if (view) view.classList.add('active');
     this.closeTouchMenu();
