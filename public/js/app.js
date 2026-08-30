@@ -860,8 +860,13 @@ const App = {
   switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const btn = document.querySelector('[data-tab="' + tab + '"]');
-    if (btn) btn.classList.add('active');
+    // Two buttons share each data-tab (the touch-menu dropdown's tab list
+    // and the desktop tab-row) — querySelector alone only ever marked the
+    // first one active, which for most tabs is the touch-menu copy (hidden
+    // on desktop), leaving the visible desktop button uncolored. "rack" and
+    // "io" have no touch-menu counterpart, which is why only those two
+    // ever looked right.
+    document.querySelectorAll('[data-tab="' + tab + '"]').forEach(b => b.classList.add('active'));
     const view = document.getElementById(tab + '-view');
     if (view) view.classList.add('active');
     this.closeTouchMenu();
