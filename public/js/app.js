@@ -71,6 +71,19 @@ const App = {
     if (Store.isAdmin) {
       document.querySelectorAll('.admin-link').forEach(el => el.style.display = 'flex');
     }
+    // NAS sync only makes sense in the Tauri desktop build — the plain
+    // browser/GitHub Pages build has no window.__TAURI__ to read/write
+    // real files with at all.
+    if (IO.isTauri()) {
+      const nasBtn = document.getElementById('nas-sync-btn');
+      if (nasBtn) {
+        nasBtn.style.display = '';
+        if (NasSync.isEnabled()) {
+          nasBtn.style.borderColor = 'var(--accent-border)';
+          nasBtn.style.color = 'var(--accent)';
+        }
+      }
+    }
     // Must run before fullRender() — unlike snap (drag-only behavior),
     // panel mode changes what render() actually outputs.
     Patch.initPanelMode();

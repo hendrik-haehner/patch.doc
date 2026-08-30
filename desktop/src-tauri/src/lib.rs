@@ -43,6 +43,13 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        // The fs plugin grants (session-only) filesystem scope to whatever
+        // folder the user picks via the dialog plugin's {directory:true,
+        // recursive:true} option (see public/js/nassync.js) — without this
+        // plugin that grant is forgotten on every restart, forcing the user
+        // to re-pick their NAS folder each time they open the app. Must be
+        // registered after the fs plugin.
+        .plugin(tauri_plugin_persisted_scope::init())
         // opener: a plain <a href target="_blank"> silently does nothing in
         // this webview — Tauri doesn't wire up new-window handling by
         // default, and there's no console error since nothing actually
