@@ -129,6 +129,18 @@ const NasSync = (() => {
     el.style.color = kind === 'err' ? 'var(--danger)' : (kind === 'ok' ? 'var(--success)' : 'var(--text2)');
   }
 
+  // Colors the topbar icon when active — called at app startup (App.init)
+  // and again right after activate()/deactivate() so the icon reflects the
+  // current state immediately instead of only after the next app restart.
+  function updateTopbarButton() {
+    const btn = document.getElementById('nas-sync-btn');
+    if (!btn) return;
+    const active = isEnabled();
+    btn.style.borderColor = active ? 'var(--accent-border)' : '';
+    btn.style.color       = active ? 'var(--accent)' : '';
+    btn.title = active ? 'NAS sync (active)' : 'NAS sync';
+  }
+
   function open() {
     document.getElementById('nas-sync-root').value = root();
     document.getElementById('nas-sync-username').value = username();
@@ -183,12 +195,14 @@ const NasSync = (() => {
 
       await Store.loadFromServer();
       App.fullRender();
+      updateTopbarButton();
       _setStatus('active — syncing with this folder', 'ok');
       App.setStatus('NAS sync active');
     } catch(err) {
       console.error('NasSync activation failed:', err);
       _setStatus('failed: ' + (err.message || err), 'err');
       try { localStorage.removeItem(ROOT_KEY); localStorage.removeItem(USER_KEY); } catch(e) {}
+      updateTopbarButton();
     }
   }
 
@@ -201,6 +215,7 @@ const NasSync = (() => {
     _modulesMtime.current = null;
     await Store.loadFromServer();
     App.fullRender();
+    updateTopbarButton();
     _setStatus('not active', '');
     App.setStatus('NAS sync deactivated — back to local storage on this device');
   }
@@ -209,6 +224,6 @@ const NasSync = (() => {
     isEnabled, root, username,
     statePath, modulesPath, mediaDir, manualsDir, ensureMediaDir, ensureManualsDir,
     readState, readModules, writeState, writeModules,
-    open, close, chooseFolder, activate, deactivate,
+    open, close, chooseFolder, activate, deactivate, updateTopbarButton,
   };
 })();
