@@ -211,6 +211,11 @@ const Manuals = {
   },
 
   async _manualsDirFor(moduleId) {
+    // Once NAS sync is active (see nassync.js), manuals live under the
+    // shared NAS folder instead of this device's own app-data dir.
+    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
+      return await NasSync.ensureManualsDir(moduleId);
+    }
     // Module ids are plain numbers (unlike patch ids, which are already
     // strings) — the Rust side takes a String, and serde_json won't
     // silently coerce a JSON number into one, so this has to stringify.

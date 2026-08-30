@@ -3,12 +3,15 @@
 Wraps the static build (`public/`, the same code that runs on
 [the GitHub Pages version](https://hendrik-haehner.github.io/patch.doc/))
 in a native desktop window via [Tauri](https://tauri.app). No login, no
-server — patches are saved to the OS webview's local storage, same as the
-browser version.
+server by default — patches are saved to the OS webview's local storage,
+same as the browser version. Optionally, [NAS sync](#nas-sync) points it at
+a self-hosted server's `/data` folder instead, for real cross-device sync.
 
-There's no custom Rust code here yet (`src-tauri/src/lib.rs` just opens
-the window) — this is a thin native shell around the existing frontend,
-not a rewrite.
+The only custom Rust code here (`src-tauri/src/lib.rs`) is one command
+that resolves/creates this app's own data directory for media/manual
+files, plus registering the plugins the frontend needs (dialog, fs,
+opener, persisted-scope) — this is a thin native shell around the
+existing frontend, not a rewrite.
 
 ## Setup
 
@@ -47,6 +50,38 @@ Produces a platform-native installer/bundle (`.app`/`.dmg`, `.exe`/`.msi`,
 `.deb`/`.AppImage`, depending on the OS you build on — Tauri doesn't
 cross-compile installers by default, so macOS/Windows builds need to run
 on that OS, e.g. in CI) under `src-tauri/target/release/bundle/`.
+
+## NAS sync
+
+By default this app is single-device, no accounts — same as the browser
+version. If you also run the [self-hosted server](../README.md#installation)
+(e.g. on a NAS), the server icon in the topbar lets you point this app at
+that server's `/data` folder instead: mount it as a normal network share
+(SMB/NFS/AFP — however your NAS exposes it), pick the mounted folder, enter
+your username on that server, and hit **activate**.
+
+From then on this app reads and writes straight from those files — the
+exact same `state.json`/`modules.json`/`media/`/`manuals/` the server
+itself uses (see [Data](../README.md#data)) — no server code involved at
+all. `server.js` re-reads its files from disk on every request rather than
+caching them, so a save from this app shows up in the web app immediately,
+and vice versa.
+
+**What this is not:** a real-time collaboration engine. If this app and
+the web app both save changes to the same patch at (almost) the same
+moment, the file is shared but the write isn't coordinated — last write
+wins, same hazard as two people editing one file over Dropbox. The one
+protection built in: if the file on disk changed since this app last read
+it, the next save is refused (with a status message telling you to reload)
+rather than silently overwriting someone else's change. Treat it as "use
+one or the other at a time," not "use both simultaneously."
+
+First activation copies whatever's currently on this device (patches, your
+module library if the NAS folder doesn't already have one, plus any local
+photos/manuals) into the NAS folder, so switching over doesn't look like
+your existing work vanished. **Deactivate** just stops using the shared
+files — it never deletes them, and reverts this device to its own local
+storage.
 
 CI (`.github/workflows/build-desktop-macos.yml`) builds macOS on every
 push to `main`, and adds Windows (`.msi` + `.exe`) and Linux (`.deb` +

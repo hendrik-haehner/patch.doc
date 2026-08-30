@@ -7793,8 +7793,33 @@ function defaultState() {
 const Store = {
   _state: null,
 
-  // Load state — server mode or localStorage (static/PWA mode)
+  // True only in the Tauri desktop build, and only once NasSync has a
+  // folder + username configured (see nassync.js) — reads/writes go
+  // straight to that shared NAS folder instead of this device's own
+  // localStorage, with no server involved on either end.
+  _nasActive() {
+    return typeof NasSync !== 'undefined' && NasSync.isEnabled();
+  },
+
+  // Load state — NAS sync, server mode, or localStorage (static/PWA mode)
   async loadFromServer() {
+    if (this._nasActive()) {
+      try {
+        const statePart   = await NasSync.readState();
+        const modulesPart = await NasSync.readModules();
+        this._state = statePart || defaultState();
+        if (modulesPart) {
+          this._state.modules      = modulesPart.modules;
+          this._state.nextModuleId = modulesPart.nextModuleId || 24;
+        }
+        this._username = NasSync.username();
+      } catch(e) {
+        console.warn('NAS sync load failed:', e);
+        this._loadFailed = true;
+        if (!this._state) this._state = defaultState();
+      }
+      return this._state;
+    }
     if (window.PATCHDOC_STATIC) {
       try {
         const raw = localStorage.getItem('patchdoc_v1');
@@ -7880,6 +7905,11 @@ const Store = {
 
   // Debounced save — 600ms after last call
   save() {
+    if (this._nasActive()) {
+      clearTimeout(this._saveTimer);
+      this._saveTimer = setTimeout(() => this._saveToNas(), 600);
+      return;
+    }
     if (window.PATCHDOC_STATIC) {
       try { localStorage.setItem('patchdoc_v1', JSON.stringify(this._state)); } catch(e) {}
       this._showSaveIndicator(true);
@@ -7891,11 +7921,32 @@ const Store = {
 
   // Immediate save — bypass debounce for critical moments
   saveNow() {
+    if (this._nasActive()) { clearTimeout(this._saveTimer); this._saveToNas(); return; }
     if (window.PATCHDOC_STATIC) { this.save(); return; }
     clearTimeout(this._saveTimer);
     // Cancel any pending debounced save — we're saving immediately
     if (this._saveAbort) { this._saveAbort.abort(); this._saveAbort = null; }
     this._saveToServer(false); // false = no abort, must complete
+  },
+
+  // Same payload shape as _saveToServer's userState — modules are saved
+  // separately (_saveModules), same split as the server's own /api/state
+  // vs /api/modules so the on-disk files stay byte-for-byte what the
+  // server itself would produce.
+  async _saveToNas() {
+    const userState = {
+      version:       this._state.version,
+      patches:       this._state.patches,
+      activePatchId: this._state.activePatchId,
+      nextPatchNum:  this._state.nextPatchNum,
+    };
+    try {
+      await NasSync.writeState(userState);
+      this._showSaveIndicator(true);
+    } catch(e) {
+      console.error('NAS sync save failed:', e);
+      this._showSaveIndicator(false);
+    }
   },
 
   _saveAbort: null,
@@ -7939,6 +7990,12 @@ const Store = {
 
   // Save shared modules — called after add/edit/delete module
   async _saveModules() {
+    if (this._nasActive()) {
+      try {
+        await NasSync.writeModules({ modules: this._state.modules, nextModuleId: this._state.nextModuleId });
+      } catch(e) { console.error('NAS sync module save failed:', e); }
+      return;
+    }
     if (window.PATCHDOC_STATIC) return;
     try {
       await fetch('/api/modules', {
@@ -7955,6 +8012,9 @@ const Store = {
   // Synchronous save via sendBeacon — works during page unload.
   // Only sends user patches (modules are shared and saved separately).
   saveImmediate() {
+    // sendBeacon is an HTTP-unload mechanism, meaningless for a Tauri fs
+    // write — a plain best-effort save is the closest equivalent here.
+    if (this._nasActive()) { this.saveNow(); return; }
     if (window.PATCHDOC_STATIC) { this.save(); return; }
     // Never beacon if the initial load failed — would overwrite real data with stale state
     if (this._loadFailed) return;

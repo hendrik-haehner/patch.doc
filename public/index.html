@@ -90,6 +90,9 @@
       <button class="icon-btn desktop-only-btn" onclick="ThemeEditor.open()" title="Theme-Editor" aria-label="Theme-Editor">
         <i class="ti ti-palette" aria-hidden="true"></i>
       </button>
+      <button class="icon-btn desktop-only-btn" id="nas-sync-btn" onclick="NasSync.open()" title="NAS sync" aria-label="NAS sync" style="display:none">
+        <i class="ti ti-server-2" aria-hidden="true"></i>
+      </button>
       <button class="icon-btn desktop-only-btn" onclick="GlobalSearch.open()" title="Globale Modulsuche (Cmd+F)" aria-label="Globale Modulsuche" id="global-search-btn"><i class="ti ti-search" aria-hidden="true"></i></button>
       <button class="icon-btn desktop-only-btn" onclick="document.getElementById('shortcuts-modal').classList.toggle('open')" title="Tastaturkürzel" aria-label="Tastaturkürzel">
         <i class="ti ti-keyboard" aria-hidden="true"></i>
@@ -554,6 +557,35 @@
   </div>
 </div>
 
+<!-- NAS sync modal — points this desktop app's data at a self-hosted
+     PATCH.doc server's /data folder, mounted as a normal network share
+     (e.g. SMB/NFS), instead of this device's own local storage. -->
+<div id="nas-sync-modal" class="modal-bg" onmousedown="window._modalMousedownOnBg=(event.target===this)" onmouseup="if(window._modalMousedownOnBg&&event.target===this)NasSync.close()">
+  <div class="modal" role="dialog" aria-label="NAS sync" style="width:400px">
+    <h3>NAS sync</h3>
+    <p style="font-size:11px;color:var(--text2);margin:-6px 0 12px">
+      Mount your self-hosted server's <code>/data</code> folder as a network share, pick it below, and this app reads/writes straight from it — patches, modules, manuals, photos and audio all in the same place as the web app.
+    </p>
+    <div class="field">
+      <label>data folder (the server's /data, mounted)</label>
+      <div style="display:flex;gap:6px">
+        <input id="nas-sync-root" type="text" placeholder="/Volumes/nas/patchdoc-data" readonly style="flex:1">
+        <button class="io-add-btn" onclick="NasSync.chooseFolder()">choose…</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>your username on that server</label>
+      <input id="nas-sync-username" type="text" placeholder="e.g. alice" autocomplete="off">
+    </div>
+    <div id="nas-sync-status" style="font-size:11px;min-height:14px;margin-top:2px"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="NasSync.deactivate()" style="margin-right:auto;color:var(--danger)">deactivate</button>
+      <button class="btn-cancel" onclick="NasSync.close()">close</button>
+      <button class="btn-primary" onclick="NasSync.activate()">activate</button>
+    </div>
+  </div>
+</div>
+
 <!-- community modules browse/import modal -->
 <div id="community-modal-bg" class="modal-bg" onmousedown="window._modalMousedownOnBg=(event.target===this)" onmouseup="if(window._modalMousedownOnBg&&event.target===this)Community.close()">
   <div class="modal" role="dialog" aria-label="Browse community modules">
@@ -706,6 +738,7 @@
 <script src="js/patch.js"></script>
 <script src="js/mobile.js"></script>
 <script src="js/io.js"></script>
+<script src="js/nassync.js"></script>
 <script src="js/app.js"></script>
 <script src="js/search.js"></script>
 <script>
