@@ -80,11 +80,18 @@ First activation copies whatever's currently on this device (patches, your
 module library if the NAS folder doesn't already have one, plus any local
 photos/manuals) into the NAS folder, so switching over doesn't look like
 your existing work vanished. **If the NAS folder already had a module
-library, that one wins instead** — any manuals you'd only ever attached
-locally (in this app, before NAS sync) won't show up until you re-add
-them, since they were never part of what was already shared. **Deactivate**
-just stops using the shared files — it never deletes them, and reverts
-this device to its own local storage.
+library, this device's modules are merged into it** (matched by name +
+maker, same as "import manuals from folder" above) rather than one side
+winning outright — a module only on this device gets added, and a manual
+you'd only ever attached locally gets folded into the shared copy of that
+module. Nothing on the NAS side is ever removed or overwritten. Patches
+are the one exception: if the NAS already has patches under this
+username, those stay authoritative and this device's local-only patches
+aren't merged in, since (unlike a module's name+maker) a patch's id is
+just this device's own counter and has no reliable identity to match on
+across two independently-used devices. **Deactivate** just stops using
+the shared files — it never deletes them, and reverts this device to its
+own local storage.
 
 Manuals and media load through a separate, narrower permission than the
 patches/modules themselves — clicking a manual opens it in its own small
