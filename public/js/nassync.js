@@ -123,8 +123,15 @@ const NasSync = (() => {
   // makes whatever's only on the losing side look like it vanished), match
   // modules by name+maker (same approach as Manuals.importFromNAS(), which
   // already has to solve the same "two independent id sequences" problem)
-  // and fold each device's manuals into the shared copy — additive only,
-  // nothing already on the NAS side is ever removed or overwritten.
+  // and add whatever's only on this device — additive only, nothing
+  // already on the NAS side is ever removed or overwritten.
+  //
+  // This only merges module identity (name, maker, ports, paramDefs,
+  // panel, color, …) — manuals are handled entirely separately by
+  // _migrateManualsToShared below, since (see manuals.js's Tauri-build
+  // comment) the server keeps those in per-module sidecar files, not in
+  // modules.json at all; a module.manuals field here would just be dead
+  // weight nothing ever reads back.
   //
   // Patches (state.json) deliberately aren't merged this way: a patch's id
   // is just this device's own patch counter, so two devices' patch #3 are
@@ -136,12 +143,15 @@ const NasSync = (() => {
     let nextId = Number(nasNextModuleId) || 24;
     for (const m of nasModules) nextId = Math.max(nextId, m.id + 1);
 
-    const result = nasModules.map(m => ({ ...m, manuals: { ...(m.manuals || {}) } }));
-    const fileCopies = []; // { fromModuleId, toModuleId, fileId } — resolved after modules.json is written
-    // oldId -> newId for every local module whose id changed, whether
-    // because it matched an existing NAS module under a different id, or
-    // because its own id collided with an unrelated one already there —
-    // any local patch placing that module by its old id needs to follow.
+    const result = nasModules.map(m => { const { manuals, ...rest } = m; return rest; });
+    // Every local module's id in the *final* merged list — whether it kept
+    // its own id, adopted a matched NAS module's id, or got a fresh one to
+    // dodge a collision. Manual migration and patch remapping both need
+    // this, for every module, not just the ones that actually changed.
+    const localToFinalId = new Map();
+    // Subset of the above where the id actually changed — local patches
+    // placing that module by its old id need to follow, or it'd just
+    // disappear from the patch on next render.
     const idMap = new Map();
     let changed = false;
 
@@ -153,33 +163,20 @@ const NasSync = (() => {
         let newId = local.id;
         if (usedIds.has(newId)) { newId = nextId++; } else { nextId = Math.max(nextId, newId + 1); }
         usedIds.add(newId);
+        localToFinalId.set(local.id, newId);
         if (newId !== local.id) idMap.set(local.id, newId);
-        result.push({ ...local, id: newId, manuals: { ...(local.manuals || {}) } });
+        const { manuals, ...rest } = local;
+        result.push({ ...rest, id: newId });
         changed = true;
-        for (const [fileId, entry] of Object.entries(local.manuals || {})) {
-          if (entry.kind !== 'link') fileCopies.push({ fromModuleId: local.id, toModuleId: newId, fileId });
-        }
         continue;
       }
       // Matched by name+maker — the NAS copy stays the module of record
-      // (its id, ports, params etc. are untouched), but any manual this
-      // device has that isn't already there (by name, so re-adding "the
-      // same" PDF on both sides doesn't create a visible duplicate) gets
-      // folded in.
+      // (its id, ports, params etc. are untouched).
+      localToFinalId.set(local.id, match.id);
       if (match.id !== local.id) idMap.set(local.id, match.id);
-      const target = result.find(m => m.id === match.id);
-      const already = new Set(Object.values(target.manuals || {}).map(_manualKey));
-      for (const [fileId, entry] of Object.entries(local.manuals || {})) {
-        const k = _manualKey(entry);
-        if (already.has(k)) continue;
-        target.manuals[fileId] = entry;
-        already.add(k);
-        changed = true;
-        if (entry.kind !== 'link') fileCopies.push({ fromModuleId: local.id, toModuleId: target.id, fileId });
-      }
     }
 
-    return { modules: result, nextModuleId: nextId, fileCopies, idMap, changed };
+    return { modules: result, nextModuleId: nextId, idMap, localToFinalId, changed };
   }
 
   // Local patches place modules by id — if _mergeModuleLibraries gave a
@@ -196,27 +193,46 @@ const NasSync = (() => {
     }));
   }
 
-  // Runs the file copies _mergeModuleLibraries worked out, once the merged
-  // modules.json has actually been written (so a failure here can't leave
-  // manuals pointing at a module list that was never saved).
-  async function _applyModuleFileCopies(fileCopies) {
-    const dirs = {};
-    const dirFor = async (prefix, id) => {
-      const k = prefix + id;
-      if (!(k in dirs)) {
-        dirs[k] = prefix === 'old'
-          ? await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals', id: String(id) })
-          : await ensureManualsDir(id);
+  // Folds this device's local-only manuals (module.manuals — see
+  // manuals.js) into the shared sidecar-file format at each module's
+  // *final* (post-merge) id — additive only, deduped by kind+name so
+  // re-adding "the same" PDF on both sides doesn't show up twice. Must run
+  // after modules.json is written (so a failure here can't leave manuals
+  // pointing at a module list that was never saved), which is also why
+  // this lives here rather than inside _mergeModuleLibraries — it needs
+  // the settled final ids, not just the plan for them.
+  async function _migrateManualsToShared(localModules, localToFinalId) {
+    for (const local of localModules || []) {
+      const entries = Object.entries(local.manuals || {});
+      if (!entries.length) continue;
+      const targetId = localToFinalId.get(local.id);
+      const newDir = await ensureManualsDir(targetId);
+      const meta  = await Manuals._readSidecarJSON(`${newDir}/.meta.json`);
+      const links = await Manuals._readSidecarJSON(`${newDir}/.links.json`);
+      const already = new Set([
+        ...Object.values(meta).map(v => _manualKey({ kind: 'file', name: v.name })),
+        ...Object.values(links).map(v => _manualKey({ kind: 'link', name: v.name })),
+      ]);
+      let metaChanged = false, linksChanged = false, oldDir = null;
+      for (const [fileId, entry] of entries) {
+        const k = _manualKey(entry);
+        if (already.has(k)) continue;
+        already.add(k);
+        if (entry.kind === 'link') {
+          links[fileId] = { name: entry.name, url: entry.url };
+          linksChanged = true;
+          continue;
+        }
+        try {
+          if (!oldDir) oldDir = await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals', id: String(local.id) });
+          const bytes = await window.__TAURI__.fs.readFile(`${oldDir}/${fileId}`);
+          await window.__TAURI__.fs.writeFile(`${newDir}/${fileId}`, bytes);
+          meta[fileId] = { name: entry.name, type: entry.type || 'application/pdf' };
+          metaChanged = true;
+        } catch(e) { console.warn('NasSync: could not migrate manual file', fileId, e); }
       }
-      return dirs[k];
-    };
-    for (const { fromModuleId, toModuleId, fileId } of fileCopies) {
-      try {
-        const oldDir = await dirFor('old', fromModuleId);
-        const newDir = await dirFor('new', toModuleId);
-        const bytes = await window.__TAURI__.fs.readFile(`${oldDir}/${fileId}`);
-        await window.__TAURI__.fs.writeFile(`${newDir}/${fileId}`, bytes);
-      } catch(e) { console.warn('NasSync: could not merge manual file', fileId, e); }
+      if (metaChanged)  await Manuals._writeSidecarJSON(`${newDir}/.meta.json`, meta);
+      if (linksChanged) await Manuals._writeSidecarJSON(`${newDir}/.links.json`, links);
     }
   }
 
@@ -314,7 +330,7 @@ const NasSync = (() => {
       // patches, unlike the module library just above, aren't merged).
 
       if (!existingState) await _migrateLocalFiles(localState);
-      if (merged.fileCopies.length) await _applyModuleFileCopies(merged.fileCopies);
+      await _migrateManualsToShared(localState.modules, merged.localToFinalId);
 
       // Manuals._cache is keyed by module id and never expires on its own
       // — reusing an id across the activation (same module, now possibly

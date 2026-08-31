@@ -215,17 +215,34 @@ const Manuals = {
     });
   },
 
-  // ── Tauri desktop build: real files on disk, metadata in module.manuals ──
-  // (an id-keyed dict — file entries hold {kind:'file',name,type,size},
-  // link entries hold {kind:'link',name,url} with no on-disk file at all.)
-  // Mirrors how media.js does it for patch.media, just keyed by module
-  // instead of patch since a module's manual is shared across all patches.
+  // ── Tauri desktop build: real files on disk ─────────────────────────────
+  //
+  // Two different on-disk formats, chosen by whether NAS sync is active:
+  //
+  // Local ($APPDATA, this device only): metadata lives in module.manuals,
+  // an id-keyed dict in modules.json itself — file entries hold
+  // {kind:'file',name,type,size}, link entries hold {kind:'link',name,url}
+  // with no on-disk file at all. Mirrors how media.js does it for
+  // patch.media, just keyed by module instead of patch since a module's
+  // manual is shared across all patches.
+  //
+  // NAS sync (shared with the self-hosted server's web app): modules.json
+  // is NOT where manuals live server-side — server.js keeps them entirely
+  // in manuals/<moduleId>/.meta.json (file entries, keyed by the real
+  // on-disk filename: {name,type}) and .links.json (link entries, keyed
+  // by a "link_…" id: {name,url}), see its _manualMeta/_saveManualMeta/
+  // _manualLinks/_saveManualLinks. module.manuals is never populated by
+  // the server, so treating it as authoritative once NAS sync is active
+  // would just show nothing — every upload/link/delete below has to go
+  // through these same sidecar files instead, or this device's changes
+  // would be invisible to the web app (and everyone else's to it).
 
   async _tauriEntriesFor(m) {
+    const dir = await this._manualsDirFor(m.id);
+    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) return this._sharedEntriesFor(dir);
     const manuals = m?.manuals || {};
     const ids = Object.keys(manuals);
     if (!ids.length) return [];
-    const dir = await this._manualsDirFor(m.id);
     return ids.map(id => {
       const e = manuals[id];
       if (e.kind === 'link') return { kind: 'link', id, name: e.name, url: e.url };
@@ -236,6 +253,41 @@ const Manuals = {
         path, // the real filesystem path — opener.openPath() needs this, not the asset:// url
       };
     });
+  },
+
+  // Real directory listing (not just .meta.json's keys) so a file that
+  // exists on disk but is somehow missing from .meta.json still shows up
+  // with a fallback name — same as server.js's own GET /api/manuals/:id.
+  async _sharedEntriesFor(dir) {
+    let dirEntries = [];
+    try { dirEntries = await window.__TAURI__.fs.readDir(dir); } catch(e) {} // dir may not exist yet
+    const meta  = await this._readSidecarJSON(`${dir}/.meta.json`);
+    const links = await this._readSidecarJSON(`${dir}/.links.json`);
+    const files = await Promise.all(
+      dirEntries
+        .filter(e => e.isFile && e.name !== '.meta.json' && e.name !== '.links.json')
+        .map(async e => {
+          const info = meta[e.name] || {};
+          const path = `${dir}/${e.name}`;
+          let size = 0;
+          try { size = (await window.__TAURI__.fs.stat(path)).size; } catch(err) {}
+          return {
+            kind: 'file', id: e.name, name: info.name || e.name, type: info.type || 'application/pdf',
+            size, url: window.__TAURI__.core.convertFileSrc(path), path,
+          };
+        })
+    );
+    const linkEntries = Object.entries(links).map(([id, l]) => ({ kind: 'link', id, name: l.name, url: l.url }));
+    return [...files, ...linkEntries];
+  },
+
+  async _readSidecarJSON(path) {
+    try { return JSON.parse(await window.__TAURI__.fs.readTextFile(path)); } catch(e) { return {}; }
+  },
+  async _writeSidecarJSON(path, data) {
+    const dir = path.slice(0, path.lastIndexOf('/'));
+    await window.__TAURI__.fs.mkdir(dir, { recursive: true });
+    await window.__TAURI__.fs.writeTextFile(path, JSON.stringify(data, null, 2));
   },
 
   async _manualsDirFor(moduleId) {
@@ -263,10 +315,17 @@ const Manuals = {
   },
 
   async _addTauriLink(moduleId, name, url) {
+    const id = 'link_' + this._uid();
+    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
+      const dir = await this._manualsDirFor(moduleId);
+      const links = await this._readSidecarJSON(`${dir}/.links.json`);
+      links[id] = { name: (name || url), url };
+      await this._writeSidecarJSON(`${dir}/.links.json`, links);
+      return;
+    }
     const m = Store.state.modules.find(x => x.id === moduleId);
     if (!m) return;
     const manuals = { ...(m.manuals || {}) };
-    const id = 'link_' + this._uid();
     manuals[id] = { kind: 'link', name: (name || url), url };
     this._saveModuleManuals(moduleId, manuals);
   },
@@ -289,6 +348,12 @@ const Manuals = {
     const dir = await this._manualsDirFor(moduleId);
     const id = this._uid() + '.pdf';
     await window.__TAURI__.fs.writeFile(`${dir}/${id}`, bytes);
+    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
+      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
+      meta[id] = { name, type: 'application/pdf' };
+      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+      return true;
+    }
     const m = Store.state.modules.find(x => x.id === moduleId);
     const manuals = { ...(m?.manuals || {}), [id]: { kind: 'file', name, type: 'application/pdf', size: bytes.length } };
     this._saveModuleManuals(moduleId, manuals);
@@ -296,6 +361,22 @@ const Manuals = {
   },
 
   async _deleteTauriFile(moduleId, fileId) {
+    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
+      const dir = await this._manualsDirFor(moduleId);
+      if (fileId.startsWith('link_')) {
+        const links = await this._readSidecarJSON(`${dir}/.links.json`);
+        delete links[fileId];
+        await this._writeSidecarJSON(`${dir}/.links.json`, links);
+        return;
+      }
+      try { await window.__TAURI__.fs.remove(`${dir}/${fileId}`); } catch (err) {
+        console.error('PATCH.doc manual delete error (Tauri):', err);
+      }
+      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
+      delete meta[fileId];
+      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+      return;
+    }
     const m = Store.state.modules.find(x => x.id === moduleId);
     if (!m) return;
     const manuals = { ...(m.manuals || {}) };
