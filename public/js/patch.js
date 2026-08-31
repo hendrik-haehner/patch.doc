@@ -259,12 +259,11 @@ const Patch = {
       // A plain <a href target="_blank"> silently does nothing in this
       // webview — no new-window handling wired up, no error either since
       // nothing actually throws (see manuals.js's _fileRow for the same
-      // gap). Open through Tauri's opener plugin instead.
+      // gap). Manuals.openTauri already handles both link/file entries and
+      // NAS-vs-local paths (see there) — reuse it instead of duplicating.
       icon.onclick = IO.isTauri() ? (e) => {
         e.preventDefault();
-        const entry = files[0];
-        const p = entry.kind === 'link' ? window.__TAURI__.opener.openUrl(entry.url) : window.__TAURI__.opener.openPath(entry.path);
-        p.catch(err => console.error('PATCH.doc manual open error (Tauri):', err));
+        Manuals.openTauri(pm.moduleId, files[0].id);
       } : null;
     });
   },
