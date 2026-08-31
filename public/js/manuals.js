@@ -196,7 +196,7 @@ const Manuals = {
       }
     } catch (err) {
       console.error('PATCH.doc manual open error (Tauri):', err);
-      App.setStatus('could not open manual: ' + (err.message || err));
+      App.setStatus('could not open manual: ' + this._errText(err));
     }
   },
 
@@ -211,8 +211,19 @@ const Manuals = {
     });
     win.once('tauri://error', (e) => {
       console.error('PATCH.doc manual window error (Tauri):', e);
-      App.setStatus('could not open manual: ' + (e?.payload?.message || e));
+      App.setStatus('could not open manual: ' + this._errText(e?.payload?.message || e));
     });
+  },
+
+  // Tauri IPC rejections are often a plain object (not an Error instance),
+  // so `err.message` is undefined and string-concatenating the object
+  // itself just prints "[object Object]" — useless for figuring out what
+  // actually failed (this is exactly how a missing-permission error looked
+  // before this existed).
+  _errText(err) {
+    if (typeof err === 'string') return err;
+    if (err && err.message) return err.message;
+    try { return JSON.stringify(err); } catch(e) { return String(err); }
   },
 
   // ── Tauri desktop build: real files on disk ─────────────────────────────
