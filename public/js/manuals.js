@@ -260,7 +260,16 @@ const Manuals = {
   // with a fallback name — same as server.js's own GET /api/manuals/:id.
   async _sharedEntriesFor(dir) {
     let dirEntries = [];
-    try { dirEntries = await window.__TAURI__.fs.readDir(dir); } catch(e) {} // dir may not exist yet
+    try {
+      dirEntries = await window.__TAURI__.fs.readDir(dir);
+    } catch(e) {
+      // Expected (dir doesn't exist yet) if exists() agrees — anything
+      // else (e.g. a permission error) would otherwise look identical to
+      // "no manuals" with no way to tell the two apart.
+      let reallyMissing = true;
+      try { reallyMissing = !(await window.__TAURI__.fs.exists(dir)); } catch(e2) {}
+      if (!reallyMissing) console.error('PATCH.doc: readDir failed for an existing manuals dir', dir, e);
+    }
     const meta  = await this._readSidecarJSON(`${dir}/.meta.json`);
     const links = await this._readSidecarJSON(`${dir}/.links.json`);
     const files = await Promise.all(
