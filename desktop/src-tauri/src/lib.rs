@@ -38,6 +38,24 @@ fn local_data_dir(app: tauri::AppHandle, category: String, id: String) -> Result
     Ok(dir.to_string_lossy().to_string())
 }
 
+// NAS sync (public/js/nassync.js) reads/writes state.json/modules.json via
+// the fs plugin's own dynamic scope (granted by the dialog picker below),
+// but images/audio/PDF previews load through the *asset* protocol instead
+// (window.__TAURI__.core.convertFileSrc — see media.js/manuals.js), which
+// is checked against a completely separate scope. Unlike the fs plugin's,
+// this one isn't extended automatically by picking a folder — it has to be
+// granted here explicitly, once, right after the user picks their NAS
+// root. tauri-plugin-persisted-scope's "protocol-asset" feature (Cargo.toml)
+// remembers this grant across restarts the same way it already does for
+// the fs scope.
+#[tauri::command]
+fn allow_nas_asset_scope(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    use tauri::Manager;
+    app.asset_protocol_scope()
+        .allow_directory(&path, true)
+        .map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -60,7 +78,7 @@ pub fn run() {
         // for a link-type manual's http(s) URL (opens in the default
         // browser).
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![local_data_dir])
+        .invoke_handler(tauri::generate_handler![local_data_dir, allow_nas_asset_scope])
         .run(tauri::generate_context!())
         .expect("error while running PATCH.doc");
 }

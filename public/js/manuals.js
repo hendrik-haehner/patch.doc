@@ -179,12 +179,40 @@ const Manuals = {
     const entry = (this._cache[moduleId] || []).find(f => f.id === fileId);
     if (!entry) return;
     try {
-      if (entry.kind === 'link') await window.__TAURI__.opener.openUrl(entry.url);
-      else await window.__TAURI__.opener.openPath(entry.path);
+      if (entry.kind === 'link') { await window.__TAURI__.opener.openUrl(entry.url); return; }
+      // opener:allow-open-path is a *static* allowlist (see capabilities/
+      // default.json) fixed at build time to this device's own $APPDATA —
+      // Tauri deliberately doesn't allow extending it at runtime, so it can
+      // never cover a NAS root the user only picks after installing the
+      // app. Once NAS sync is active, every manual's real path lives under
+      // that NAS root instead, so openPath() would just be silently denied
+      // — open the PDF in its own small window via the asset:// URL
+      // instead, whose scope *can* be (and is, by NasSync.activate) granted
+      // at runtime.
+      if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
+        await this._openInWindow(entry);
+      } else {
+        await window.__TAURI__.opener.openPath(entry.path);
+      }
     } catch (err) {
       console.error('PATCH.doc manual open error (Tauri):', err);
       App.setStatus('could not open manual: ' + (err.message || err));
     }
+  },
+
+  async _openInWindow(entry) {
+    // Window labels only allow [a-zA-Z-/:_] — file ids are UUID-ish but can
+    // contain dots (e.g. the ".pdf" suffix _uploadTauriFile appends).
+    const label = 'manual-' + entry.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const existing = await window.__TAURI__.webviewWindow.WebviewWindow.getByLabel(label);
+    if (existing) { await existing.setFocus(); return; }
+    const win = new window.__TAURI__.webviewWindow.WebviewWindow(label, {
+      url: entry.url, title: entry.name, width: 900, height: 1000,
+    });
+    win.once('tauri://error', (e) => {
+      console.error('PATCH.doc manual window error (Tauri):', e);
+      App.setStatus('could not open manual: ' + (e?.payload?.message || e));
+    });
   },
 
   // ── Tauri desktop build: real files on disk, metadata in module.manuals ──

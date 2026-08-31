@@ -175,6 +175,13 @@ const NasSync = (() => {
     _modulesMtime.current = null;
 
     try {
+      // Manual PDFs and media (photos/audio) load through window.__TAURI__.
+      // core.convertFileSrc's asset:// protocol, not the fs plugin — that
+      // has its own scope, separate from the fs scope the folder picker
+      // already granted above, and it isn't extended automatically just by
+      // picking a folder. Without this, thumbnails/audio/PDF previews for
+      // anything under the NAS root silently fail to load.
+      await window.__TAURI__.core.invoke('allow_nas_asset_scope', { path: rootPath });
       const localState = JSON.parse(JSON.stringify(Store.state));
       const existingState   = await readState();
       const existingModules = await readModules();

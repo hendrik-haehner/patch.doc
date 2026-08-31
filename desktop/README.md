@@ -79,9 +79,18 @@ one or the other at a time," not "use both simultaneously."
 First activation copies whatever's currently on this device (patches, your
 module library if the NAS folder doesn't already have one, plus any local
 photos/manuals) into the NAS folder, so switching over doesn't look like
-your existing work vanished. **Deactivate** just stops using the shared
-files — it never deletes them, and reverts this device to its own local
-storage.
+your existing work vanished. **If the NAS folder already had a module
+library, that one wins instead** — any manuals you'd only ever attached
+locally (in this app, before NAS sync) won't show up until you re-add
+them, since they were never part of what was already shared. **Deactivate**
+just stops using the shared files — it never deletes them, and reverts
+this device to its own local storage.
+
+Manuals and media load through a separate, narrower permission than the
+patches/modules themselves — clicking a manual opens it in its own small
+window rather than your OS's regular PDF viewer, since the OS-level opener
+can only be trusted with folders known at build time, never one you pick
+at runtime.
 
 CI (`.github/workflows/build-desktop-macos.yml`) builds macOS on every
 push to `main`, and adds Windows (`.msi` + `.exe`) and Linux (`.deb` +
