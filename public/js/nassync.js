@@ -90,11 +90,14 @@ const NasSync = (() => {
   async function writeState(data)     { return _writeJSON(statePath(), data, _stateMtime); }
   async function writeModules(data)   { return _writeJSON(modulesPath(), data, _modulesMtime); }
 
-  // Copies any existing local (pre-NAS-sync, $APPDATA-based) media/manual
-  // files into the newly-chosen shared location, once — otherwise switching
-  // over looks like every photo and manual just vanished. Only meaningful
-  // on first activation (an existing NAS state.json means this root+user
-  // was already set up before, so its media should already be there).
+  // Copies any existing local (pre-NAS-sync, $APPDATA-based) patch media
+  // into the newly-chosen shared location, once — otherwise switching over
+  // looks like every photo just vanished. Only meaningful on first
+  // activation (an existing NAS state.json means this root+user was
+  // already set up before, so its media should already be there). Module
+  // manuals are handled separately by _mergeModuleLibraries/
+  // _applyModuleFileCopies below — unlike patches, the module library is
+  // shared, so it needs actual matching, not a flat "first time only" copy.
   async function _migrateLocalFiles(localState) {
     for (const patch of localState.patches || []) {
       const ids = Object.keys(patch.media || {});
@@ -108,17 +111,91 @@ const NasSync = (() => {
         } catch(e) { console.warn('NasSync: could not migrate media file', id, e); }
       }
     }
-    for (const m of localState.modules || []) {
-      const fileIds = Object.entries(m.manuals || {}).filter(([, v]) => v.kind !== 'link').map(([id]) => id);
-      if (!fileIds.length) continue;
-      const oldDir = await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals', id: String(m.id) });
-      const newDir = await ensureManualsDir(m.id);
-      for (const id of fileIds) {
-        try {
-          const bytes = await window.__TAURI__.fs.readFile(`${oldDir}/${id}`);
-          await window.__TAURI__.fs.writeFile(`${newDir}/${id}`, bytes);
-        } catch(e) { console.warn('NasSync: could not migrate manual file', id, e); }
+  }
+
+  function _normKey(m) { return (m.name || '').trim().toLowerCase() + '|' + (m.maker || '').trim().toLowerCase(); }
+  function _manualKey(entry) { return entry.kind + '|' + (entry.name || '').trim().toLowerCase(); }
+
+  // The module library (modules.json) is shared across every user of a NAS
+  // root, so by the time anyone activates NAS sync from the desktop app it
+  // very likely already exists — e.g. from using the self-hosted server's
+  // web app. Rather than either "local wins" or "NAS wins" (either one
+  // makes whatever's only on the losing side look like it vanished), match
+  // modules by name+maker (same approach as Manuals.importFromNAS(), which
+  // already has to solve the same "two independent id sequences" problem)
+  // and fold each device's manuals into the shared copy — additive only,
+  // nothing already on the NAS side is ever removed or overwritten.
+  //
+  // Patches (state.json) deliberately aren't merged this way: a patch's id
+  // is just this device's own patch counter, so two devices' patch #3 are
+  // no more likely to be "the same patch" than two random numbers — unlike
+  // a module's name+maker, there's no reliable identity to match on.
+  function _mergeModuleLibraries(localModules, nasModules, nasNextModuleId) {
+    const nasByKey = new Map(nasModules.map(m => [_normKey(m), m]));
+    const usedIds = new Set(nasModules.map(m => m.id));
+    let nextId = Number(nasNextModuleId) || 24;
+    for (const m of nasModules) nextId = Math.max(nextId, m.id + 1);
+
+    const result = nasModules.map(m => ({ ...m, manuals: { ...(m.manuals || {}) } }));
+    const fileCopies = []; // { fromModuleId, toModuleId, fileId } — resolved after modules.json is written
+    let changed = false;
+
+    for (const local of localModules || []) {
+      const match = nasByKey.get(_normKey(local));
+      if (!match) {
+        // Nothing by this name+maker on the NAS side yet — add it as a new
+        // module, keeping its own id unless that id's already taken.
+        let newId = local.id;
+        if (usedIds.has(newId)) { newId = nextId++; } else { nextId = Math.max(nextId, newId + 1); }
+        usedIds.add(newId);
+        result.push({ ...local, id: newId, manuals: { ...(local.manuals || {}) } });
+        changed = true;
+        for (const [fileId, entry] of Object.entries(local.manuals || {})) {
+          if (entry.kind !== 'link') fileCopies.push({ fromModuleId: local.id, toModuleId: newId, fileId });
+        }
+        continue;
       }
+      // Matched by name+maker — the NAS copy stays the module of record
+      // (its id, ports, params etc. are untouched), but any manual this
+      // device has that isn't already there (by name, so re-adding "the
+      // same" PDF on both sides doesn't create a visible duplicate) gets
+      // folded in.
+      const target = result.find(m => m.id === match.id);
+      const already = new Set(Object.values(target.manuals || {}).map(_manualKey));
+      for (const [fileId, entry] of Object.entries(local.manuals || {})) {
+        const k = _manualKey(entry);
+        if (already.has(k)) continue;
+        target.manuals[fileId] = entry;
+        already.add(k);
+        changed = true;
+        if (entry.kind !== 'link') fileCopies.push({ fromModuleId: local.id, toModuleId: target.id, fileId });
+      }
+    }
+
+    return { modules: result, nextModuleId: nextId, fileCopies, changed };
+  }
+
+  // Runs the file copies _mergeModuleLibraries worked out, once the merged
+  // modules.json has actually been written (so a failure here can't leave
+  // manuals pointing at a module list that was never saved).
+  async function _applyModuleFileCopies(fileCopies) {
+    const dirs = {};
+    const dirFor = async (prefix, id) => {
+      const k = prefix + id;
+      if (!(k in dirs)) {
+        dirs[k] = prefix === 'old'
+          ? await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals', id: String(id) })
+          : await ensureManualsDir(id);
+      }
+      return dirs[k];
+    };
+    for (const { fromModuleId, toModuleId, fileId } of fileCopies) {
+      try {
+        const oldDir = await dirFor('old', fromModuleId);
+        const newDir = await dirFor('new', toModuleId);
+        const bytes = await window.__TAURI__.fs.readFile(`${oldDir}/${fileId}`);
+        await window.__TAURI__.fs.writeFile(`${newDir}/${fileId}`, bytes);
+      } catch(e) { console.warn('NasSync: could not merge manual file', fileId, e); }
     }
   }
 
@@ -136,8 +213,12 @@ const NasSync = (() => {
     const btn = document.getElementById('nas-sync-btn');
     if (!btn) return;
     const active = isEnabled();
-    btn.style.borderColor = active ? 'var(--accent-border)' : '';
-    btn.style.color       = active ? 'var(--accent)' : '';
+    // --success (a literal green), not --accent (the UI's own theme color,
+    // which is blue by default) — this is a connected/synced indicator,
+    // the same "green = good" convention as any other sync status icon,
+    // not a themed selection highlight like the active tab uses.
+    btn.style.borderColor = active ? 'var(--success)' : '';
+    btn.style.color       = active ? 'var(--success)' : '';
     btn.title = active ? 'NAS sync (active)' : 'NAS sync';
   }
 
@@ -192,13 +273,21 @@ const NasSync = (() => {
           activePatchId: localState.activePatchId, nextPatchNum: localState.nextPatchNum,
         });
       }
-      if (!existingModules) {
-        await writeModules({ modules: localState.modules, nextModuleId: localState.nextModuleId });
+      // else: this NAS root already has patches under this username —
+      // those stay authoritative (see _mergeModuleLibraries above for why
+      // patches, unlike the module library just below, aren't merged).
+
+      const merged = _mergeModuleLibraries(
+        localState.modules,
+        (existingModules && existingModules.modules) || [],
+        (existingModules && existingModules.nextModuleId) || localState.nextModuleId
+      );
+      if (!existingModules || merged.changed) {
+        await writeModules({ modules: merged.modules, nextModuleId: merged.nextModuleId });
       }
-      // else: this NAS root already has a module library — that becomes
-      // the shared source of truth from now on, unchanged.
 
       if (!existingState) await _migrateLocalFiles(localState);
+      if (merged.fileCopies.length) await _applyModuleFileCopies(merged.fileCopies);
 
       await Store.loadFromServer();
       App.fullRender();
@@ -232,5 +321,6 @@ const NasSync = (() => {
     statePath, modulesPath, mediaDir, manualsDir, ensureMediaDir, ensureManualsDir,
     readState, readModules, writeState, writeModules,
     open, close, chooseFolder, activate, deactivate, updateTopbarButton,
+    _mergeModuleLibraries, // exposed for tests only
   };
 })();
