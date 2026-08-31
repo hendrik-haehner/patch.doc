@@ -138,6 +138,11 @@ const NasSync = (() => {
 
     const result = nasModules.map(m => ({ ...m, manuals: { ...(m.manuals || {}) } }));
     const fileCopies = []; // { fromModuleId, toModuleId, fileId } — resolved after modules.json is written
+    // oldId -> newId for every local module whose id changed, whether
+    // because it matched an existing NAS module under a different id, or
+    // because its own id collided with an unrelated one already there —
+    // any local patch placing that module by its old id needs to follow.
+    const idMap = new Map();
     let changed = false;
 
     for (const local of localModules || []) {
@@ -148,6 +153,7 @@ const NasSync = (() => {
         let newId = local.id;
         if (usedIds.has(newId)) { newId = nextId++; } else { nextId = Math.max(nextId, newId + 1); }
         usedIds.add(newId);
+        if (newId !== local.id) idMap.set(local.id, newId);
         result.push({ ...local, id: newId, manuals: { ...(local.manuals || {}) } });
         changed = true;
         for (const [fileId, entry] of Object.entries(local.manuals || {})) {
@@ -160,6 +166,7 @@ const NasSync = (() => {
       // device has that isn't already there (by name, so re-adding "the
       // same" PDF on both sides doesn't create a visible duplicate) gets
       // folded in.
+      if (match.id !== local.id) idMap.set(local.id, match.id);
       const target = result.find(m => m.id === match.id);
       const already = new Set(Object.values(target.manuals || {}).map(_manualKey));
       for (const [fileId, entry] of Object.entries(local.manuals || {})) {
@@ -172,7 +179,21 @@ const NasSync = (() => {
       }
     }
 
-    return { modules: result, nextModuleId: nextId, fileCopies, changed };
+    return { modules: result, nextModuleId: nextId, fileCopies, idMap, changed };
+  }
+
+  // Local patches place modules by id — if _mergeModuleLibraries gave a
+  // module a different id (matched an existing NAS module, or resolved an
+  // id collision), any patch referencing the old id needs to follow, or
+  // that module would just silently vanish from the patch on next render.
+  function _remapPatchModuleIds(patches, idMap) {
+    if (!idMap.size) return patches;
+    return (patches || []).map(patch => ({
+      ...patch,
+      patchModules: (patch.patchModules || []).map(pm =>
+        idMap.has(pm.moduleId) ? { ...pm, moduleId: idMap.get(pm.moduleId) } : pm
+      ),
+    }));
   }
 
   // Runs the file copies _mergeModuleLibraries worked out, once the merged
@@ -267,16 +288,6 @@ const NasSync = (() => {
       const existingState   = await readState();
       const existingModules = await readModules();
 
-      if (!existingState) {
-        await writeState({
-          version: localState.version, patches: localState.patches,
-          activePatchId: localState.activePatchId, nextPatchNum: localState.nextPatchNum,
-        });
-      }
-      // else: this NAS root already has patches under this username —
-      // those stay authoritative (see _mergeModuleLibraries above for why
-      // patches, unlike the module library just below, aren't merged).
-
       const merged = _mergeModuleLibraries(
         localState.modules,
         (existingModules && existingModules.modules) || [],
@@ -286,9 +297,31 @@ const NasSync = (() => {
         await writeModules({ modules: merged.modules, nextModuleId: merged.nextModuleId });
       }
 
+      if (!existingState) {
+        // A module the merge just matched onto an existing NAS module (or
+        // renumbered to dodge an id collision) needs every local patch
+        // that places it by its old id updated to match — otherwise it'd
+        // just disappear from the patch, looking like data loss all over
+        // again but for placed modules instead of manuals.
+        await writeState({
+          version: localState.version,
+          patches: _remapPatchModuleIds(localState.patches, merged.idMap),
+          activePatchId: localState.activePatchId, nextPatchNum: localState.nextPatchNum,
+        });
+      }
+      // else: this NAS root already has patches under this username —
+      // those stay authoritative (see _mergeModuleLibraries above for why
+      // patches, unlike the module library just above, aren't merged).
+
       if (!existingState) await _migrateLocalFiles(localState);
       if (merged.fileCopies.length) await _applyModuleFileCopies(merged.fileCopies);
 
+      // Manuals._cache is keyed by module id and never expires on its own
+      // — reusing an id across the activation (same module, now possibly
+      // with different/merged manuals) would otherwise keep showing
+      // whatever was cached from before this activation, with no way for
+      // the user to tell the two apart short of restarting the app.
+      if (typeof Manuals !== 'undefined') Manuals._cache = {};
       await Store.loadFromServer();
       App.fullRender();
       updateTopbarButton();
@@ -309,6 +342,7 @@ const NasSync = (() => {
     try { localStorage.removeItem(ROOT_KEY); localStorage.removeItem(USER_KEY); } catch(e) {}
     _stateMtime.current = null;
     _modulesMtime.current = null;
+    if (typeof Manuals !== 'undefined') Manuals._cache = {}; // see activate() for why
     await Store.loadFromServer();
     App.fullRender();
     updateTopbarButton();
