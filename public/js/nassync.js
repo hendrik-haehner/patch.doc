@@ -136,8 +136,12 @@ const NasSync = (() => {
     const btn = document.getElementById('nas-sync-btn');
     if (!btn) return;
     const active = isEnabled();
-    btn.style.borderColor = active ? 'var(--accent-border)' : '';
-    btn.style.color       = active ? 'var(--accent)' : '';
+    // --success (a literal green), not --accent (the UI's own theme color,
+    // which is blue by default) — this is a connected/synced indicator,
+    // the same "green = good" convention as any other sync status icon,
+    // not a themed selection highlight like the active tab uses.
+    btn.style.borderColor = active ? 'var(--success)' : '';
+    btn.style.color       = active ? 'var(--success)' : '';
     btn.title = active ? 'NAS sync (active)' : 'NAS sync';
   }
 
