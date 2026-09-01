@@ -124,7 +124,14 @@ html, body {
   display: grid;
   grid-template-columns: 275px 1fr;
   grid-template-rows: 44px 1fr;
-  height: 100vh;
+  /* 100vh on mobile Safari is the height with its address/tab bar
+     collapsed, not what's actually visible — since this app shell never
+     scrolls (Safari only auto-collapses that bar on scroll), the bar stays
+     up and permanently covers whatever 100vh pushed below the real fold
+     (the patch-view status bar, the topbar in other tabs — no way back).
+     100dvh tracks the real visible height instead. */
+  height: 100vh; /* fallback for browsers without dvh support */
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   transition: grid-template-columns 0.2s ease;
@@ -680,7 +687,7 @@ html, body {
 .modal {
   background: var(--bg1); border: 0.5px solid var(--border2);
   border-radius: var(--radius-lg); padding: 20px; width: 340px;
-  max-width: 92vw; max-height: 90vh; overflow-y: auto;
+  max-width: 92vw; max-height: 90dvh; overflow-y: auto;
 }
 .modal h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
 .field { margin-bottom: 10px; }
@@ -796,6 +803,10 @@ html, body {
 /* Detected via JS (Mobile.init) and applied as a data attribute, so it
    works correctly in landscape orientation too, unlike a pure width query. */
 [data-touch-mode="1"] #patch-toolbar { display: none; }
+/* The hint text/zoom controls it holds don't earn the vertical space they
+   take on a small screen — pinch-to-zoom already works, and the hints
+   describe mouse interactions (drag, click) touch mode doesn't use. */
+[data-touch-mode="1"] #patch-statusbar { display: none; }
 
 [data-touch-mode="1"] .patch-module {
   cursor: default; /* no drag affordance — modules aren't draggable here */
@@ -1348,7 +1359,7 @@ html, body {
    never resizes based on how much is left to place. */
 .panel-editor-modal {
   width: 70vw; max-width: 96vw;
-  height: 90vh; max-height: 96vh;
+  height: 90dvh; max-height: 96dvh;
   display: flex; flex-direction: column;
   overflow: hidden; /* .modal's own overflow-y:auto would scroll the whole dialog instead */
 }
@@ -1828,7 +1839,7 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
 /* ── theme editor modal ── */
 .theme-editor-modal {
   width: 460px; max-width: 96vw;
-  height: 82vh; max-height: 92vh;
+  height: 82dvh; max-height: 92dvh;
   display: flex; flex-direction: column;
   overflow: hidden; /* .modal's own overflow-y:auto would scroll the whole dialog instead */
 }
