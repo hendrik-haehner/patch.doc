@@ -236,6 +236,159 @@ const NasSync = (() => {
     }
   }
 
+  // ── offline-first sync ──────────────────────────────────────────────────
+  //
+  // NAS sync's reads/writes so far have all assumed the NAS is reachable —
+  // if it isn't (laptop closed, off the home network, NAS rebooting), the
+  // app had nothing to fall back to and just showed no patches at all.
+  // Store now writes a full local copy on every save regardless of NAS
+  // state (see store.js's _writeLocalCache, called from _saveToNas/
+  // _saveModules) and falls back to reading it if the NAS can't be reached
+  // at startup. The three pieces below make that safe to reconcile once
+  // the NAS comes back: per-item timestamps decide which side is newer,
+  // tombstones remember an offline deletion so it isn't silently undone by
+  // adopting the NAS's still-existing copy, and "synced ids" distinguish a
+  // brand new local item (push it) from one that used to be on the NAS and
+  // has since been deleted there by someone else (drop it locally, same as
+  // a `git pull` removing a file deleted upstream — nothing irreplaceable
+  // is destroyed by that, unlike the reverse direction, which is why only
+  // local-deleted-but-still-on-NAS asks first).
+
+  const DELETED_KEY = { patch: 'patchdoc_nas_deleted_patches', module: 'patchdoc_nas_deleted_modules' };
+  const SYNCED_KEY  = { patch: 'patchdoc_nas_synced_patch_ids', module: 'patchdoc_nas_synced_module_ids' };
+
+  function _readLocalJSON(key, fallback) {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch(e) { return fallback; }
+  }
+  function _writeLocalJSON(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
+
+  // Called by Store.deletePatch/deleteModule right before removing the
+  // item, so a later reconcile() can tell "deleted here" apart from
+  // "never existed here" if the NAS still has it. isEnabled() reflects
+  // configuration, not live reachability, so this still fires while NAS
+  // sync is merely offline (exactly the case it exists for) — only a
+  // no-op for the plain web/browser/server builds that never configure it.
+  function markDeleted(kind, id, name) {
+    if (!isEnabled()) return;
+    const map = _readLocalJSON(DELETED_KEY[kind], {});
+    map[id] = { name: name || '', deletedAt: new Date().toISOString() };
+    _writeLocalJSON(DELETED_KEY[kind], map);
+  }
+
+  // Called after every successful full read/write of patches or modules —
+  // replaces the whole set, since it's always passed the complete current
+  // id list, not an incremental delta.
+  function markSynced(kind, ids) {
+    _writeLocalJSON(SYNCED_KEY[kind], [...new Set(ids)]);
+  }
+  function _syncedIds(kind) { return new Set(_readLocalJSON(SYNCED_KEY[kind], [])); }
+
+  function _newer(a, b) {
+    // Undated items (older data from before timestamps existed) never win
+    // against a dated one — being unable to prove "I'm newer" is the same
+    // as not being newer.
+    return new Date(a || 0).getTime() > new Date(b || 0).getTime();
+  }
+
+  // Reconciles one collection (patches or modules) between what this
+  // device had cached locally and what's actually on the NAS right now.
+  // itemName(item) extracts a human-readable label for the delete-conflict
+  // prompt. Returns { list, needsWrite } — the merged collection, and
+  // whether it differs from nasList (so the caller knows to write it back).
+  async function _reconcileList(kind, localList, nasList, itemName) {
+    const localById = new Map((localList || []).map(x => [x.id, x]));
+    const nasById   = new Map((nasList   || []).map(x => [x.id, x]));
+    const tombstones = _readLocalJSON(DELETED_KEY[kind], {});
+    const wasSynced   = _syncedIds(kind);
+    const resolvedTombstones = [];
+    const result = [];
+    let needsWrite = false;
+
+    for (const id of new Set([...localById.keys(), ...nasById.keys()])) {
+      const local = localById.get(id);
+      const nas   = nasById.get(id);
+
+      if (local && nas) {
+        result.push(_newer(local.updatedAt, nas.updatedAt) ? local : nas);
+        if (_newer(local.updatedAt, nas.updatedAt)) needsWrite = true;
+        continue;
+      }
+
+      if (local && !nas) {
+        if (wasSynced.has(id)) continue; // deleted remotely by someone else — drop it here too
+        result.push(local); // never-yet-pushed local creation
+        needsWrite = true;
+        continue;
+      }
+
+      // NAS-only.
+      if (tombstones[id]) {
+        const deleteOnNas = await IO.confirmAsync(
+          `"${tombstones[id].name || itemName(nas)}" was deleted on this device but still exists on the NAS. Delete it there too?`
+        );
+        resolvedTombstones.push(id);
+        if (deleteOnNas) { needsWrite = true; continue; } // omit from result — this write removes it from the NAS
+        result.push(nas); // keep it — undoes the local deletion
+        continue;
+      }
+      result.push(nas); // new from the NAS (or another device)
+    }
+
+    // A tombstoned id is always absent from localById by now (deleting it
+    // is what created the tombstone) — so if it's also absent from the
+    // NAS, it never enters the loop above at all. Nothing to ask about
+    // either way: it's already gone everywhere, just clean up the record.
+    for (const id of Object.keys(tombstones)) {
+      if (!nasById.has(id) && !resolvedTombstones.includes(id)) resolvedTombstones.push(id);
+    }
+
+    if (resolvedTombstones.length) {
+      const remaining = { ..._readLocalJSON(DELETED_KEY[kind], {}) };
+      resolvedTombstones.forEach(id => delete remaining[id]);
+      _writeLocalJSON(DELETED_KEY[kind], remaining);
+    }
+    markSynced(kind, result.map(x => x.id));
+    return { list: result, needsWrite };
+  }
+
+  // Called once per successful NAS read (see store.js's loadFromServer) —
+  // reconciles both patches and modules against the local cache and pushes
+  // anything that needs it back to the NAS. Not used by activate() itself,
+  // which has its own one-time cross-library merge for adopting an
+  // *already-existing, independently-created* NAS module set (see
+  // _mergeModuleLibraries above) — this one assumes the id spaces already
+  // line up, true from the second sync onward.
+  async function reconcile(nasState) {
+    const cached = Store._readLocalCache();
+    if (!cached) { markSynced('patch', (nasState.patches || []).map(p => p.id)); markSynced('module', (nasState.modules || []).map(m => m.id)); return nasState; }
+
+    const patches = await _reconcileList('patch', cached.patches, nasState.patches, p => p.title || 'Untitled patch');
+    const modules = await _reconcileList('module', cached.modules, nasState.modules, m => m.name || 'Unnamed module');
+
+    let nextModuleId = Math.max(Number(nasState.nextModuleId) || 24, Number(cached.nextModuleId) || 0);
+    for (const m of modules.list) nextModuleId = Math.max(nextModuleId, m.id + 1);
+    let nextPatchNum = Math.max(Number(nasState.nextPatchNum) || 1, Number(cached.nextPatchNum) || 0);
+
+    const finalState = {
+      version: nasState.version,
+      patches: patches.list,
+      activePatchId: nasState.activePatchId && patches.list.some(p => p.id === nasState.activePatchId)
+        ? nasState.activePatchId
+        : (patches.list[0] && patches.list[0].id) || nasState.activePatchId,
+      nextPatchNum,
+      modules: modules.list,
+      nextModuleId,
+    };
+
+    if (patches.needsWrite) {
+      await writeState({ version: finalState.version, patches: finalState.patches, activePatchId: finalState.activePatchId, nextPatchNum: finalState.nextPatchNum });
+    }
+    if (modules.needsWrite) {
+      await writeModules({ modules: finalState.modules, nextModuleId: finalState.nextModuleId });
+    }
+    return finalState;
+  }
+
   function _setStatus(text, kind) {
     const el = document.getElementById('nas-sync-status');
     if (!el) return;
@@ -249,14 +402,17 @@ const NasSync = (() => {
   function updateTopbarButton() {
     const btn = document.getElementById('nas-sync-btn');
     if (!btn) return;
-    const active = isEnabled();
-    // --success (a literal green), not --accent (the UI's own theme color,
-    // which is blue by default) — this is a connected/synced indicator,
-    // the same "green = good" convention as any other sync status icon,
-    // not a themed selection highlight like the active tab uses.
-    btn.style.borderColor = active ? 'var(--success)' : '';
-    btn.style.color       = active ? 'var(--success)' : '';
-    btn.title = active ? 'NAS sync (active)' : 'NAS sync';
+    const active  = isEnabled();
+    const offline = active && !!(typeof Store !== 'undefined' && Store._nasOffline);
+    // --success (a literal green) when actually synced, --danger (an amber/
+    // red "attention" color) when configured but unreachable right now —
+    // not --accent (the UI's own theme color, which is blue by default and
+    // reserved for plain selection highlighting, not a status).
+    const color = offline ? 'var(--danger)' : (active ? 'var(--success)' : '');
+    btn.style.borderColor = color;
+    btn.style.color       = color;
+    btn.title = offline ? 'NAS sync (offline — using local copy, will sync when reachable)'
+      : active ? 'NAS sync (active)' : 'NAS sync';
   }
 
   function open() {
@@ -338,7 +494,22 @@ const NasSync = (() => {
       // whatever was cached from before this activation, with no way for
       // the user to tell the two apart short of restarting the app.
       if (typeof Manuals !== 'undefined') Manuals._cache = {};
-      await Store.loadFromServer();
+
+      // Adopt what was just established directly, rather than a generic
+      // Store.loadFromServer() — that would run reconcile() too, which
+      // assumes local and NAS ids already line up (true from the *next*
+      // sync onward) and would just redo, poorly, the name+maker merge
+      // this function already did above.
+      const finalState = existingState || {
+        version: localState.version,
+        patches: _remapPatchModuleIds(localState.patches, merged.idMap),
+        activePatchId: localState.activePatchId, nextPatchNum: localState.nextPatchNum,
+      };
+      finalState.modules = merged.modules;
+      finalState.nextModuleId = merged.nextModuleId;
+      Store._adoptNasState(finalState);
+      markSynced('patch', finalState.patches.map(p => p.id));
+      markSynced('module', finalState.modules.map(m => m.id));
       App.fullRender();
       updateTopbarButton();
       _setStatus('active — syncing with this folder', 'ok');
@@ -366,11 +537,36 @@ const NasSync = (() => {
     App.setStatus('NAS sync deactivated — back to local storage on this device');
   }
 
+  let _retryTimer = null;
+
+  // While NAS sync is configured but currently unreachable, periodically
+  // retries so a NAS coming back (laptop reopened on the home network,
+  // NAS finished rebooting) is picked up on its own — matching the "no
+  // manual step needed to notice a save succeeded" feel of the normal
+  // server/browser modes, instead of requiring a deactivate+reactivate or
+  // an app restart every time. Call once at startup; safe to call more
+  // than once (clears any previous timer first).
+  function startOfflineRetry() {
+    if (_retryTimer) clearInterval(_retryTimer);
+    _retryTimer = setInterval(async () => {
+      if (!isEnabled() || !Store._nasOffline) return;
+      try {
+        await Store.loadFromServer();
+        if (!Store._nasOffline) {
+          App.fullRender();
+          updateTopbarButton();
+          App.setStatus('NAS reachable again — synced');
+        }
+      } catch(e) { /* still unreachable — try again next tick */ }
+    }, 30000);
+  }
+
   return {
     isEnabled, root, username,
     statePath, modulesPath, mediaDir, manualsDir, ensureMediaDir, ensureManualsDir,
     readState, readModules, writeState, writeModules,
     open, close, chooseFolder, activate, deactivate, updateTopbarButton,
+    markDeleted, markSynced, reconcile, startOfflineRetry,
     _mergeModuleLibraries, // exposed for tests only
   };
 })();

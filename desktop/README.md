@@ -99,6 +99,25 @@ window rather than your OS's regular PDF viewer, since the OS-level opener
 can only be trusted with folders known at build time, never one you pick
 at runtime.
 
+**Working offline:** every save also writes a full local copy on this
+device, whether or not the NAS is actually reachable at that moment. If
+the NAS is off, asleep, or just not on the current network when the app
+starts, it falls back to that local copy instead of showing nothing — the
+topbar icon turns amber ("offline — using local copy") instead of green,
+and you can keep patching normally. The app checks every 30 seconds
+whether the NAS is back; once it is, each patch and module is reconciled
+individually: whichever side has the more recent edit wins, and older
+copies get overwritten with it — not a whole-file "last write wins" the
+way concurrent saves from two *already-connected* devices are handled
+(see above), but the same idea per item once one side was offline. A
+patch or module only present locally (never yet synced) gets pushed up;
+one that used to be synced and is now missing from the NAS was deleted by
+someone else and disappears here too. The one case that asks first:
+deleting something on this device while offline, if the NAS still has a
+copy by the time you're back online — you get a prompt for each one,
+since silently deleting it there too would be irreversible for whoever
+else can see that shared copy.
+
 CI (`.github/workflows/build-desktop-macos.yml`) builds macOS on every
 push to `main`, and adds Windows (`.msi` + `.exe`) and Linux (`.deb` +
 `.AppImage`) builds whenever that run also cuts a

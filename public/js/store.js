@@ -7801,22 +7801,57 @@ const Store = {
     return typeof NasSync !== 'undefined' && NasSync.isEnabled();
   },
 
+  // The device's own durable copy — written on every save *regardless* of
+  // whether NAS sync is active, so the app still has something to show
+  // (and keep working against) the next time it starts with no NAS
+  // connection. Same key/shape the plain browser (PATCHDOC_STATIC) build
+  // already uses, so this is a no-op there rather than a second format.
+  _writeLocalCache() {
+    try { localStorage.setItem('patchdoc_v1', JSON.stringify(this._state)); } catch(e) {}
+  },
+  _readLocalCache() {
+    try {
+      const raw = localStorage.getItem('patchdoc_v1');
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
+  },
+
+  // Used by NasSync.activate() once it's finished establishing/merging the
+  // NAS state, to adopt it as current without going through
+  // loadFromServer()'s reconcile() step (which assumes local/NAS ids
+  // already line up — not true yet on a first activation).
+  _adoptNasState(state) {
+    this._state = state;
+    this._nasOffline = false;
+    this._writeLocalCache();
+    return this._state;
+  },
+
   // Load state — NAS sync, server mode, or localStorage (static/PWA mode)
   async loadFromServer() {
     if (this._nasActive()) {
       try {
         const statePart   = await NasSync.readState();
         const modulesPart = await NasSync.readModules();
-        this._state = statePart || defaultState();
+        let state = statePart || defaultState();
         if (modulesPart) {
-          this._state.modules      = modulesPart.modules;
-          this._state.nextModuleId = modulesPart.nextModuleId || 24;
+          state.modules      = modulesPart.modules;
+          state.nextModuleId = modulesPart.nextModuleId || 24;
         }
+        // Reachable — reconcile against whatever this device last had
+        // locally (a previous session, or edits made while offline) before
+        // adopting the NAS's copy as current, so nothing made offline is
+        // silently discarded. See NasSync.reconcile for the merge rules.
+        this._state = await NasSync.reconcile(state);
         this._username = NasSync.username();
+        this._nasOffline = false;
+        this._writeLocalCache();
       } catch(e) {
-        console.warn('NAS sync load failed:', e);
-        this._loadFailed = true;
-        if (!this._state) this._state = defaultState();
+        console.warn('NAS sync load failed, falling back to local cache:', e);
+        this._nasOffline = true;
+        const cached = this._readLocalCache();
+        this._state = cached || defaultState();
+        if (!cached) this._loadFailed = true;
       }
       return this._state;
     }
@@ -7934,6 +7969,10 @@ const Store = {
   // vs /api/modules so the on-disk files stay byte-for-byte what the
   // server itself would produce.
   async _saveToNas() {
+    // Written first and unconditionally — a NAS write failing below must
+    // never mean this edit only existed in memory. This is also what lets
+    // the app start up with real data the next time the NAS isn't reachable.
+    this._writeLocalCache();
     const userState = {
       version:       this._state.version,
       patches:       this._state.patches,
@@ -7942,9 +7981,13 @@ const Store = {
     };
     try {
       await NasSync.writeState(userState);
+      NasSync.markSynced('patch', this._state.patches.map(p => p.id));
+      this._nasOffline = false;
       this._showSaveIndicator(true);
     } catch(e) {
-      console.error('NAS sync save failed:', e);
+      console.error('NAS sync save failed, kept locally for now:', e);
+      this._nasOffline = true;
+      NasSync.updateTopbarButton();
       this._showSaveIndicator(false);
     }
   },
@@ -7991,9 +8034,16 @@ const Store = {
   // Save shared modules — called after add/edit/delete module
   async _saveModules() {
     if (this._nasActive()) {
+      this._writeLocalCache();
       try {
         await NasSync.writeModules({ modules: this._state.modules, nextModuleId: this._state.nextModuleId });
-      } catch(e) { console.error('NAS sync module save failed:', e); }
+        NasSync.markSynced('module', this._state.modules.map(m => m.id));
+        this._nasOffline = false;
+      } catch(e) {
+        console.error('NAS sync module save failed, kept locally for now:', e);
+        this._nasOffline = true;
+        NasSync.updateTopbarButton();
+      }
       return;
     }
     if (window.PATCHDOC_STATIC) return;
@@ -8076,6 +8126,8 @@ const Store = {
 
   deletePatch(id) {
     if (this._state.patches.length <= 1) return false;
+    const p = this._state.patches.find(x => x.id === id);
+    if (p && typeof NasSync !== 'undefined') NasSync.markDeleted('patch', id, p.title);
     this._state.patches = this._state.patches.filter(p => p.id !== id);
     if (this._state.activePatchId === id) {
       this._state.activePatchId = this._state.patches[0].id;
@@ -8119,6 +8171,8 @@ const Store = {
 
   addModule(mod) {
     mod.id = this._state.nextModuleId++;
+    mod.createdAt = new Date().toISOString();
+    mod.updatedAt = mod.createdAt;
     this._state.modules.push(mod);
     this._saveModules();
     this.saveNow();
@@ -8126,6 +8180,8 @@ const Store = {
   },
 
   deleteModule(id) {
+    const m = this._state.modules.find(x => x.id === id);
+    if (m && typeof NasSync !== 'undefined') NasSync.markDeleted('module', id, m.name);
     this._state.modules = this._state.modules.filter(m => m.id !== id);
     this._state.patches.forEach(p => {
       p.patchModules = p.patchModules.filter(pm => pm.moduleId !== id);
