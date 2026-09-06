@@ -78,6 +78,7 @@ const App = {
       const nasBtn = document.getElementById('nas-sync-btn');
       if (nasBtn) nasBtn.style.display = '';
       NasSync.updateTopbarButton();
+      NasSync.startOfflineRetry();
     }
     // Must run before fullRender() — unlike snap (drag-only behavior),
     // panel mode changes what render() actually outputs.
@@ -1445,6 +1446,7 @@ const App = {
       const existing = Store.state.modules.find(x => x.id === window._editModuleId);
       if (existing) {
         Object.assign(existing, mod);
+        existing.updatedAt = new Date().toISOString();
         Store._saveModules(); // shared module library — must save separately
         Store.save();
         Undo.snapshot();
