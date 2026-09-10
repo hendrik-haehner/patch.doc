@@ -13,7 +13,8 @@ const Manuals = {
     if (IO.isTauri()) {
       await Promise.all(missing.map(async id => {
         const m = Store.state.modules.find(x => x.id === id);
-        this._cache[id] = m ? await this._tauriEntriesFor(m) : [];
+        try { this._cache[id] = m ? await this._tauriEntriesFor(m) : []; }
+        catch(e) { console.warn('PATCH.doc: could not prefetch manuals for module', id, e); this._cache[id] = []; }
       }));
       return;
     }
@@ -59,7 +60,15 @@ const Manuals = {
 
     // Fetch manual lists for all modules in parallel
     if (IO.isTauri()) {
-      await Promise.all(modules.map(async m => { this._cache[m.id] = await this._tauriEntriesFor(m); }));
+      // Same resilience as the non-Tauri branch below: one module's fetch
+      // failing (e.g. NAS sync configured but currently unreachable) must
+      // not sink the whole tab — Promise.all with no per-item catch would
+      // otherwise leave el stuck on the "loading…" placeholder forever,
+      // since the innerHTML further down that replaces it never runs.
+      await Promise.all(modules.map(async m => {
+        try { this._cache[m.id] = await this._tauriEntriesFor(m); }
+        catch(e) { console.warn('PATCH.doc: could not load manuals for', m.name, e); this._cache[m.id] = []; }
+      }));
     } else {
       await Promise.all(modules.map(async m => {
         try {
@@ -249,8 +258,14 @@ const Manuals = {
   // would be invisible to the web app (and everyone else's to it).
 
   async _tauriEntriesFor(m) {
+    // A *read* never needs the directory to exist yet (readDir/exists both
+    // handle "not there" fine, see _sharedEntriesFor) — only writes do.
+    // Using the ensure/mkdir path here meant every manuals listing tried to
+    // create a directory on the NAS, which throws immediately (and used to
+    // take the *entire* Manuals tab down with it — see render() below) the
+    // moment the NAS isn't actually reachable, not just "not yet created".
+    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) return this._sharedEntriesFor(NasSync.manualsDir(m.id));
     const dir = await this._manualsDirFor(m.id);
-    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) return this._sharedEntriesFor(dir);
     const manuals = m?.manuals || {};
     const ids = Object.keys(manuals);
     if (!ids.length) return [];
@@ -607,7 +622,11 @@ const Manuals = {
     let entries = [];
     if (IO.isTauri()) {
       const m = Store.state.modules.find(x => x.id === moduleId);
-      entries = m ? await this._tauriEntriesFor(m) : [];
+      try { entries = m ? await this._tauriEntriesFor(m) : []; }
+      catch(e) {
+        el.innerHTML = '<span style="color:var(--danger)">could not load manuals</span>';
+        return;
+      }
     } else {
       try {
         const res = await fetch(`/api/manuals/${moduleId}`);
