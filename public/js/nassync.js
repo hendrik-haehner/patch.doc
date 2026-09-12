@@ -351,6 +351,26 @@ const NasSync = (() => {
     return { list: result, needsWrite };
   }
 
+  // A NAS read can come back looking "successful" — no exception, valid
+  // JSON — while actually reflecting a disconnected mount rather than
+  // real content: some network filesystems answer an exists()/stat() on
+  // an unreachable path with a plain "not found" instead of an I/O error,
+  // which readState()/readModules() can't tell apart from "this really is
+  // a fresh NAS with nothing on it yet". If every single item this device
+  // previously confirmed was on the NAS is now missing, that's far more
+  // likely a bad read than every one of them having just been deleted —
+  // treat it as unreachable (the caller's catch block already knows how
+  // to fall back to the local cache safely) rather than let reconcile()
+  // wipe them out here.
+  function _assertPlausible(kind, nasList) {
+    const wasSynced = _syncedIds(kind);
+    if (!wasSynced.size) return; // nothing synced before — an empty NAS is entirely plausible
+    const nasIds = new Set((nasList || []).map(x => x.id));
+    if (![...wasSynced].some(id => nasIds.has(id))) {
+      throw new Error(`NAS read for ${kind}s had none of the ${wasSynced.size} previously-synced item(s) — treating as unreachable rather than risking wiping local data`);
+    }
+  }
+
   // Called once per successful NAS read (see store.js's loadFromServer) —
   // reconciles both patches and modules against the local cache and pushes
   // anything that needs it back to the NAS. Not used by activate() itself,
@@ -361,6 +381,9 @@ const NasSync = (() => {
   async function reconcile(nasState) {
     const cached = Store._readLocalCache();
     if (!cached) { markSynced('patch', (nasState.patches || []).map(p => p.id)); markSynced('module', (nasState.modules || []).map(m => m.id)); return nasState; }
+
+    _assertPlausible('patch', nasState.patches);
+    _assertPlausible('module', nasState.modules);
 
     const patches = await _reconcileList('patch', cached.patches, nasState.patches, p => p.title || 'Untitled patch');
     const modules = await _reconcileList('module', cached.modules, nasState.modules, m => m.name || 'Unnamed module');

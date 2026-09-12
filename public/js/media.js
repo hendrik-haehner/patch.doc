@@ -91,7 +91,14 @@ const Media = {
   // disk directly — no need to read bytes into JS for that.
   async _listTauri(patch) {
     const meta = patch.media || {};
-    const dir = await this._tauriDir(patch.id);
+    // A read never needs the directory to exist — only _tauriDir's
+    // ensureMediaDir (mkdir) does, and mkdir throws immediately if NAS
+    // sync is configured but the NAS isn't actually reachable, which would
+    // otherwise take the whole Media tab down (render() does catch this,
+    // but there's no reason a listing should ever need to create anything).
+    const dir = (typeof NasSync !== 'undefined' && NasSync.isEnabled())
+      ? NasSync.mediaDir(patch.id)
+      : await this._tauriDir(patch.id);
     return Object.entries(meta).map(([id, m]) => ({
       id, name: m.name, type: m.type, size: m.size,
       url: window.__TAURI__.core.convertFileSrc(`${dir}/${id}`),
