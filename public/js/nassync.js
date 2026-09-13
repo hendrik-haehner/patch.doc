@@ -356,18 +356,27 @@ const NasSync = (() => {
   // real content: some network filesystems answer an exists()/stat() on
   // an unreachable path with a plain "not found" instead of an I/O error,
   // which readState()/readModules() can't tell apart from "this really is
-  // a fresh NAS with nothing on it yet". If every single item this device
-  // previously confirmed was on the NAS is now missing, that's far more
-  // likely a bad read than every one of them having just been deleted —
-  // treat it as unreachable (the caller's catch block already knows how
-  // to fall back to the local cache safely) rather than let reconcile()
-  // wipe them out here.
-  function _assertPlausible(kind, nasList) {
+  // a fresh NAS with nothing on it yet".
+  //
+  // Two independent checks, deliberately not just one: the synced-ids
+  // ledger (checked first) is the more precise signal — it catches a read
+  // that dropped *some* previously-confirmed items even if others survive
+  // — but it's itself something a bad read can corrupt (an earlier false
+  // wipe writes "0 synced" right along with it, which would otherwise look
+  // like a legitimately fresh start forever after). The second check reads
+  // the actual cached data directly instead of that bookkeeping — the same
+  // "don't trust an empty read over data we can see we already have"
+  // defense loadFromServer()'s plain server-mode branch already applies
+  // (see its `stateData.patches.length > 0` check) — so a corrupted ledger
+  // can't silently disable the whole safety net.
+  function _assertPlausible(kind, cachedList, nasList) {
     const wasSynced = _syncedIds(kind);
-    if (!wasSynced.size) return; // nothing synced before — an empty NAS is entirely plausible
     const nasIds = new Set((nasList || []).map(x => x.id));
-    if (![...wasSynced].some(id => nasIds.has(id))) {
+    if (wasSynced.size && ![...wasSynced].some(id => nasIds.has(id))) {
       throw new Error(`NAS read for ${kind}s had none of the ${wasSynced.size} previously-synced item(s) — treating as unreachable rather than risking wiping local data`);
+    }
+    if ((cachedList || []).length && !(nasList || []).length) {
+      throw new Error(`NAS read for ${kind}s came back with none while this device has ${cachedList.length} cached — treating as unreachable rather than risking wiping local data`);
     }
   }
 
@@ -382,8 +391,8 @@ const NasSync = (() => {
     const cached = Store._readLocalCache();
     if (!cached) { markSynced('patch', (nasState.patches || []).map(p => p.id)); markSynced('module', (nasState.modules || []).map(m => m.id)); return nasState; }
 
-    _assertPlausible('patch', nasState.patches);
-    _assertPlausible('module', nasState.modules);
+    _assertPlausible('patch', cached.patches, nasState.patches);
+    _assertPlausible('module', cached.modules, nasState.modules);
 
     const patches = await _reconcileList('patch', cached.patches, nasState.patches, p => p.title || 'Untitled patch');
     const modules = await _reconcileList('module', cached.modules, nasState.modules, m => m.name || 'Unnamed module');

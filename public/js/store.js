@@ -7822,9 +7822,32 @@ const Store = {
   // already line up — not true yet on a first activation).
   _adoptNasState(state) {
     this._state = state;
+    this._ensureAtLeastOnePatch();
     this._nasOffline = false;
     this._writeLocalCache();
     return this._state;
+  },
+
+  // deletePatch() already refuses to remove the last one, but a *load* can
+  // still land on zero (an empty NAS read, a wiped or never-populated local
+  // cache) — and every screen assumes getActivePatch() returns something,
+  // with no ?. anywhere. Restoring the same "never zero" invariant here,
+  // right after every load, turns that into an honest placeholder patch
+  // instead of a blank canvas from an uncaught exception deep in render().
+  _ensureAtLeastOnePatch() {
+    if (!this._state.patches || !this._state.patches.length) {
+      this._state.patches = [{
+        id: 'patch_' + Date.now(),
+        title: 'New Patch #1',
+        notes: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        patchModules: [], cables: [], params: {}, cableColorIdx: 0, tags: [], photo: null,
+      }];
+      this._state.activePatchId = this._state.patches[0].id;
+    } else if (!this._state.patches.some(p => p.id === this._state.activePatchId)) {
+      this._state.activePatchId = this._state.patches[0].id;
+    }
   },
 
   // Load state — NAS sync, server mode, or localStorage (static/PWA mode)
@@ -7833,11 +7856,21 @@ const Store = {
       try {
         const statePart   = await NasSync.readState();
         const modulesPart = await NasSync.readModules();
-        let state = statePart || defaultState();
-        if (modulesPart) {
-          state.modules      = modulesPart.modules;
-          state.nextModuleId = modulesPart.nextModuleId || 24;
-        }
+        // A null read here means "no file" — which, on fs plugins that
+        // answer exists() with plain false on a disconnected mount instead
+        // of throwing, also means "unreachable right now". By the time
+        // isEnabled() is true, activate() has always already written a
+        // real state.json (see nassync.js), so there is no legitimate case
+        // where this branch runs and a genuinely-fresh empty NAS is
+        // expected. Substituting the built-in defaultState() here used to
+        // disguise that null as a plausible-looking sample patch and full
+        // module library — which sailed straight through reconcile()'s
+        // "does this look like a bad read" check below, since that check
+        // only ever inspects whether the NAS side truly came back empty.
+        // An honest empty object lets it do its job.
+        let state = statePart || { version: 2, patches: [], activePatchId: null, nextPatchNum: 1 };
+        state.modules      = modulesPart ? modulesPart.modules : [];
+        state.nextModuleId = modulesPart ? (modulesPart.nextModuleId || 24) : 1;
         // Reachable — reconcile against whatever this device last had
         // locally (a previous session, or edits made while offline) before
         // adopting the NAS's copy as current, so nothing made offline is
@@ -7845,12 +7878,14 @@ const Store = {
         this._state = await NasSync.reconcile(state);
         this._username = NasSync.username();
         this._nasOffline = false;
+        this._ensureAtLeastOnePatch();
         this._writeLocalCache();
       } catch(e) {
         console.warn('NAS sync load failed, falling back to local cache:', e);
         this._nasOffline = true;
         const cached = this._readLocalCache();
         this._state = cached || defaultState();
+        this._ensureAtLeastOnePatch();
         if (!cached) this._loadFailed = true;
       }
       return this._state;
@@ -7860,6 +7895,7 @@ const Store = {
         const raw = localStorage.getItem('patchdoc_v1');
         this._state = raw ? JSON.parse(raw) : defaultState();
       } catch(e) { this._state = defaultState(); }
+      this._ensureAtLeastOnePatch();
       return this._state;
     }
     try {
@@ -7927,6 +7963,7 @@ const Store = {
       this._loadFailed = true;
       if (!this._state) this._state = defaultState();
     }
+    this._ensureAtLeastOnePatch();
     return this._state;
   },
 
