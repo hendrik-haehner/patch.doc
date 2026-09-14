@@ -264,7 +264,25 @@ const Manuals = {
     // create a directory on the NAS, which throws immediately (and used to
     // take the *entire* Manuals tab down with it — see render() below) the
     // moment the NAS isn't actually reachable, not just "not yet created".
-    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) return this._sharedEntriesFor(NasSync.manualsDir(m.id));
+    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
+      const { reachable, entries } = await this._sharedEntriesFor(NasSync.manualsDir(m.id));
+      if (reachable) {
+        // Mirror to this device's own app-data dir in the background so a
+        // later read still has something to show once the NAS goes
+        // unreachable (see the fallback branch below) — unlike patches/
+        // modules, manuals were never cached locally at all before this,
+        // which is why they used to just vanish the moment the NAS mount
+        // dropped rather than falling back to a last-known copy.
+        this._cacheManualsLocally(m.id, NasSync.manualsDir(m.id))
+          .catch(e => console.warn('PATCH.doc: could not cache manuals locally for', m.name, e));
+        return entries;
+      }
+      // NAS unreachable — fall back to whatever this device cached the
+      // last time it *was* reachable. Same on-disk layout (.meta.json/
+      // .links.json + files) as the NAS dir, so the same reader works.
+      const cacheDir = await this._manualsCacheDirFor(m.id);
+      return (await this._sharedEntriesFor(cacheDir)).entries;
+    }
     const dir = await this._manualsDirFor(m.id);
     const manuals = m?.manuals || {};
     const ids = Object.keys(manuals);
@@ -284,17 +302,18 @@ const Manuals = {
   // Real directory listing (not just .meta.json's keys) so a file that
   // exists on disk but is somehow missing from .meta.json still shows up
   // with a fallback name — same as server.js's own GET /api/manuals/:id.
+  //
+  // Returns {reachable, entries}: reachable=false means readDir itself
+  // failed (the NAS mount is gone, or this local cache dir was never
+  // written to) — callers use that to tell "genuinely no manuals" apart
+  // from "couldn't find out", the same distinction store.js's NAS-sync
+  // reads had to learn to make (see _assertPlausible in nassync.js).
   async _sharedEntriesFor(dir) {
-    let dirEntries = [];
+    let dirEntries;
     try {
       dirEntries = await window.__TAURI__.fs.readDir(dir);
     } catch(e) {
-      // Expected (dir doesn't exist yet) if exists() agrees — anything
-      // else (e.g. a permission error) would otherwise look identical to
-      // "no manuals" with no way to tell the two apart.
-      let reallyMissing = true;
-      try { reallyMissing = !(await window.__TAURI__.fs.exists(dir)); } catch(e2) {}
-      if (!reallyMissing) console.error('PATCH.doc: readDir failed for an existing manuals dir', dir, e);
+      return { reachable: false, entries: [] };
     }
     const meta  = await this._readSidecarJSON(`${dir}/.meta.json`);
     const links = await this._readSidecarJSON(`${dir}/.links.json`);
@@ -313,7 +332,58 @@ const Manuals = {
         })
     );
     const linkEntries = Object.entries(links).map(([id, l]) => ({ kind: 'link', id, name: l.name, url: l.url }));
-    return [...files, ...linkEntries];
+    return { reachable: true, entries: [...files, ...linkEntries] };
+  },
+
+  async _manualsCacheDirFor(moduleId) {
+    return await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals_cache', id: String(moduleId) });
+  },
+
+  // Mirrors a module's manuals from the NAS into this device's own
+  // app-data dir so _tauriEntriesFor's fallback branch has something to
+  // show once the NAS becomes unreachable. Runs in the background (not
+  // awaited by callers) after every successful NAS listing; only copies a
+  // file's bytes when the cache doesn't already have a same-size copy, so
+  // opening the Manuals tab doesn't re-copy every PDF on disk each time.
+  async _cacheManualsLocally(moduleId, nasDir) {
+    let nasEntries;
+    try { nasEntries = await window.__TAURI__.fs.readDir(nasDir); } catch(e) { return; }
+
+    const cacheDir = await this._manualsCacheDirFor(moduleId);
+    const meta  = await this._readSidecarJSON(`${nasDir}/.meta.json`);
+    const links = await this._readSidecarJSON(`${nasDir}/.links.json`);
+    await this._writeSidecarJSON(`${cacheDir}/.meta.json`, meta);
+    await this._writeSidecarJSON(`${cacheDir}/.links.json`, links);
+
+    const nasFileNames = new Set();
+    for (const e of nasEntries) {
+      if (!e.isFile || e.name === '.meta.json' || e.name === '.links.json') continue;
+      nasFileNames.add(e.name);
+      const srcPath = `${nasDir}/${e.name}`;
+      const destPath = `${cacheDir}/${e.name}`;
+      let nasSize;
+      try { nasSize = (await window.__TAURI__.fs.stat(srcPath)).size; } catch(err) { continue; }
+      let cachedSize = -1;
+      try { cachedSize = (await window.__TAURI__.fs.stat(destPath)).size; } catch(err) {}
+      if (cachedSize === nasSize) continue;
+      try {
+        const bytes = await window.__TAURI__.fs.readFile(srcPath);
+        await window.__TAURI__.fs.writeFile(destPath, bytes);
+      } catch(err) {
+        console.warn('PATCH.doc: could not cache manual file', e.name, err);
+      }
+    }
+
+    // Drop cached files no longer on the NAS (deleted elsewhere) so a
+    // stale, since-removed PDF doesn't linger in the offline fallback.
+    let cacheEntries = [];
+    try { cacheEntries = await window.__TAURI__.fs.readDir(cacheDir); } catch(e) {}
+    for (const e of cacheEntries) {
+      if (!e.isFile || e.name === '.meta.json' || e.name === '.links.json') continue;
+      if (!nasFileNames.has(e.name)) {
+        try { await window.__TAURI__.fs.remove(`${cacheDir}/${e.name}`); } catch(err) {}
+      }
+    }
   },
 
   async _readSidecarJSON(path) {

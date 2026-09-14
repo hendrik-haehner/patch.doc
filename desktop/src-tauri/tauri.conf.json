@@ -24,7 +24,7 @@
       "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["$APPDATA/media/**", "$APPDATA/manuals/**"]
+        "scope": ["$APPDATA/media/**", "$APPDATA/manuals/**", "$APPDATA/manuals_cache/**"]
       }
     }
   },
