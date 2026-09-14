@@ -265,21 +265,32 @@ const Manuals = {
     // take the *entire* Manuals tab down with it — see render() below) the
     // moment the NAS isn't actually reachable, not just "not yet created".
     if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
-      const { reachable, entries } = await this._sharedEntriesFor(NasSync.manualsDir(m.id));
-      if (reachable) {
-        // Mirror to this device's own app-data dir in the background so a
-        // later read still has something to show once the NAS goes
-        // unreachable (see the fallback branch below) — unlike patches/
-        // modules, manuals were never cached locally at all before this,
-        // which is why they used to just vanish the moment the NAS mount
-        // dropped rather than falling back to a last-known copy.
-        this._cacheManualsLocally(m.id, NasSync.manualsDir(m.id))
-          .catch(e => console.warn('PATCH.doc: could not cache manuals locally for', m.name, e));
-        return entries;
+      // Store.loadFromServer() already works out real NAS reachability
+      // (see nassync.js's _assertPlausible) far more robustly than a
+      // single readDir() call here ever could — trust that first. Some
+      // network mounts answer readDir() on a disconnected share with a
+      // plain empty listing instead of throwing, which looks exactly like
+      // "this module simply has no manuals" and would otherwise skip the
+      // cache fallback below entirely — the same false-empty-read failure
+      // mode state.json/modules.json reads had before that fix existed.
+      if (!Store._nasOffline) {
+        const { reachable, entries } = await this._sharedEntriesFor(NasSync.manualsDir(m.id));
+        if (reachable) {
+          // Mirror to this device's own app-data dir in the background so
+          // a later read still has something to show once the NAS goes
+          // unreachable (see the fallback branch below) — unlike patches/
+          // modules, manuals were never cached locally at all before this,
+          // which is why they used to just vanish the moment the NAS
+          // mount dropped rather than falling back to a last-known copy.
+          this._cacheManualsLocally(m.id, NasSync.manualsDir(m.id))
+            .catch(e => console.warn('PATCH.doc: could not cache manuals locally for', m.name, e));
+          return entries;
+        }
       }
-      // NAS unreachable — fall back to whatever this device cached the
-      // last time it *was* reachable. Same on-disk layout (.meta.json/
-      // .links.json + files) as the NAS dir, so the same reader works.
+      // NAS unreachable (or untrusted) — fall back to whatever this
+      // device cached the last time it *was* reachable. Same on-disk
+      // layout (.meta.json/.links.json + files) as the NAS dir, so the
+      // same reader works.
       const cacheDir = await this._manualsCacheDirFor(m.id);
       return (await this._sharedEntriesFor(cacheDir)).entries;
     }
@@ -337,6 +348,25 @@ const Manuals = {
 
   async _manualsCacheDirFor(moduleId) {
     return await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals_cache', id: String(moduleId) });
+  },
+
+  // Proactively mirrors *every* module's manuals, not just ones the user
+  // happens to have looked at — relying on _tauriEntriesFor's per-module
+  // mirroring alone meant a device that never opened the Manuals tab (or
+  // a patch using a given module) before going offline had nothing cached
+  // for it at all, which is exactly what "no local copy" looked like.
+  // Called after every successful NAS sync (see store.js's
+  // loadFromServer and nassync.js's startOfflineRetry); cheap to repeat
+  // since _cacheManualsLocally only re-copies a file when its size
+  // actually changed. Runs sequentially, not in parallel, so it doesn't
+  // hammer the NAS with dozens of concurrent readDir/stat/readFile calls
+  // for a large module library.
+  async cacheAllModulesLocally() {
+    if (typeof NasSync === 'undefined' || !NasSync.isEnabled()) return;
+    for (const m of Store.state.modules) {
+      try { await this._cacheManualsLocally(m.id, NasSync.manualsDir(m.id)); }
+      catch(e) { console.warn('PATCH.doc: could not cache manuals for', m.name, e); }
+    }
   },
 
   // Mirrors a module's manuals from the NAS into this device's own
