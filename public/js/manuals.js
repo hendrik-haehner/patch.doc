@@ -275,7 +275,20 @@ const Manuals = {
       // mode state.json/modules.json reads had before that fix existed.
       const cacheDir = await this._manualsCacheDirFor(m.id);
       if (!Store._nasOffline) {
-        const { reachable, entries } = await this._sharedEntriesFor(NasSync.manualsDir(m.id));
+        // A native fs call can hang indefinitely — neither resolving nor
+        // rejecting — without the NAS being genuinely unreachable in any
+        // way _assertPlausible-style checks would catch (confirmed on a
+        // real device: the app stayed fully responsive while a background
+        // sync made no further progress at all). Without a timeout here,
+        // one such module would leave the Manuals tab's "loading…"
+        // placeholder up forever, since render()'s Promise.all over every
+        // module never settles until every one of them does.
+        let reachable, entries;
+        try {
+          ({ reachable, entries } = await this._withTimeout(this._sharedEntriesFor(NasSync.manualsDir(m.id)), 8000));
+        } catch(e) {
+          reachable = false; entries = [];
+        }
         if (reachable) {
           if (entries.length) {
             // Mirror to this device's own app-data dir in the background
@@ -412,24 +425,58 @@ const Manuals = {
     this._cacheModuleList(rest, progress).catch(e => console.warn('PATCH.doc: could not finish caching manuals library', e));
   },
 
+  // A dedicated topbar readout instead of the shared status line
+  // (App.setStatus) — that one's reused by every save/upload/delete
+  // action in the app, so a slow multi-minute sync (large manuals over a
+  // real NAS) would get its percentage overwritten and cleared by
+  // whatever else happens to flash by in between updates, making it look
+  // like nothing was happening at all.
+  _setSyncProgress(text) {
+    const el = document.getElementById('topbar-manuals-sync');
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+  },
+
+  // Races a promise against a plain timer — Tauri's native fs calls have
+  // no timeout of their own, and a single one that never settles (neither
+  // resolving nor rejecting — confirmed on a real device: the app stayed
+  // fully responsive at ~0% CPU while the manuals sync made no further
+  // progress at all) would otherwise permanently stall whichever worker
+  // hit it. This doesn't cancel the underlying call — it may still finish
+  // on its own later, harmlessly, since nothing further depends on its
+  // result — it just stops this worker from waiting on it forever.
+  _withTimeout(promise, ms) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+      promise.then(
+        v => { clearTimeout(timer); resolve(v); },
+        e => { clearTimeout(timer); reject(e); }
+      );
+    });
+  },
+
   async _cacheModuleList(modules, progress) {
     if (!modules.length) return;
     const CONCURRENCY = 4;
+    const TIMEOUT_MS = 20000;
     let next = 0;
     const worker = async () => {
       while (next < modules.length) {
         const m = modules[next++];
-        try { await this._cacheManualsLocally(m.id, NasSync.manualsDir(m.id)); }
+        try { await this._withTimeout(this._cacheManualsLocally(m.id, NasSync.manualsDir(m.id)), TIMEOUT_MS); }
         catch(e) { console.warn('PATCH.doc: could not cache manuals for', m.name, e); }
         if (progress) {
           progress.done++;
-          if (progress.show && typeof App !== 'undefined') {
+          if (progress.show) {
             const finished = progress.done >= progress.total;
             const pct = Math.round(progress.done / progress.total * 100);
-            App.setStatus(
-              finished ? 'manuals synced for offline use' : `syncing manuals for offline use: ${pct}%`,
-              finished ? 3500 : 0 // 0 = stays up until the next status update, instead of fading mid-sync
-            );
+            if (finished) {
+              this._setSyncProgress('manuals synced ✓');
+              setTimeout(() => this._setSyncProgress(''), 3000);
+            } else {
+              this._setSyncProgress(`manuals ${pct}% (${progress.done}/${progress.total})`);
+            }
           }
         }
       }
