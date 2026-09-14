@@ -11,6 +11,10 @@
     "fs:allow-read-file",
     "fs:allow-app-write-recursive",
     "fs:read-dirs",
+    {
+      "identifier": "fs:scope",
+      "allow": ["$APPDATA/manuals_cache/**", "$APPDATA/manuals/**", "$APPDATA/media/**"]
+    },
     "core:webview:allow-create-webview-window",
     "core:window:allow-get-all-windows",
     "core:window:allow-set-focus",
