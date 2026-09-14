@@ -936,6 +936,39 @@ const Manuals = {
     xhr.send(form);
   },
 
+  uploadFromModal(event, moduleId) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/manuals/${moduleId}`);
+
+    xhr.onload = () => {
+      if (xhr.status !== 200) {
+        App.setStatus('manual upload failed: HTTP ' + xhr.status);
+        return;
+      }
+      try {
+        const uploaded = JSON.parse(xhr.responseText);
+        fetch(`/api/manuals/${moduleId}/${uploaded.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: file.name, type: file.type })
+        }).then(() => {
+          App.setStatus('manual uploaded');
+          this.renderInModal(moduleId);
+        });
+      } catch(e) {
+        App.setStatus('manual upload failed: ' + e.message);
+      }
+    };
+    xhr.onerror = () => App.setStatus('manual upload failed: network error');
+    xhr.send(form);
+  },
+
   async deleteFile(moduleId, fileId) {
     if (!(await IO.confirmAsync('Delete this manual?'))) return;
     if (IO.isTauri()) { await this._deleteTauriFile(moduleId, fileId); this.render(); return; }
