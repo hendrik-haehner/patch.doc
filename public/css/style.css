@@ -1802,6 +1802,11 @@ audio::-webkit-media-controls-panel { background: var(--bg2); }
   font-size: 14px; color: var(--text2); padding: 0 2px; line-height: 1; flex-shrink: 0;
 }
 .conn-del:hover { color: var(--danger); }
+.conn-edit {
+  background: transparent; border: none; cursor: pointer;
+  font-size: 14px; color: var(--text2); padding: 0 2px; line-height: 1; flex-shrink: 0;
+}
+.conn-edit:hover { color: var(--accent); }
 
 /* ── touch-mode editable connections ── */
 .conn-add-module-row {

@@ -180,6 +180,9 @@ const Manuals = {
       <a href="${f.url}" target="_blank" rel="noopener" class="manual-open-external" title="open in new tab" aria-label="open in new tab"${tauriOpenAttr}>
         <i class="ti ti-external-link" aria-hidden="true"></i>
       </a>
+      <button class="conn-edit" onclick="Manuals.renameFile(${moduleId},'${f.id}')" title="rename" aria-label="rename manual">
+        <i class="ti ti-pencil" aria-hidden="true"></i>
+      </button>
       <button class="conn-del" onclick="Manuals.deleteFile(${moduleId},'${f.id}')" aria-label="delete manual">×</button>
     </div>`;
   },
@@ -579,11 +582,20 @@ const Manuals = {
       await this._writeSidecarJSON(`${dir}/.links.json`, links);
       return;
     }
-    if (op.action === 'add') {
-      await window.__TAURI__.fs.writeFile(`${dir}/${op.fileId}`, bytes);
+    if (op.action === 'rename') {
+      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
+      meta[op.fileId] = { ...meta[op.fileId], name: op.name };
+      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+    } else if (op.action === 'add') {
+      // Meta written *before* the file bytes: if this device's scope ever
+      // rejects the sidecar-JSON write again (see requireLiteralLeadingDot,
+      // fixed in 1.3.24) the PDF never lands on disk either, instead of
+      // sitting there namelessly forever — that's exactly how existing
+      // manuals ended up showing their raw crypto filename in the UI.
       const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
       meta[op.fileId] = { name: op.name, type: op.fileType };
       await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+      await window.__TAURI__.fs.writeFile(`${dir}/${op.fileId}`, bytes);
     } else {
       try { await window.__TAURI__.fs.remove(`${dir}/${op.fileId}`); } catch(err) {
         console.error('PATCH.doc manual delete error (Tauri):', err);
@@ -764,6 +776,25 @@ const Manuals = {
     this._saveModuleManuals(moduleId, manuals);
   },
 
+  async _renameTauriFile(moduleId, fileId, name) {
+    if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
+      const op = { kind: 'file', action: 'rename', fileId, name };
+      const cacheDir = await this._manualsCacheDirFor(moduleId);
+      await this._applyOpToDir(cacheDir, op);
+      try {
+        const dir = await this._manualsDirFor(moduleId);
+        await this._applyOpToDir(dir, op);
+      } catch(e) {
+        this._queueOp(moduleId, op);
+      }
+      return;
+    }
+    const m = Store.state.modules.find(x => x.id === moduleId);
+    if (!m || !m.manuals || !m.manuals[fileId]) return;
+    const manuals = { ...m.manuals, [fileId]: { ...m.manuals[fileId], name } };
+    this._saveModuleManuals(moduleId, manuals);
+  },
+
   async uploadTauri(moduleId) {
     try {
       if (await this._uploadTauriFile(moduleId)) { App.setStatus('manual uploaded'); this.render(); }
@@ -909,6 +940,11 @@ const Manuals = {
 
     const form = new FormData();
     form.append('file', file);
+    // Sent alongside the upload itself (not as a separate follow-up PATCH)
+    // so the server can save the display name atomically — a second
+    // request that never lands can no longer leave a nameless file behind.
+    form.append('name', file.name);
+    form.append('type', file.type);
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `/api/manuals/${moduleId}`);
@@ -918,19 +954,8 @@ const Manuals = {
         App.setStatus('manual upload failed: HTTP ' + xhr.status);
         return;
       }
-      try {
-        const uploaded = JSON.parse(xhr.responseText);
-        fetch(`/api/manuals/${moduleId}/${uploaded.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: file.name, type: file.type })
-        }).then(() => {
-          App.setStatus('manual uploaded');
-          this.render();
-        });
-      } catch(e) {
-        App.setStatus('manual upload failed: ' + e.message);
-      }
+      App.setStatus('manual uploaded');
+      this.render();
     };
     xhr.onerror = () => App.setStatus('manual upload failed: network error');
     xhr.send(form);
@@ -940,6 +965,28 @@ const Manuals = {
     if (!(await IO.confirmAsync('Delete this manual?'))) return;
     if (IO.isTauri()) { await this._deleteTauriFile(moduleId, fileId); this.render(); return; }
     await fetch(`/api/manuals/${moduleId}/${fileId}`, { method: 'DELETE' });
+    this.render();
+  },
+
+  // Lets a user fix a manual's display name in place — the main way to
+  // repair the raw crypto filename (e.g. "9b260c8818f0edbd.pdf") an upload
+  // can leave behind if the name never made it into .meta.json, without
+  // having to delete and re-upload a PDF they may no longer have a copy of.
+  async renameFile(moduleId, fileId) {
+    const entry = (this._cache[moduleId] || []).find(f => f.id === fileId);
+    const newName = await IO.promptAsync('Rename manual', entry?.name || '');
+    if (newName == null) return; // canceled
+    const name = newName.trim();
+    if (!name || name === entry?.name) return;
+    if (IO.isTauri()) { await this._renameTauriFile(moduleId, fileId, name); this.render(); return; }
+    try {
+      await fetch(`/api/manuals/${moduleId}/${fileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      App.setStatus('manual renamed');
+    } catch(e) { App.setStatus('rename failed: ' + e.message); }
     this.render();
   },
 

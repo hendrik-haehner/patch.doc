@@ -461,7 +461,17 @@ app.post('/api/manuals/:moduleId', (req, res) => {
   uploadManual.single('file')(req, res, err => {
     if (err) return res.status(500).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'no file' });
-    res.json({ kind: 'file', id: req.file.filename, name: req.file.originalname, type: req.file.mimetype, size: req.file.size, url: `/api/manuals/${req.params.moduleId}/${req.file.filename}` });
+    // Persist the display name here, atomically with the upload itself,
+    // instead of relying on the client's follow-up PATCH to ever land —
+    // if that second request is lost (page navigated away, brief network
+    // blip), the file was otherwise left in .meta.json-less limbo forever,
+    // showing its raw crypto filename in the UI with no way to fix it.
+    const name = (req.body && req.body.name) || req.file.originalname;
+    const type = (req.body && req.body.type) || req.file.mimetype;
+    const meta = _manualMeta(req.params.moduleId);
+    meta[req.file.filename] = { ...meta[req.file.filename], name, type };
+    _saveManualMeta(req.params.moduleId, meta);
+    res.json({ kind: 'file', id: req.file.filename, name, type, size: req.file.size, url: `/api/manuals/${req.params.moduleId}/${req.file.filename}` });
   });
 });
 
