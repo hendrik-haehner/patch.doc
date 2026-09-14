@@ -13,7 +13,11 @@
     "fs:read-dirs",
     {
       "identifier": "fs:scope",
-      "allow": ["$APPDATA/manuals_cache/**", "$APPDATA/manuals/**", "$APPDATA/media/**"]
+      "allow": [
+        "$APPDATA/manuals_cache/**", "$APPDATA/manuals_cache/**/*",
+        "$APPDATA/manuals/**", "$APPDATA/manuals/**/*",
+        "$APPDATA/media/**", "$APPDATA/media/**/*"
+      ]
     },
     "core:webview:allow-create-webview-window",
     "core:window:allow-get-all-windows",
@@ -23,8 +27,8 @@
     {
       "identifier": "opener:allow-open-path",
       "allow": [
-        { "path": "$APPDATA/media/**" },
-        { "path": "$APPDATA/manuals/**" }
+        { "path": "$APPDATA/media/**" }, { "path": "$APPDATA/media/**/*" },
+        { "path": "$APPDATA/manuals/**" }, { "path": "$APPDATA/manuals/**/*" }
       ]
     }
   ]
