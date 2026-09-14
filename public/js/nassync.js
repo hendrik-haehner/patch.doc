@@ -585,9 +585,11 @@ const NasSync = (() => {
       try {
         await Store.loadFromServer();
         if (!Store._nasOffline) {
+          const manualsFlushed = (typeof Manuals !== 'undefined') ? await Manuals.flushPendingOps() : 0;
           App.fullRender();
           updateTopbarButton();
-          App.setStatus('NAS reachable again — synced');
+          App.setStatus('NAS reachable again — synced' +
+            (manualsFlushed ? ` (+ ${manualsFlushed} offline manual change${manualsFlushed !== 1 ? 's' : ''})` : ''));
         }
       } catch(e) { /* still unreachable — try again next tick */ }
     }, 30000);

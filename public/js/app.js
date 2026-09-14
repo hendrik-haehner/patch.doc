@@ -79,6 +79,13 @@ const App = {
       if (nasBtn) nasBtn.style.display = '';
       NasSync.updateTopbarButton();
       NasSync.startOfflineRetry();
+      // Covers ops queued during a previous session that got closed while
+      // still offline — startOfflineRetry()'s own flush only fires on a
+      // reachability *transition*, which never happens if the app opens
+      // already-reachable.
+      if (NasSync.isEnabled() && !Store._nasOffline) {
+        Manuals.flushPendingOps().catch(e => console.warn('PATCH.doc: could not flush pending manual ops', e));
+      }
     }
     // Must run before fullRender() — unlike snap (drag-only behavior),
     // panel mode changes what render() actually outputs.

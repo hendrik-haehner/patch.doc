@@ -8219,6 +8219,7 @@ const Store = {
   deleteModule(id) {
     const m = this._state.modules.find(x => x.id === id);
     if (m && typeof NasSync !== 'undefined') NasSync.markDeleted('module', id, m.name);
+    if (typeof Manuals !== 'undefined') Manuals.clearPendingFor(id);
     this._state.modules = this._state.modules.filter(m => m.id !== id);
     this._state.patches.forEach(p => {
       p.patchModules = p.patchModules.filter(pm => pm.moduleId !== id);

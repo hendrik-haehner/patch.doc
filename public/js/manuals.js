@@ -419,13 +419,121 @@ const Manuals = {
     Store.saveNow();
   },
 
+  // Applies one add/delete op to a manuals dir — the NAS dir and the local
+  // cache dir share the same on-disk layout (.meta.json/.links.json +
+  // files), so this same function mutates either one: writing offline
+  // updates the cache immediately, then tries the same op against the NAS
+  // and, if that fails, queues it for later (see _uploadTauriFile/
+  // _addTauriLink/_deleteTauriFile below); flushPendingOps() replays a
+  // queued op against the NAS the same way once it's reachable again.
+  async _applyOpToDir(dir, op, bytes) {
+    if (op.kind === 'link') {
+      const links = await this._readSidecarJSON(`${dir}/.links.json`);
+      if (op.action === 'add') links[op.fileId] = { name: op.name, url: op.url };
+      else delete links[op.fileId];
+      await this._writeSidecarJSON(`${dir}/.links.json`, links);
+      return;
+    }
+    if (op.action === 'add') {
+      await window.__TAURI__.fs.writeFile(`${dir}/${op.fileId}`, bytes);
+      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
+      meta[op.fileId] = { name: op.name, type: op.fileType };
+      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+    } else {
+      try { await window.__TAURI__.fs.remove(`${dir}/${op.fileId}`); } catch(err) {
+        console.error('PATCH.doc manual delete error (Tauri):', err);
+      }
+      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
+      delete meta[op.fileId];
+      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+    }
+  },
+
+  // ── Offline write queue (NAS sync only) ──────────────────────────────
+  //
+  // Uploading, linking, and deleting a manual all need to work with no NAS
+  // connection too — mirroring how patches/modules already queue offline
+  // edits and replay them on reconnect (see nassync.js). A queued op only
+  // ever needs a moduleId/fileId/kind/action plus, for a link, its
+  // name+url — a *file* add's bytes are never duplicated into this queue,
+  // since they're already sitting in the local manuals cache dir under
+  // that same fileId by the time the op is queued (flushPendingOps reads
+  // them from there when replaying).
+  _PENDING_KEY: 'patchdoc_manuals_pending_ops',
+
+  _readPendingOps() {
+    try { return JSON.parse(localStorage.getItem(this._PENDING_KEY)) || []; } catch(e) { return []; }
+  },
+  _writePendingOps(ops) {
+    try { localStorage.setItem(this._PENDING_KEY, JSON.stringify(ops)); } catch(e) {}
+  },
+  _queueOp(moduleId, op) {
+    const ops = this._readPendingOps();
+    ops.push({ ...op, moduleId, id: this._uid(), createdAt: new Date().toISOString() });
+    this._writePendingOps(ops);
+  },
+  // A delete for a fileId whose "add" is still queued (never reached the
+  // NAS at all) just cancels that add — there is nothing to delete on the
+  // NAS side. Returns true when it found and removed one.
+  _dequeueAdd(moduleId, fileId) {
+    const ops = this._readPendingOps();
+    const idx = ops.findIndex(o => o.moduleId === moduleId && o.fileId === fileId && o.action === 'add');
+    if (idx === -1) return false;
+    ops.splice(idx, 1);
+    this._writePendingOps(ops);
+    return true;
+  },
+  // Called when a module is deleted locally (see Store.deleteModule) —
+  // any manual changes still queued for it would otherwise just recreate
+  // a manuals folder for a module that no longer exists once reconnected.
+  clearPendingFor(moduleId) {
+    const ops = this._readPendingOps().filter(o => o.moduleId !== moduleId);
+    this._writePendingOps(ops);
+  },
+
+  // Replays every queued offline manual change against the real NAS now
+  // that it's reachable again — called from NasSync.startOfflineRetry()
+  // right after reachability comes back. Ops are applied in the order
+  // they were made; only the ones that actually land on the NAS are
+  // dropped from the queue, so a renewed disconnection mid-flush just
+  // resumes cleanly next time this runs. Returns how many were flushed.
+  async flushPendingOps() {
+    if (typeof NasSync === 'undefined' || !NasSync.isEnabled()) return 0;
+    const ops = this._readPendingOps();
+    if (!ops.length) return 0;
+    const remaining = [];
+    for (const op of ops) {
+      try {
+        const dir = await this._manualsDirFor(op.moduleId); // throws if still unreachable
+        let bytes;
+        if (op.kind === 'file' && op.action === 'add') {
+          const cacheDir = await this._manualsCacheDirFor(op.moduleId);
+          bytes = await window.__TAURI__.fs.readFile(`${cacheDir}/${op.fileId}`);
+        }
+        await this._applyOpToDir(dir, op, bytes);
+      } catch(e) {
+        console.warn('PATCH.doc: could not flush pending manual op', op, e);
+        remaining.push(op);
+      }
+    }
+    this._writePendingOps(remaining);
+    const flushed = ops.length - remaining.length;
+    if (flushed) this._cache = {}; // force a fresh NAS read next render instead of stale cached entries
+    return flushed;
+  },
+
   async _addTauriLink(moduleId, name, url) {
     const id = 'link_' + this._uid();
     if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
-      const dir = await this._manualsDirFor(moduleId);
-      const links = await this._readSidecarJSON(`${dir}/.links.json`);
-      links[id] = { name: (name || url), url };
-      await this._writeSidecarJSON(`${dir}/.links.json`, links);
+      const op = { kind: 'link', action: 'add', fileId: id, name: (name || url), url };
+      const cacheDir = await this._manualsCacheDirFor(moduleId);
+      await this._applyOpToDir(cacheDir, op);
+      try {
+        const dir = await this._manualsDirFor(moduleId);
+        await this._applyOpToDir(dir, op);
+      } catch(e) {
+        this._queueOp(moduleId, op);
+      }
       return;
     }
     const m = Store.state.modules.find(x => x.id === moduleId);
@@ -450,15 +558,25 @@ const Manuals = {
     const srcPath = Array.isArray(picked) ? picked[0] : picked;
     const name = srcPath.split(/[\\/]/).pop();
     const bytes = await window.__TAURI__.fs.readFile(srcPath);
-    const dir = await this._manualsDirFor(moduleId);
     const id = this._uid() + '.pdf';
-    await window.__TAURI__.fs.writeFile(`${dir}/${id}`, bytes);
+
     if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
-      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
-      meta[id] = { name, type: 'application/pdf' };
-      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+      const op = { kind: 'file', action: 'add', fileId: id, name, fileType: 'application/pdf' };
+      // Written to the local cache first — this is what the Manuals tab
+      // and its "no manuals yet" fallback actually read, so the upload
+      // shows up right away whether or not the NAS is reachable.
+      const cacheDir = await this._manualsCacheDirFor(moduleId);
+      await this._applyOpToDir(cacheDir, op, bytes);
+      try {
+        const dir = await this._manualsDirFor(moduleId);
+        await this._applyOpToDir(dir, op, bytes);
+      } catch(e) {
+        this._queueOp(moduleId, op);
+      }
       return true;
     }
+    const dir = await this._manualsDirFor(moduleId);
+    await window.__TAURI__.fs.writeFile(`${dir}/${id}`, bytes);
     const m = Store.state.modules.find(x => x.id === moduleId);
     const manuals = { ...(m?.manuals || {}), [id]: { kind: 'file', name, type: 'application/pdf', size: bytes.length } };
     this._saveModuleManuals(moduleId, manuals);
@@ -467,19 +585,22 @@ const Manuals = {
 
   async _deleteTauriFile(moduleId, fileId) {
     if (typeof NasSync !== 'undefined' && NasSync.isEnabled()) {
-      const dir = await this._manualsDirFor(moduleId);
-      if (fileId.startsWith('link_')) {
-        const links = await this._readSidecarJSON(`${dir}/.links.json`);
-        delete links[fileId];
-        await this._writeSidecarJSON(`${dir}/.links.json`, links);
-        return;
+      const isLink = fileId.startsWith('link_');
+      const op = { kind: isLink ? 'link' : 'file', action: 'delete', fileId };
+      const cacheDir = await this._manualsCacheDirFor(moduleId);
+      await this._applyOpToDir(cacheDir, op);
+
+      // Nothing ever reached the NAS for this file — cancel the pending
+      // upload/link instead of queueing a delete for something that was
+      // never there.
+      if (this._dequeueAdd(moduleId, fileId)) return;
+
+      try {
+        const dir = await this._manualsDirFor(moduleId);
+        await this._applyOpToDir(dir, op);
+      } catch(e) {
+        this._queueOp(moduleId, op);
       }
-      try { await window.__TAURI__.fs.remove(`${dir}/${fileId}`); } catch (err) {
-        console.error('PATCH.doc manual delete error (Tauri):', err);
-      }
-      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
-      delete meta[fileId];
-      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
       return;
     }
     const m = Store.state.modules.find(x => x.id === moduleId);
