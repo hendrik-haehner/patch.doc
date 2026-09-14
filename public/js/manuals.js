@@ -368,35 +368,52 @@ const Manuals = {
     return await window.__TAURI__.core.invoke('local_data_dir', { category: 'manuals_cache', id: String(moduleId) });
   },
 
-  // Proactively mirrors *every* module's manuals, not just ones the user
-  // happens to have looked at — relying on _tauriEntriesFor's per-module
-  // mirroring alone meant a device that never opened the Manuals tab (or
-  // a patch using a given module) before going offline had nothing cached
-  // for it at all, which is exactly what "no local copy" looked like.
-  // Called after every successful NAS sync (see store.js's
-  // loadFromServer and nassync.js's startOfflineRetry); cheap to repeat
-  // since _cacheManualsLocally only re-copies a file when its size
-  // actually changed.
+  // Proactively mirrors module manuals, not just ones the user happens to
+  // have looked at — relying on _tauriEntriesFor's per-module mirroring
+  // alone meant a device that never opened the Manuals tab (or a patch
+  // using a given module) before going offline had nothing cached for it
+  // at all, which is exactly what "no local copy" looked like.
   //
-  // Modules actually placed in one of this device's patches go first —
-  // that's the small, bounded set the user is actually looking at right
-  // now, as opposed to the often much larger built-in library most of
-  // which has no manual uploaded at all. A short concurrency limit (not
-  // fully parallel, not fully sequential) keeps this from hammering the
-  // NAS with dozens of simultaneous readDir/stat/readFile calls while
-  // still finishing in a reasonable time over real network latency —
-  // sequential-one-at-a-time turned out to be too slow to reliably finish
-  // before a real, fast disconnect+restart test cycle.
+  // Confirmed on a real device with ~47 modules: firing the whole sweep
+  // as one fire-and-forget background pass (the original version of this
+  // method) left an *empty* manuals_cache/<id> folder for nearly every
+  // module — _tauriEntriesFor's own unconditional cacheDir lookup creates
+  // that instantly — but the actual multi-step copy (readDir, two
+  // sidecar-JSON reads, per-file stat+read+write) only ever finished for
+  // one single module before the app was closed. A full-library sweep
+  // over real NAS latency just isn't reliably faster than a normal
+  // disconnect+restart test cycle, no matter the concurrency.
+  //
+  // So this now awaits the small, bounded set of modules actually placed
+  // in one of this device's patches first — that's what "still works
+  // offline" concretely means for the user, and it needs to be
+  // *guaranteed* done before app startup finishes, not just probably done
+  // in time. The rest of the (often much larger, mostly-unused) library
+  // still gets swept afterward, but in the true background, since nothing
+  // depends on it finishing before the user might disconnect.
   async cacheAllModulesLocally() {
     if (typeof NasSync === 'undefined' || !NasSync.isEnabled()) return;
     const usedIds = new Set();
     for (const p of Store.state.patches) {
       for (const pm of p.patchModules || []) usedIds.add(pm.moduleId);
     }
-    const modules = [...Store.state.modules].sort(
-      (a, b) => (usedIds.has(b.id) ? 1 : 0) - (usedIds.has(a.id) ? 1 : 0)
-    );
+    const used = Store.state.modules.filter(m => usedIds.has(m.id));
+    const rest = Store.state.modules.filter(m => !usedIds.has(m.id));
 
+    // A visible progress readout, not just a silent background sweep — a
+    // large library over real NAS latency can take long enough that
+    // "nothing seems to be happening" is a reasonable thing to wonder,
+    // and it doubles as a diagnostic: if it visibly stalls partway, that
+    // itself is a useful report. Skipped for a small library, where the
+    // whole thing finishes near-instantly anyway.
+    const progress = { done: 0, total: used.length + rest.length, show: used.length + rest.length > 8 };
+
+    await this._cacheModuleList(used, progress);
+    this._cacheModuleList(rest, progress).catch(e => console.warn('PATCH.doc: could not finish caching manuals library', e));
+  },
+
+  async _cacheModuleList(modules, progress) {
+    if (!modules.length) return;
     const CONCURRENCY = 4;
     let next = 0;
     const worker = async () => {
@@ -404,6 +421,17 @@ const Manuals = {
         const m = modules[next++];
         try { await this._cacheManualsLocally(m.id, NasSync.manualsDir(m.id)); }
         catch(e) { console.warn('PATCH.doc: could not cache manuals for', m.name, e); }
+        if (progress) {
+          progress.done++;
+          if (progress.show && typeof App !== 'undefined') {
+            const finished = progress.done >= progress.total;
+            const pct = Math.round(progress.done / progress.total * 100);
+            App.setStatus(
+              finished ? 'manuals synced for offline use' : `syncing manuals for offline use: ${pct}%`,
+              finished ? 3500 : 0 // 0 = stays up until the next status update, instead of fading mid-sync
+            );
+          }
+        }
       }
     };
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, modules.length) }, worker));

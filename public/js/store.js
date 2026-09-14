@@ -7883,10 +7883,15 @@ const Store = {
         // Proactively, not just reactively (see Manuals.cacheAllModulesLocally) —
         // a device that never opens the Manuals tab or a patch using a given
         // module before going offline would otherwise have nothing cached for
-        // it at all. Not awaited: this can touch every module's manuals, and
-        // loadFromServer() shouldn't block app startup on that.
+        // it at all. Awaited on purpose: cacheAllModulesLocally() only blocks
+        // on the small set of modules actually placed in one of this device's
+        // patches (backgrounding the rest of the library itself) — confirmed
+        // on a real ~47-module library that firing the *entire* sweep as
+        // fire-and-forget left almost everything uncached, since the full
+        // multi-step copy per module rarely wins the race against a normal
+        // disconnect+restart test cycle.
         if (typeof Manuals !== 'undefined') {
-          Manuals.cacheAllModulesLocally().catch(e => console.warn('PATCH.doc: could not cache manuals library locally', e));
+          await Manuals.cacheAllModulesLocally().catch(e => console.warn('PATCH.doc: could not cache manuals library locally', e));
         }
       } catch(e) {
         console.warn('NAS sync load failed, falling back to local cache:', e);
