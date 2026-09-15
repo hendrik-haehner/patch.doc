@@ -493,7 +493,7 @@ app.get('/api/manuals/:moduleId', (req, res) => {
   const d = path.join(MANUALS_DIR, req.params.moduleId);
   const meta = _manualMeta(req.params.moduleId);
   const files = fs.existsSync(d)
-    ? fs.readdirSync(d).filter(f => !f.endsWith('.meta.json') && !f.endsWith('.links.json')).map(f => ({
+    ? fs.readdirSync(d).filter(f => !['.meta.json', '.links.json', 'manual-meta.json', 'manual-links.json'].includes(f)).map(f => ({
         kind: 'file', id: f, name: meta[f]?.name || f, type: meta[f]?.type || 'application/pdf',
         size: fs.statSync(path.join(d, f)).size, url: `/api/manuals/${req.params.moduleId}/${f}`
       }))
@@ -539,24 +539,40 @@ app.delete('/api/manuals/:moduleId/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// Sidecar files used to be named .meta.json/.links.json. That's fine for
+// this server (plain Node fs, no ACL), but the desktop app's NAS-sync mode
+// shares this exact folder over a mounted network drive, and Tauri's fs
+// plugin grants that mount through a *runtime*-added scope (the folder
+// picker + persisted-scope) that — unlike this app's own static $APPDATA
+// paths — always enforces the unix "hide dotfiles from wildcards" default
+// no matter what tauri.conf.json says, so the desktop app could never
+// write a dotfile there. Non-dotfile names sidestep that entirely. Reads
+// fall back to the old dotfile name so already-populated /data folders
+// keep working; every write goes to the new name, so a folder migrates
+// the next time anything in it changes.
+function _readSidecarJSON(primary, fallback) {
+  try { if (fs.existsSync(primary)) return JSON.parse(fs.readFileSync(primary, 'utf8')); } catch(e) {}
+  try { if (fs.existsSync(fallback)) return JSON.parse(fs.readFileSync(fallback, 'utf8')); } catch(e) {}
+  return {};
+}
+function _writeSidecarJSON(dir, name, data) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
+}
 function _manualMeta(moduleId) {
-  const f = path.join(MANUALS_DIR, moduleId, '.meta.json');
-  try { return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {}; } catch(e) { return {}; }
+  const d = path.join(MANUALS_DIR, moduleId);
+  return _readSidecarJSON(path.join(d, 'manual-meta.json'), path.join(d, '.meta.json'));
 }
 function _saveManualMeta(moduleId, meta) {
-  const d = path.join(MANUALS_DIR, moduleId);
-  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-  fs.writeFileSync(path.join(d, '.meta.json'), JSON.stringify(meta, null, 2));
+  _writeSidecarJSON(path.join(MANUALS_DIR, moduleId), 'manual-meta.json', meta);
 }
 
 function _manualLinks(moduleId) {
-  const f = path.join(MANUALS_DIR, moduleId, '.links.json');
-  try { return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {}; } catch(e) { return {}; }
+  const d = path.join(MANUALS_DIR, moduleId);
+  return _readSidecarJSON(path.join(d, 'manual-links.json'), path.join(d, '.links.json'));
 }
 function _saveManualLinks(moduleId, links) {
-  const d = path.join(MANUALS_DIR, moduleId);
-  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-  fs.writeFileSync(path.join(d, '.links.json'), JSON.stringify(links, null, 2));
+  _writeSidecarJSON(path.join(MANUALS_DIR, moduleId), 'manual-links.json', links);
 }
 
 // ── API: shared patches ──────────────────────────────────────────────────────

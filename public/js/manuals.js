@@ -360,11 +360,11 @@ const Manuals = {
     } catch(e) {
       return { reachable: false, entries: [] };
     }
-    const meta  = await this._readSidecarJSON(`${dir}/.meta.json`);
-    const links = await this._readSidecarJSON(`${dir}/.links.json`);
+    const meta  = await this._readMetaFor(dir);
+    const links = await this._readLinksFor(dir);
     const files = await Promise.all(
       dirEntries
-        .filter(e => e.isFile && e.name !== '.meta.json' && e.name !== '.links.json')
+        .filter(e => e.isFile && !this._isSidecarName(e.name))
         .map(async e => {
           const info = meta[e.name] || {};
           const path = `${dir}/${e.name}`;
@@ -498,14 +498,14 @@ const Manuals = {
     try { nasEntries = await window.__TAURI__.fs.readDir(nasDir); } catch(e) { return; }
 
     const cacheDir = await this._manualsCacheDirFor(moduleId);
-    const meta  = await this._readSidecarJSON(`${nasDir}/.meta.json`);
-    const links = await this._readSidecarJSON(`${nasDir}/.links.json`);
-    await this._writeSidecarJSON(`${cacheDir}/.meta.json`, meta);
-    await this._writeSidecarJSON(`${cacheDir}/.links.json`, links);
+    const meta  = await this._readMetaFor(nasDir);
+    const links = await this._readLinksFor(nasDir);
+    await this._writeSidecarJSON(`${cacheDir}/manual-meta.json`, meta);
+    await this._writeSidecarJSON(`${cacheDir}/manual-links.json`, links);
 
     const nasFileNames = new Set();
     for (const e of nasEntries) {
-      if (!e.isFile || e.name === '.meta.json' || e.name === '.links.json') continue;
+      if (!e.isFile || this._isSidecarName(e.name)) continue;
       nasFileNames.add(e.name);
       const srcPath = `${nasDir}/${e.name}`;
       const destPath = `${cacheDir}/${e.name}`;
@@ -527,7 +527,7 @@ const Manuals = {
     let cacheEntries = [];
     try { cacheEntries = await window.__TAURI__.fs.readDir(cacheDir); } catch(e) {}
     for (const e of cacheEntries) {
-      if (!e.isFile || e.name === '.meta.json' || e.name === '.links.json') continue;
+      if (!e.isFile || this._isSidecarName(e.name)) continue;
       if (!nasFileNames.has(e.name)) {
         try { await window.__TAURI__.fs.remove(`${cacheDir}/${e.name}`); } catch(err) {}
       }
@@ -535,12 +535,43 @@ const Manuals = {
   },
 
   async _readSidecarJSON(path) {
-    try { return JSON.parse(await window.__TAURI__.fs.readTextFile(path)); } catch(e) { return {}; }
+    try { return JSON.parse(await window.__TAURI__.fs.readTextFile(path)); } catch(e) { return null; }
   },
   async _writeSidecarJSON(path, data) {
     const dir = path.slice(0, path.lastIndexOf('/'));
     await window.__TAURI__.fs.mkdir(dir, { recursive: true });
     await window.__TAURI__.fs.writeTextFile(path, JSON.stringify(data, null, 2));
+  },
+
+  // Sidecar files used to be named .meta.json/.links.json — a leading dot
+  // that's invisible to shell globs by convention. That's harmless under
+  // this app's own $APPDATA paths (a static, build-time capability grant,
+  // which tauri.conf.json's plugins.fs.requireLiteralLeadingDot can fully
+  // control), but a NAS-sync root is a *runtime*-granted scope (added via
+  // the folder picker's {recursive:true} + tauri-plugin-persisted-scope) —
+  // and tauri-plugin-fs 2.5.1 keeps that grant in a separate Scope object
+  // that's always built with the unix hardcoded requireLiteralLeadingDot
+  // default (true), ignoring the app config entirely (confirmed directly
+  // against a real NAS mount: writing a plain file there succeeds, writing
+  // any dotfile there is unconditionally "forbidden path", no matter what
+  // this app's own tauri.conf.json says). There's no config escape from
+  // that — so instead of fighting it, the sidecar files are now named
+  // without a leading dot, which sidesteps the whole restriction for good
+  // under any scope, static or runtime-granted. Reads fall back to the old
+  // dotfile name so already-populated NAS folders/local caches aren't
+  // orphaned; every write goes to the new name only, so a folder migrates
+  // to it the next time anything in it changes.
+  async _readMetaFor(dir) {
+    return (await this._readSidecarJSON(`${dir}/manual-meta.json`))
+      ?? (await this._readSidecarJSON(`${dir}/.meta.json`)) ?? {};
+  },
+  async _readLinksFor(dir) {
+    return (await this._readSidecarJSON(`${dir}/manual-links.json`))
+      ?? (await this._readSidecarJSON(`${dir}/.links.json`)) ?? {};
+  },
+  _isSidecarName(name) {
+    return name === 'manual-meta.json' || name === 'manual-links.json'
+      || name === '.meta.json' || name === '.links.json';
   },
 
   async _manualsDirFor(moduleId) {
@@ -576,33 +607,33 @@ const Manuals = {
   // queued op against the NAS the same way once it's reachable again.
   async _applyOpToDir(dir, op, bytes) {
     if (op.kind === 'link') {
-      const links = await this._readSidecarJSON(`${dir}/.links.json`);
+      const links = await this._readLinksFor(dir);
       if (op.action === 'add') links[op.fileId] = { name: op.name, url: op.url };
       else delete links[op.fileId];
-      await this._writeSidecarJSON(`${dir}/.links.json`, links);
+      await this._writeSidecarJSON(`${dir}/manual-links.json`, links);
       return;
     }
     if (op.action === 'rename') {
-      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
+      const meta = await this._readMetaFor(dir);
       meta[op.fileId] = { ...meta[op.fileId], name: op.name };
-      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+      await this._writeSidecarJSON(`${dir}/manual-meta.json`, meta);
     } else if (op.action === 'add') {
       // Meta written *before* the file bytes: if this device's scope ever
       // rejects the sidecar-JSON write again (see requireLiteralLeadingDot,
       // fixed in 1.3.24) the PDF never lands on disk either, instead of
       // sitting there namelessly forever — that's exactly how existing
       // manuals ended up showing their raw crypto filename in the UI.
-      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
+      const meta = await this._readMetaFor(dir);
       meta[op.fileId] = { name: op.name, type: op.fileType };
-      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+      await this._writeSidecarJSON(`${dir}/manual-meta.json`, meta);
       await window.__TAURI__.fs.writeFile(`${dir}/${op.fileId}`, bytes);
     } else {
       try { await window.__TAURI__.fs.remove(`${dir}/${op.fileId}`); } catch(err) {
         console.error('PATCH.doc manual delete error (Tauri):', err);
       }
-      const meta = await this._readSidecarJSON(`${dir}/.meta.json`);
+      const meta = await this._readMetaFor(dir);
       delete meta[op.fileId];
-      await this._writeSidecarJSON(`${dir}/.meta.json`, meta);
+      await this._writeSidecarJSON(`${dir}/manual-meta.json`, meta);
     }
   },
 
@@ -847,9 +878,8 @@ const Manuals = {
       if (!localModule) { skipped++; continue; }
 
       const srcDir = `${dir}/manuals/${nasModule.id}`;
-      let meta = {}, links = {};
-      try { meta = JSON.parse(await window.__TAURI__.fs.readTextFile(`${srcDir}/.meta.json`)); } catch (e) {}
-      try { links = JSON.parse(await window.__TAURI__.fs.readTextFile(`${srcDir}/.links.json`)); } catch (e) {}
+      const meta = await this._readMetaFor(srcDir);
+      const links = await this._readLinksFor(srcDir);
       const fileEntries = Object.entries(meta);
       const linkEntries = Object.entries(links);
       if (!fileEntries.length && !linkEntries.length) continue;
