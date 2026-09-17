@@ -1,6 +1,6 @@
 [package]
 name = "patchdoc"
-version = "1.3.26"
+version = "1.3.27"
 description = "PATCH.doc — modular synth patch documentation"
 edition = "2021"
 
