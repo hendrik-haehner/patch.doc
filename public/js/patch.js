@@ -826,12 +826,15 @@ const Patch = {
     App.setStatus('aligned ' + patch.patchModules.length + ' module(s) to grid (' + GRID + 'px)');
   },
 
-  // Pack all modules tightly into rows (like a hardware rack), wrapping to
-  // a new row once the visible canvas width is exceeded. Order is preserved
-  // top-to-bottom, left-to-right based on current position. The gap between
-  // modules (and rows) is user-configurable in HP, see setCompactGap() —
-  // widths still come from each module's actual rendered size, so gaps and
-  // offsets between differently-sized panels are expected, not a bug.
+  // Pack all modules tightly into rows (like a hardware rack): rows are
+  // whatever the user already grouped by y-position (bucketed below), never
+  // re-wrapped by width — a row stays a row even if it runs past the
+  // current window's edge, since the canvas scrolls horizontally. Order is
+  // preserved top-to-bottom, left-to-right based on current position. The
+  // gap between modules (and rows) is user-configurable in HP, see
+  // setCompactGap() — widths still come from each module's actual rendered
+  // size, so gaps and offsets between differently-sized panels are
+  // expected, not a bug.
   _HP_PX: 12, // approximate on-screen px per HP, for the rack-gap control only
   _compactGapHp: 2,
 
@@ -857,24 +860,25 @@ const Patch = {
     if (!patch.patchModules.length) { App.setStatus('no modules to compact'); return; }
 
     const GAP = Math.round(this._compactGapHp * this._HP_PX); // rack gap, in px
-    const wrapEl = document.getElementById('patch-canvas-wrap');
-    const rowWidth = Math.max(600, (wrapEl ? wrapEl.clientWidth : 1200) - 40);
 
     // Sort by current visual order: row first (y, bucketed), then x
+    const rowKeyOf = pm => Math.round(pm.y / 100);
     const sorted = [...patch.patchModules].sort((a, b) => {
-      const rowA = Math.round(a.y / 100), rowB = Math.round(b.y / 100);
+      const rowA = rowKeyOf(a), rowB = rowKeyOf(b);
       if (rowA !== rowB) return rowA - rowB;
       return a.x - b.x;
     });
 
-    let x = GAP, y = GAP, rowH = 0;
+    let x = GAP, y = GAP, rowH = 0, prevRowKey = null;
     sorted.forEach(pm => {
+      const rowKey = rowKeyOf(pm);
       const el = document.querySelector('.patch-module[data-pmid="' + pm.id + '"]');
       const w  = el ? el.offsetWidth  : 150;
       const h  = el ? el.offsetHeight : 120;
 
-      if (x + w > rowWidth && x > GAP) {
-        // wrap to next row
+      if (prevRowKey !== null && rowKey !== prevRowKey) {
+        // new row — only because the user placed this module in a
+        // different row, never because the row ran wide
         x = GAP;
         y += rowH + GAP;
         rowH = 0;
@@ -883,6 +887,7 @@ const Patch = {
       pm.y = y;
       x += w + GAP;
       rowH = Math.max(rowH, h);
+      prevRowKey = rowKey;
     });
 
     Store.updatePatch(patch.id, { patchModules: patch.patchModules });
